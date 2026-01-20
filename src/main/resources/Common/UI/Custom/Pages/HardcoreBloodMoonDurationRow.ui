@@ -1,0 +1,81 @@
+$C = "../Common.ui";
+
+Group {
+  Anchor: (Width: 340, Height: 40);
+  LayoutMode: Left;
+  Padding: (Full: 6);
+
+  Label #Label {
+    Anchor: (Width: 70);
+    Style: (...$C.@DefaultLabelStyle, VerticalAlignment: Center);
+    Text: "Duration";
+  }
+
+  Group #Options {
+    LayoutMode: Left;
+
+    Group #OneHour {
+      LayoutMode: Left;
+      Anchor: (Right: 6);
+
+      $C.@CheckBox #OneHourToggle {}
+
+      Label #OneHourLabel {
+        Anchor: (Left: 4);
+        Style: (...$C.@DefaultLabelStyle, VerticalAlignment: Center);
+        Text: "1h";
+      }
+    }
+
+    Group #ThreeHour {
+      LayoutMode: Left;
+      Anchor: (Right: 6);
+
+      $C.@CheckBox #ThreeHourToggle {}
+
+      Label #ThreeHourLabel {
+        Anchor: (Left: 4);
+        Style: (...$C.@DefaultLabelStyle, VerticalAlignment: Center);
+        Text: "3h";
+      }
+    }
+
+    Group #SixHour {
+      LayoutMode: Left;
+      Anchor: (Right: 6);
+
+      $C.@CheckBox #SixHourToggle {}
+
+      Label #SixHourLabel {
+        Anchor: (Left: 4);
+        Style: (...$C.@DefaultLabelStyle, VerticalAlignment: Center);
+        Text: "6h";
+      }
+    }
+
+    Group #NineHour {
+      LayoutMode: Left;
+      Anchor: (Right: 6);
+
+      $C.@CheckBox #NineHourToggle {}
+
+      Label #NineHourLabel {
+        Anchor: (Left: 4);
+        Style: (...$C.@DefaultLabelStyle, VerticalAlignment: Center);
+        Text: "9h";
+      }
+    }
+
+    Group #TwelveHour {
+      LayoutMode: Left;
+
+      $C.@CheckBox #TwelveHourToggle {}
+
+      Label #TwelveHourLabel {
+        Anchor: (Left: 4);
+        Style: (...$C.@DefaultLabelStyle, VerticalAlignment: Center);
+        Text: "12h";
+      }
+    }
+  }
+}

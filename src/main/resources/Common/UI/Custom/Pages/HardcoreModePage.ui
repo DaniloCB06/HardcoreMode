@@ -1,0 +1,68 @@
+$C = "../Common.ui";
+
+$C.@PageOverlay {}
+
+$C.@Container {
+  Anchor: (Width: 1000, Height: 700);
+
+  #Title {
+    Group {
+      $C.@Title #PageTitle {
+        @Text = "Hardcore Mode";
+      }
+    }
+  }
+
+  #Content {
+    LayoutMode: Left;
+    Padding: (Left: 40, Right: 40, Top: 12);
+
+    Group #SettingsPanel {
+      LayoutMode: Top;
+      Anchor: (Width: 420);
+
+      Label #EnemySectionTitle {
+        Style: (
+          FontSize: 20,
+          RenderBold: true,
+          TextColor: #d3d6db,
+          VerticalAlignment: Center,
+          HorizontalAlignment: Center
+        );
+        Anchor: (Bottom: 12);
+        Text: "Enemy Settings";
+      }
+
+      Group #EnemySettingsList {
+        LayoutMode: Top;
+      }
+    }
+
+    Group #ColumnSpacer {
+      Anchor: (Width: 40, Height: 1);
+    }
+
+    Group #BloodMoonPanel {
+      LayoutMode: Top;
+      Anchor: (Width: 420);
+
+      Label #BloodMoonSectionTitle {
+        Style: (
+          FontSize: 20,
+          RenderBold: true,
+          TextColor: #d3d6db,
+          VerticalAlignment: Center,
+          HorizontalAlignment: Center
+        );
+        Anchor: (Bottom: 12);
+        Text: "Blood Moon";
+      }
+
+      Group #BloodMoonSettingsList {
+        LayoutMode: Top;
+      }
+    }
+  }
+}
+
+$C.@BackButton {}

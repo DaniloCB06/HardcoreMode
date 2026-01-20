@@ -1,0 +1,14 @@
+$C = "../Common.ui";
+
+Group {
+  Anchor: (Width: 340, Height: 38);
+  LayoutMode: Left;
+  Padding: (Left: 6, Right: 6, Top: 8, Bottom: 6);
+
+  Label #Label {
+    FlexWeight: 1;
+    Style: (...$C.@DefaultLabelStyle, FontSize: 15, RenderBold: true, TextColor: #e6ebf2, VerticalAlignment: Center);
+  }
+
+  $C.@CheckBox #Toggle {}
+}

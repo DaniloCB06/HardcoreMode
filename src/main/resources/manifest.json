@@ -1,0 +1,14 @@
+{
+  "Group": "com.example",
+  "Name": "HardcoreMode",
+  "Version": "1.0.0",
+  "Description": "Increases mob health and damage with a configurable GUI.",
+  "Authors": [
+    { "Name": "FoToom" }
+  ],
+  "Main": "com.example.plugin.HardcoreModePlugin",
+  "OptionalDependencies": {
+    "Zoltus:TinyMessage": "*"
+  },
+  "IncludesAssetPack": true
+}

@@ -1,0 +1,26 @@
+$C = "../Common.ui";
+
+Group {
+  Anchor: (Width: 340, Height: 40);
+  LayoutMode: Left;
+  Padding: (Full: 6);
+
+  Label #Label {
+    Anchor: (Width: 120);
+    Style: (...$C.@DefaultLabelStyle, VerticalAlignment: Center);
+  }
+
+  FloatSlider #Slider {
+    Anchor: (Left: 6, Width: 140, Height: 5);
+    Style: $C.@DefaultSliderStyle;
+    Min: 1.0;
+    Max: 5.0;
+    Step: 0.25;
+    Value: 1.0;
+  }
+
+  Label #Value {
+    Anchor: (Left: 8, Width: 60);
+    Style: (...$C.@DefaultLabelStyle, VerticalAlignment: Center, HorizontalAlignment: End);
+  }
+}

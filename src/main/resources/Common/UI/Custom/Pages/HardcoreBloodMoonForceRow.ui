@@ -1,0 +1,18 @@
+$C = "../Common.ui";
+
+Group {
+  Anchor: (Width: 340, Height: 40);
+  LayoutMode: Left;
+  Padding: (Left: 6, Right: 6, Top: 6, Bottom: 6);
+
+  $C.@SmallSecondaryTextButton #ForceButton {
+    Anchor: (Width: 200);
+    Text: "Force Blood Moon";
+  }
+
+  $C.@CheckBox #ForceValue {
+    Anchor: (Width: 0, Height: 0);
+    Visible: false;
+    Value: true;
+  }
+}
