@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.example"
-version = "1.1.0"
+version = "2.0.0"
 
 repositories {
     mavenCentral()
@@ -11,7 +11,8 @@ repositories {
 
 dependencies {
     compileOnly(files("libs/HytaleServer.jar"))
-    compileOnly(files("libs/tinymessage-2.0.0.jar"))
+    compileOnly(fileTree("libs") { include("tinymessage-*.jar") })
+    compileOnly(fileTree(".test-integration") { include("RPGLeveling-*.jar") })
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

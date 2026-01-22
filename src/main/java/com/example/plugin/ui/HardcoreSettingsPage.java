@@ -98,6 +98,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
         Boolean bloodMoonDuration12h = data.getBloodMoonDuration12h();
         Float bloodMoonHostileHealthMultiplier = data.getBloodMoonHostileHealthMultiplier();
         Float bloodMoonHostileDamageMultiplier = data.getBloodMoonHostileDamageMultiplier();
+        Float bloodMoonXpMultiplier = data.getBloodMoonXpMultiplier();
         Boolean bloodMoonForce = data.getBloodMoonForce();
         Boolean playerDeathSettingsEnabled = data.getPlayerDeathSettingsEnabled();
         Float playerItemDurabilityLossPercent = data.getPlayerItemDurabilityLossPercent();
@@ -124,6 +125,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 && bloodMoonDuration12h == null
                 && bloodMoonHostileHealthMultiplier == null
                 && bloodMoonHostileDamageMultiplier == null
+                && bloodMoonXpMultiplier == null
                 && bloodMoonForce == null
                 && playerDeathSettingsEnabled == null
                 && playerItemDurabilityLossPercent == null
@@ -254,6 +256,14 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 MAX_MULTIPLIER,
                 STEP,
                 value -> config.bloodMoonHostileDamageMultiplier = value
+        );
+        changed |= applyFloatSetting(
+                bloodMoonXpMultiplier,
+                config.bloodMoonXpMultiplier,
+                MIN_MULTIPLIER,
+                MAX_MULTIPLIER,
+                STEP,
+                value -> config.bloodMoonXpMultiplier = value
         );
         changed |= applyEnabled(
                 playerDeathSettingsEnabled,
@@ -485,6 +495,17 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 config.bloodMoonHostileDamageMultiplier,
                 HardcoreSettingsPageEventData.KEY_BLOOD_MOON_HOSTILE_DAMAGE
         );
+        if (plugin.isRpgLevelingAvailable()) {
+            bloodIndex = addSliderEntry(
+                    commands,
+                    events,
+                    BLOOD_MOON_LIST_ID,
+                    bloodIndex,
+                    "RPG XP Multiplier",
+                    config.bloodMoonXpMultiplier,
+                    HardcoreSettingsPageEventData.KEY_BLOOD_MOON_XP_MULTIPLIER
+            );
+        }
         bloodIndex = addForceBloodMoonEntry(commands, events, bloodIndex);
         bloodIndex = addHeaderEntry(
                 commands,

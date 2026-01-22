@@ -34,6 +34,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class HardcoreModePlugin extends JavaPlugin {
     private static HardcoreModePlugin instance;
+    private static final String RPG_LEVELING_PLUGIN_CLASS = "org.zuxaw.plugin.RPGLevelingPlugin";
+    private static final String RPG_LEVELING_CONFIG_CLASS = "org.zuxaw.plugin.config.LevelingConfig";
 
     private final Config<HardcoreModeConfig> config;
     private final HardcoreMobSetupSystem mobSetupSystem;
@@ -45,6 +47,15 @@ public class HardcoreModePlugin extends JavaPlugin {
     private Ref<EntityStore> cachedPlayerRef;
     private boolean bloodMoonActive;
     private Long forcedBloodMoonEndHourOfEpoch;
+    private boolean rpgLevelingChecked;
+    private boolean rpgLevelingAvailable;
+    private java.lang.reflect.Method rpgGetInstanceMethod;
+    private java.lang.reflect.Method rpgGetConfigMethod;
+    private java.lang.reflect.Method rpgGetRateExpMethod;
+    private java.lang.reflect.Method rpgSetRateExpMethod;
+    private Double rpgLevelingBaseRateExp;
+    private float rpgLevelingAppliedMultiplier = 1.0f;
+    private boolean rpgLevelingBloodMoonApplied;
 
     public HardcoreModePlugin(JavaPluginInit init) {
         super(init);
@@ -168,14 +179,15 @@ public class HardcoreModePlugin extends JavaPlugin {
 
     public void refreshBloodMoonState(Store<EntityStore> store, boolean applyToMobs) {
         boolean active = computeBloodMoonActive(store);
-        if (active == bloodMoonActive) {
-            return;
-        }
+        boolean changed = active != bloodMoonActive;
 
         bloodMoonActive = active;
-        announceBloodMoon(active, store);
-        if (applyToMobs) {
-            applyToExistingMobs(store);
+        syncRpgLevelingMultiplier(active);
+        if (changed) {
+            announceBloodMoon(active, store);
+            if (applyToMobs) {
+                applyToExistingMobs(store);
+            }
         }
     }
 
@@ -503,5 +515,130 @@ public class HardcoreModePlugin extends JavaPlugin {
 
         cachedPlayerRef = found.get();
         return found.get();
+    }
+
+    public boolean isRpgLevelingAvailable() {
+        if (!ensureRpgLevelingAccess()) {
+            return false;
+        }
+
+        try {
+            return rpgGetInstanceMethod.invoke(null) != null;
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            return false;
+        }
+    }
+
+    private void syncRpgLevelingMultiplier(boolean active) {
+        Object levelingConfig = getRpgLevelingConfig();
+        if (levelingConfig == null) {
+            rpgLevelingBloodMoonApplied = false;
+            rpgLevelingAppliedMultiplier = 1.0f;
+            rpgLevelingBaseRateExp = null;
+            return;
+        }
+
+        if (!active) {
+            if (rpgLevelingBloodMoonApplied && rpgLevelingBaseRateExp != null) {
+                setRpgRateExp(levelingConfig, rpgLevelingBaseRateExp);
+            }
+            rpgLevelingBloodMoonApplied = false;
+            rpgLevelingAppliedMultiplier = 1.0f;
+            rpgLevelingBaseRateExp = null;
+            return;
+        }
+
+        float multiplier = config.get().bloodMoonXpMultiplier;
+        if (!rpgLevelingBloodMoonApplied) {
+            rpgLevelingBaseRateExp = getRpgRateExp(levelingConfig);
+        }
+
+        if (rpgLevelingBaseRateExp == null) {
+            return;
+        }
+
+        if (rpgLevelingBloodMoonApplied
+                && Math.abs(rpgLevelingAppliedMultiplier - multiplier) <= 0.0001f) {
+            return;
+        }
+
+        double target = rpgLevelingBaseRateExp * Math.max(0.0f, multiplier);
+        if (setRpgRateExp(levelingConfig, target)) {
+            rpgLevelingAppliedMultiplier = multiplier;
+            rpgLevelingBloodMoonApplied = true;
+        }
+    }
+
+    private Object getRpgLevelingConfig() {
+        if (!ensureRpgLevelingAccess()) {
+            return null;
+        }
+
+        try {
+            Object pluginInstance = rpgGetInstanceMethod.invoke(null);
+            if (pluginInstance == null) {
+                return null;
+            }
+
+            Object configWrapper = rpgGetConfigMethod.invoke(pluginInstance);
+            if (configWrapper instanceof Config) {
+                return ((Config<?>) configWrapper).get();
+            }
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            return null;
+        }
+
+        return null;
+    }
+
+    private Double getRpgRateExp(Object levelingConfig) {
+        if (levelingConfig == null) {
+            return null;
+        }
+
+        try {
+            Object result = rpgGetRateExpMethod.invoke(levelingConfig);
+            if (result instanceof Double) {
+                return (Double) result;
+            }
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            return null;
+        }
+
+        return null;
+    }
+
+    private boolean setRpgRateExp(Object levelingConfig, double value) {
+        if (levelingConfig == null) {
+            return false;
+        }
+
+        try {
+            rpgSetRateExpMethod.invoke(levelingConfig, value);
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            return false;
+        }
+    }
+
+    private boolean ensureRpgLevelingAccess() {
+        if (rpgLevelingChecked) {
+            return rpgLevelingAvailable;
+        }
+
+        rpgLevelingChecked = true;
+        try {
+            Class<?> pluginClass = Class.forName(RPG_LEVELING_PLUGIN_CLASS);
+            Class<?> configClass = Class.forName(RPG_LEVELING_CONFIG_CLASS);
+            rpgGetInstanceMethod = pluginClass.getMethod("get");
+            rpgGetConfigMethod = pluginClass.getMethod("getConfig");
+            rpgGetRateExpMethod = configClass.getMethod("getRateExp");
+            rpgSetRateExpMethod = configClass.getMethod("setRateExp", double.class);
+            rpgLevelingAvailable = true;
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            rpgLevelingAvailable = false;
+        }
+
+        return rpgLevelingAvailable;
     }
 }

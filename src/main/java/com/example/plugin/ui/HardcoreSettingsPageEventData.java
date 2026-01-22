@@ -27,6 +27,7 @@ public class HardcoreSettingsPageEventData {
     public static final String KEY_BLOOD_MOON_DURATION_12H = "@BloodMoonDuration12h";
     public static final String KEY_BLOOD_MOON_HOSTILE_HEALTH = "@BloodMoonHostileHealthMultiplier";
     public static final String KEY_BLOOD_MOON_HOSTILE_DAMAGE = "@BloodMoonHostileDamageMultiplier";
+    public static final String KEY_BLOOD_MOON_XP_MULTIPLIER = "@BloodMoonXpMultiplier";
     public static final String KEY_BLOOD_MOON_FORCE = "@BloodMoonForce";
     public static final String KEY_PLAYER_DEATH_SETTINGS_ENABLED = "@PlayerDeathSettingsEnabled";
     public static final String KEY_PLAYER_ITEM_DURABILITY_LOSS_PERCENT = "@PlayerItemDurabilityLossPercent";
@@ -122,6 +123,10 @@ public class HardcoreSettingsPageEventData {
                     (data, value) -> data.bloodMoonHostileDamageMultiplier = value,
                     data -> data.bloodMoonHostileDamageMultiplier)
             .add()
+            .append(new KeyedCodec<>(KEY_BLOOD_MOON_XP_MULTIPLIER, Codec.FLOAT),
+                    (data, value) -> data.bloodMoonXpMultiplier = value,
+                    data -> data.bloodMoonXpMultiplier)
+            .add()
             .append(new KeyedCodec<>(KEY_BLOOD_MOON_FORCE, Codec.BOOLEAN),
                     (data, value) -> data.bloodMoonForce = value,
                     data -> data.bloodMoonForce)
@@ -162,6 +167,7 @@ public class HardcoreSettingsPageEventData {
     private Boolean bloodMoonDuration12h;
     private Float bloodMoonHostileHealthMultiplier;
     private Float bloodMoonHostileDamageMultiplier;
+    private Float bloodMoonXpMultiplier;
     private Boolean bloodMoonForce;
     private Boolean playerDeathSettingsEnabled;
     private Float playerItemDurabilityLossPercent;
@@ -256,6 +262,10 @@ public class HardcoreSettingsPageEventData {
 
     public Float getBloodMoonHostileDamageMultiplier() {
         return bloodMoonHostileDamageMultiplier;
+    }
+
+    public Float getBloodMoonXpMultiplier() {
+        return bloodMoonXpMultiplier;
     }
 
     public Boolean getBloodMoonForce() {
