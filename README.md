@@ -17,12 +17,16 @@ Optional:
 - `/hardgui` - Opens the Hardcore Mode settings GUI.
   - Permission: admins/ops only.
   - Hidden from `/help` for players without permission.
+ 
+<img width="935" height="654" alt="image" src="https://github.com/user-attachments/assets/33b5dfab-f0af-4d70-873c-8f34156fcff2" />
 
 ## GUI Settings
 Enemy Settings (left panel):
 - Global Hardcore Mode: toggles all categories at once.
 - Global Health/Damage: base multipliers for all categories.
 - Peaceful/Neutral/Hostile: per-category enable + health/damage multipliers.
+
+<img width="1293" height="711" alt="image" src="https://github.com/user-attachments/assets/b254839c-16c0-46c8-bbed-896842fa3e26" />
 
 Blood Moon (right panel):
 - Enable/disable automatic Blood Moon.
