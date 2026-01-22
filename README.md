@@ -18,7 +18,7 @@ Optional:
   - Permission: admins/ops only.
   - Hidden from `/help` for players without permission.
  
-<img width="935" height="654" alt="image" src="https://github.com/user-attachments/assets/33b5dfab-f0af-4d70-873c-8f34156fcff2" />
+<img width="933" height="652" alt="image" src="https://github.com/user-attachments/assets/219ede66-3ce8-43a5-9a84-bd2a41538a8a" />
 
 ## GUI Settings
 Enemy Settings (left panel):
