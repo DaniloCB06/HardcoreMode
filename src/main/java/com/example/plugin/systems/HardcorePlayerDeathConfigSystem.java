@@ -15,13 +15,28 @@ import com.hypixel.hytale.server.core.modules.entity.damage.DeathComponent;
 import com.hypixel.hytale.server.core.modules.entity.damage.DeathSystems;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 public class HardcorePlayerDeathConfigSystem extends DeathSystems.OnDeathSystem {
-    private final HardcoreModePlugin plugin;
+    public enum DependencyMode {
+        STRICT,       // AFTER PlayerDropItemsConfig + BEFORE DropPlayerDeathItems (se existir)
+        AFTER_CONFIG, // só AFTER PlayerDropItemsConfig (se existir)
+        NONE          // sem dependências
+    }
 
-    public HardcorePlayerDeathConfigSystem(HardcoreModePlugin plugin) {
+    // Usamos strings pra NÃO referenciar classes internas diretamente (evita quebra em builds diferentes)
+    private static final String PLAYER_DROP_CONFIG_CLASS =
+            "com.hypixel.hytale.server.core.modules.entity.damage.DeathSystems$PlayerDropItemsConfig";
+    private static final String DROP_PLAYER_DEATH_ITEMS_CLASS =
+            "com.hypixel.hytale.server.core.modules.entity.damage.DeathSystems$DropPlayerDeathItems";
+
+    private final HardcoreModePlugin plugin;
+    private final DependencyMode dependencyMode;
+
+    public HardcorePlayerDeathConfigSystem(HardcoreModePlugin plugin, DependencyMode dependencyMode) {
         this.plugin = plugin;
+        this.dependencyMode = dependencyMode;
     }
 
     @Override
@@ -31,10 +46,34 @@ public class HardcorePlayerDeathConfigSystem extends DeathSystems.OnDeathSystem 
 
     @Override
     public Set<Dependency<EntityStore>> getDependencies() {
-        return Set.of(
-                new SystemDependency<>(Order.AFTER, DeathSystems.PlayerDropItemsConfig.class),
-                new SystemDependency<>(Order.BEFORE, DeathSystems.DropPlayerDeathItems.class)
-        );
+        Set<Dependency<EntityStore>> deps = new LinkedHashSet<>();
+
+        if (dependencyMode != DependencyMode.NONE) {
+            addSystemDependencyIfPresent(deps, Order.AFTER, PLAYER_DROP_CONFIG_CLASS);
+        }
+
+        if (dependencyMode == DependencyMode.STRICT) {
+            // Esse era o ponto que quebrava o servidor do player quando o system NÃO estava registrado
+            addSystemDependencyIfPresent(deps, Order.BEFORE, DROP_PLAYER_DEATH_ITEMS_CLASS);
+        }
+
+        return deps;
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private void addSystemDependencyIfPresent(Set<Dependency<EntityStore>> deps, Order order, String className) {
+        Class<?> clazz = tryLoad(className);
+        if (clazz != null) {
+            deps.add(new SystemDependency(order, (Class) clazz));
+        }
+    }
+
+    private static Class<?> tryLoad(String name) {
+        try {
+            return Class.forName(name);
+        } catch (Throwable ignored) {
+            return null;
+        }
     }
 
     @Override

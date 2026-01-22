@@ -1,7 +1,7 @@
 {
   "Group": "com.example",
   "Name": "HardcoreMode",
-  "Version": "2.0.0",
+  "Version": "2.0.1",
   "Description": "Increases mob health and damage with a configurable GUI.",
   "Authors": [
     { "Name": "FoToom" }

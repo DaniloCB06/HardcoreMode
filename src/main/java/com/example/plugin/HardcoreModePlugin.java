@@ -30,6 +30,7 @@ import com.hypixel.hytale.server.npc.blackboard.Blackboard;
 import com.hypixel.hytale.server.npc.blackboard.view.attitude.AttitudeView;
 import com.hypixel.hytale.server.npc.entities.NPCEntity;
 import com.hypixel.hytale.server.npc.role.Role;
+
 import java.util.concurrent.atomic.AtomicReference;
 
 public class HardcoreModePlugin extends JavaPlugin {
@@ -41,12 +42,13 @@ public class HardcoreModePlugin extends JavaPlugin {
     private final HardcoreMobSetupSystem mobSetupSystem;
     private final HardcoreMobDamageSystem mobDamageSystem;
     private final HardcoreBloodMoonSystem bloodMoonSystem;
-    private final HardcorePlayerDeathConfigSystem playerDeathConfigSystem;
     private final HardcoreMobStatRefreshSystem mobStatRefreshSystem;
     private final HardcorePlayerPresenceSystem playerPresenceSystem;
+
     private Ref<EntityStore> cachedPlayerRef;
     private boolean bloodMoonActive;
     private Long forcedBloodMoonEndHourOfEpoch;
+
     private boolean rpgLevelingChecked;
     private boolean rpgLevelingAvailable;
     private java.lang.reflect.Method rpgGetInstanceMethod;
@@ -63,7 +65,6 @@ public class HardcoreModePlugin extends JavaPlugin {
         this.mobSetupSystem = new HardcoreMobSetupSystem(this);
         this.mobDamageSystem = new HardcoreMobDamageSystem(this);
         this.bloodMoonSystem = new HardcoreBloodMoonSystem(this);
-        this.playerDeathConfigSystem = new HardcorePlayerDeathConfigSystem(this);
         this.mobStatRefreshSystem = new HardcoreMobStatRefreshSystem(this);
         this.playerPresenceSystem = new HardcorePlayerPresenceSystem(this);
         instance = this;
@@ -84,13 +85,39 @@ public class HardcoreModePlugin extends JavaPlugin {
     @Override
     protected void setup() {
         normalizeConfig();
+
         getEntityStoreRegistry().registerSystem(mobSetupSystem);
         getEntityStoreRegistry().registerSystem(mobDamageSystem);
         getEntityStoreRegistry().registerSystem(bloodMoonSystem);
-        getEntityStoreRegistry().registerSystem(playerDeathConfigSystem);
+
+        // ✅ Registro com fallback (dependência de DropPlayerDeathItems fica opcional)
+        registerPlayerDeathConfigSystemWithFallback();
+
         getEntityStoreRegistry().registerSystem(mobStatRefreshSystem);
         getEntityStoreRegistry().registerSystem(playerPresenceSystem);
+
         getCommandRegistry().registerCommand(new HardcoreGuiCommand(this));
+    }
+
+    private void registerPlayerDeathConfigSystemWithFallback() {
+        HardcorePlayerDeathConfigSystem.DependencyMode[] modes =
+                new HardcorePlayerDeathConfigSystem.DependencyMode[]{
+                        HardcorePlayerDeathConfigSystem.DependencyMode.STRICT,
+                        HardcorePlayerDeathConfigSystem.DependencyMode.AFTER_CONFIG,
+                        HardcorePlayerDeathConfigSystem.DependencyMode.NONE
+                };
+
+        for (HardcorePlayerDeathConfigSystem.DependencyMode mode : modes) {
+            try {
+                getEntityStoreRegistry().registerSystem(new HardcorePlayerDeathConfigSystem(this, mode));
+                System.out.println("[HardcoreMode] PlayerDeathConfigSystem registrado com mode=" + mode);
+                return;
+            } catch (Throwable t) {
+                System.out.println("[HardcoreMode] Falha ao registrar PlayerDeathConfigSystem com mode=" + mode + " -> " + t);
+            }
+        }
+
+        System.out.println("[HardcoreMode] PlayerDeathConfigSystem não pôde ser registrado. O mod continuará sem alterar morte do player.");
     }
 
     @Override
