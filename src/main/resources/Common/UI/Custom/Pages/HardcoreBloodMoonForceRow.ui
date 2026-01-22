@@ -1,9 +1,9 @@
 $C = "../Common.ui";
 
 Group {
-  Anchor: (Width: 340, Height: 40);
+  Anchor: (Width: 340, Height: 44);
   LayoutMode: Left;
-  Padding: (Left: 6, Right: 6, Top: 6, Bottom: 6);
+  Padding: (Left: 6, Right: 6, Top: 6, Bottom: 12);
 
   $C.@SmallSecondaryTextButton #ForceButton {
     Anchor: (Width: 200);

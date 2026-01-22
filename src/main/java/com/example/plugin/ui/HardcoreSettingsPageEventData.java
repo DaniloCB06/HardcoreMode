@@ -28,6 +28,9 @@ public class HardcoreSettingsPageEventData {
     public static final String KEY_BLOOD_MOON_HOSTILE_HEALTH = "@BloodMoonHostileHealthMultiplier";
     public static final String KEY_BLOOD_MOON_HOSTILE_DAMAGE = "@BloodMoonHostileDamageMultiplier";
     public static final String KEY_BLOOD_MOON_FORCE = "@BloodMoonForce";
+    public static final String KEY_PLAYER_DEATH_SETTINGS_ENABLED = "@PlayerDeathSettingsEnabled";
+    public static final String KEY_PLAYER_ITEM_DURABILITY_LOSS_PERCENT = "@PlayerItemDurabilityLossPercent";
+    public static final String KEY_PLAYER_ITEM_DROP_PERCENT = "@PlayerItemDropPercent";
 
     public static final BuilderCodec<HardcoreSettingsPageEventData> CODEC = BuilderCodec
             .builder(HardcoreSettingsPageEventData.class, HardcoreSettingsPageEventData::new)
@@ -123,6 +126,18 @@ public class HardcoreSettingsPageEventData {
                     (data, value) -> data.bloodMoonForce = value,
                     data -> data.bloodMoonForce)
             .add()
+            .append(new KeyedCodec<>(KEY_PLAYER_DEATH_SETTINGS_ENABLED, Codec.BOOLEAN),
+                    (data, value) -> data.playerDeathSettingsEnabled = value,
+                    data -> data.playerDeathSettingsEnabled)
+            .add()
+            .append(new KeyedCodec<>(KEY_PLAYER_ITEM_DURABILITY_LOSS_PERCENT, Codec.FLOAT),
+                    (data, value) -> data.playerItemDurabilityLossPercent = value,
+                    data -> data.playerItemDurabilityLossPercent)
+            .add()
+            .append(new KeyedCodec<>(KEY_PLAYER_ITEM_DROP_PERCENT, Codec.FLOAT),
+                    (data, value) -> data.playerItemDropPercent = value,
+                    data -> data.playerItemDropPercent)
+            .add()
             .build();
 
     private Boolean enabled;
@@ -148,6 +163,9 @@ public class HardcoreSettingsPageEventData {
     private Float bloodMoonHostileHealthMultiplier;
     private Float bloodMoonHostileDamageMultiplier;
     private Boolean bloodMoonForce;
+    private Boolean playerDeathSettingsEnabled;
+    private Float playerItemDurabilityLossPercent;
+    private Float playerItemDropPercent;
 
     public HardcoreSettingsPageEventData() {
     }
@@ -242,5 +260,17 @@ public class HardcoreSettingsPageEventData {
 
     public Boolean getBloodMoonForce() {
         return bloodMoonForce;
+    }
+
+    public Boolean getPlayerDeathSettingsEnabled() {
+        return playerDeathSettingsEnabled;
+    }
+
+    public Float getPlayerItemDurabilityLossPercent() {
+        return playerItemDurabilityLossPercent;
+    }
+
+    public Float getPlayerItemDropPercent() {
+        return playerItemDropPercent;
     }
 }

@@ -1,12 +1,12 @@
 $C = "../Common.ui";
 
 Group {
-  Anchor: (Width: 340, Height: 28);
+  Anchor: (Width: 340, Height: 36);
   LayoutMode: Left;
-  Padding: (Left: 6, Right: 6, Top: 8, Bottom: 2);
+  Padding: (Left: 6, Right: 6, Top: 10, Bottom: 6);
 
   Label #Label {
     FlexWeight: 1;
-    Style: (...$C.@DefaultLabelStyle, RenderBold: true, TextColor: #d3d6db, VerticalAlignment: Center);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 20, RenderBold: true, TextColor: #d3d6db, VerticalAlignment: Center, HorizontalAlignment: Center);
   }
 }

@@ -4,6 +4,7 @@ import com.example.plugin.HardcoreModePlugin;
 import com.hypixel.hytale.component.AddReason;
 import com.hypixel.hytale.component.Holder;
 import com.hypixel.hytale.component.RemoveReason;
+import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.query.Query;
@@ -31,6 +32,7 @@ public class HardcoreMobSetupSystem extends HolderSystem<EntityStore> {
         plugin.refreshBloodMoonState(store, true);
         ComponentType<EntityStore, Player> playerType = Player.getComponentType();
         if (playerType != null && holder.getComponent(playerType) != null) {
+            plugin.applyToExistingMobs(store);
             return;
         }
 
@@ -44,9 +46,14 @@ public class HardcoreMobSetupSystem extends HolderSystem<EntityStore> {
             return;
         }
 
+        Ref<EntityStore> playerRef = plugin.getAnyPlayerRef(store);
+        if (playerRef == null || !playerRef.isValid()) {
+            return;
+        }
+
         ComponentType<EntityStore, NPCEntity> npcType = NPCEntity.getComponentType();
         NPCEntity npcEntity = npcType == null ? null : holder.getComponent(npcType);
-        plugin.applyHealthModifier(statMap, plugin.resolveMobDisposition(store, npcEntity));
+        plugin.applyHealthModifier(statMap, plugin.resolveMobDisposition(store, npcEntity, playerRef));
     }
 
     @Override

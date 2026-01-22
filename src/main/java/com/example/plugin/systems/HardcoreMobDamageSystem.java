@@ -4,6 +4,7 @@ import com.example.plugin.HardcoreModePlugin;
 import com.example.plugin.MobDisposition;
 import com.hypixel.hytale.component.ArchetypeChunk;
 import com.hypixel.hytale.component.CommandBuffer;
+import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.SystemGroup;
@@ -42,6 +43,23 @@ public class HardcoreMobDamageSystem extends DamageEventSystem {
             Damage damage
     ) {
         plugin.refreshBloodMoonState(store, true);
+        ComponentType<EntityStore, Player> playerType = Player.getComponentType();
+        Ref<EntityStore> playerRef = null;
+        Ref<EntityStore> targetRef = chunk.getReferenceTo(index);
+        if (playerType != null && targetRef != null && targetRef.isValid()) {
+            if (store.getComponent(targetRef, playerType) != null) {
+                playerRef = targetRef;
+            }
+        }
+
+        if (playerRef == null || !playerRef.isValid()) {
+            playerRef = plugin.getAnyPlayerRef(store);
+        }
+
+        if (playerRef == null || !playerRef.isValid()) {
+            return;
+        }
+
         Damage.Source source = damage.getSource();
         if (!(source instanceof Damage.EntitySource)) {
             return;
@@ -52,8 +70,7 @@ public class HardcoreMobDamageSystem extends DamageEventSystem {
             return;
         }
 
-        if (Player.getComponentType() != null
-                && store.getComponent(sourceRef, Player.getComponentType()) != null) {
+        if (playerType != null && store.getComponent(sourceRef, playerType) != null) {
             return;
         }
 
@@ -65,7 +82,7 @@ public class HardcoreMobDamageSystem extends DamageEventSystem {
         NPCEntity npcEntity = NPCEntity.getComponentType() == null
                 ? null
                 : store.getComponent(sourceRef, NPCEntity.getComponentType());
-        MobDisposition disposition = plugin.resolveMobDisposition(store, npcEntity);
+        MobDisposition disposition = plugin.resolveMobDisposition(store, npcEntity, playerRef);
         if (!plugin.isMobEnabled(disposition)) {
             return;
         }

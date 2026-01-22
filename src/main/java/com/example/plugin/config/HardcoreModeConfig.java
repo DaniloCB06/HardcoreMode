@@ -23,6 +23,9 @@ public class HardcoreModeConfig {
     public static final String KEY_BLOOD_MOON_DURATION_HOURS = "BloodMoonDurationHours";
     public static final String KEY_BLOOD_MOON_HOSTILE_HEALTH_MULTIPLIER = "BloodMoonHostileHealthMultiplier";
     public static final String KEY_BLOOD_MOON_HOSTILE_DAMAGE_MULTIPLIER = "BloodMoonHostileDamageMultiplier";
+    public static final String KEY_PLAYER_DEATH_SETTINGS_ENABLED = "PlayerDeathSettingsEnabled";
+    public static final String KEY_PLAYER_ITEM_DURABILITY_LOSS_PERCENT = "PlayerItemDurabilityLossPercent";
+    public static final String KEY_PLAYER_ITEM_DROP_PERCENT = "PlayerItemDropPercent";
 
     public static final BuilderCodec<HardcoreModeConfig> CODEC = BuilderCodec
             .builder(HardcoreModeConfig.class, HardcoreModeConfig::new)
@@ -98,26 +101,41 @@ public class HardcoreModeConfig {
                     (config, value) -> config.bloodMoonHostileDamageMultiplier = value,
                     config -> config.bloodMoonHostileDamageMultiplier)
             .add()
+            .append(new KeyedCodec<>(KEY_PLAYER_DEATH_SETTINGS_ENABLED, Codec.BOOLEAN),
+                    (config, value) -> config.playerDeathSettingsEnabled = value,
+                    config -> config.playerDeathSettingsEnabled)
+            .add()
+            .append(new KeyedCodec<>(KEY_PLAYER_ITEM_DURABILITY_LOSS_PERCENT, Codec.INTEGER),
+                    (config, value) -> config.playerItemDurabilityLossPercent = value,
+                    config -> config.playerItemDurabilityLossPercent)
+            .add()
+            .append(new KeyedCodec<>(KEY_PLAYER_ITEM_DROP_PERCENT, Codec.INTEGER),
+                    (config, value) -> config.playerItemDropPercent = value,
+                    config -> config.playerItemDropPercent)
+            .add()
             .build();
 
-    public boolean enabled = true;
+    public boolean enabled = false;
     public float healthMultiplier = 2.0f;
     public float damageMultiplier = 2.0f;
-    public boolean peacefulEnabled = true;
-    public float peacefulHealthMultiplier = -1.0f;
-    public float peacefulDamageMultiplier = -1.0f;
-    public boolean neutralEnabled = true;
-    public float neutralHealthMultiplier = -1.0f;
-    public float neutralDamageMultiplier = -1.0f;
-    public boolean hostileEnabled = true;
-    public float hostileHealthMultiplier = -1.0f;
-    public float hostileDamageMultiplier = -1.0f;
+    public boolean peacefulEnabled = false;
+    public float peacefulHealthMultiplier = 2.0f;
+    public float peacefulDamageMultiplier = 2.0f;
+    public boolean neutralEnabled = false;
+    public float neutralHealthMultiplier = 2.0f;
+    public float neutralDamageMultiplier = 2.0f;
+    public boolean hostileEnabled = false;
+    public float hostileHealthMultiplier = 2.0f;
+    public float hostileDamageMultiplier = 2.0f;
     public boolean bloodMoonEnabled = false;
     public int bloodMoonIntervalDays = 7;
     public int bloodMoonStartHour = 20;
     public int bloodMoonDurationHours = 3;
-    public float bloodMoonHostileHealthMultiplier = 4.0f;
-    public float bloodMoonHostileDamageMultiplier = 4.0f;
+    public float bloodMoonHostileHealthMultiplier = 2.0f;
+    public float bloodMoonHostileDamageMultiplier = 2.0f;
+    public boolean playerDeathSettingsEnabled = false;
+    public int playerItemDurabilityLossPercent = 20;
+    public int playerItemDropPercent = 20;
 
     public HardcoreModeConfig() {
     }

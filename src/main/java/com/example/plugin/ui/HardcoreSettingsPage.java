@@ -24,6 +24,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
     private static final String ENTRY_SLIDER_PATH = "Pages/HardcoreSliderRow.ui";
     private static final String ENTRY_DURATION_PATH = "Pages/HardcoreBloodMoonDurationRow.ui";
     private static final String ENTRY_FORCE_PATH = "Pages/HardcoreBloodMoonForceRow.ui";
+    private static final String ENTRY_HEADER_PATH = "Pages/HardcoreHeaderRow.ui";
     private static final String ENEMY_LIST_ID = "#EnemySettingsList";
     private static final String BLOOD_MOON_LIST_ID = "#BloodMoonSettingsList";
 
@@ -46,6 +47,9 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
     private static final int BLOOD_MOON_DURATION_6H = 6;
     private static final int BLOOD_MOON_DURATION_9H = 9;
     private static final int BLOOD_MOON_DURATION_12H = 12;
+    private static final int MIN_PERCENT = 0;
+    private static final int MAX_PERCENT = 100;
+    private static final float PERCENT_STEP = 10.0f;
 
     private final HardcoreModePlugin plugin;
 
@@ -95,6 +99,9 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
         Float bloodMoonHostileHealthMultiplier = data.getBloodMoonHostileHealthMultiplier();
         Float bloodMoonHostileDamageMultiplier = data.getBloodMoonHostileDamageMultiplier();
         Boolean bloodMoonForce = data.getBloodMoonForce();
+        Boolean playerDeathSettingsEnabled = data.getPlayerDeathSettingsEnabled();
+        Float playerItemDurabilityLossPercent = data.getPlayerItemDurabilityLossPercent();
+        Float playerItemDropPercent = data.getPlayerItemDropPercent();
         if (enabled == null
                 && globalHealthMultiplier == null
                 && globalDamageMultiplier == null
@@ -117,7 +124,10 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 && bloodMoonDuration12h == null
                 && bloodMoonHostileHealthMultiplier == null
                 && bloodMoonHostileDamageMultiplier == null
-                && bloodMoonForce == null) {
+                && bloodMoonForce == null
+                && playerDeathSettingsEnabled == null
+                && playerItemDurabilityLossPercent == null
+                && playerItemDropPercent == null) {
             return;
         }
 
@@ -244,6 +254,27 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 MAX_MULTIPLIER,
                 STEP,
                 value -> config.bloodMoonHostileDamageMultiplier = value
+        );
+        changed |= applyEnabled(
+                playerDeathSettingsEnabled,
+                config.playerDeathSettingsEnabled,
+                value -> config.playerDeathSettingsEnabled = value
+        );
+        changed |= applyIntSetting(
+                playerItemDurabilityLossPercent,
+                config.playerItemDurabilityLossPercent,
+                MIN_PERCENT,
+                MAX_PERCENT,
+                PERCENT_STEP,
+                value -> config.playerItemDurabilityLossPercent = value
+        );
+        changed |= applyIntSetting(
+                playerItemDropPercent,
+                config.playerItemDropPercent,
+                MIN_PERCENT,
+                MAX_PERCENT,
+                PERCENT_STEP,
+                value -> config.playerItemDropPercent = value
         );
 
         if (Boolean.TRUE.equals(bloodMoonForce)) {
@@ -454,7 +485,48 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 config.bloodMoonHostileDamageMultiplier,
                 HardcoreSettingsPageEventData.KEY_BLOOD_MOON_HOSTILE_DAMAGE
         );
-        addForceBloodMoonEntry(commands, events, bloodIndex);
+        bloodIndex = addForceBloodMoonEntry(commands, events, bloodIndex);
+        bloodIndex = addHeaderEntry(
+                commands,
+                BLOOD_MOON_LIST_ID,
+                bloodIndex,
+                "Player Settings"
+        );
+        bloodIndex = addCategoryToggleEntry(
+                commands,
+                events,
+                BLOOD_MOON_LIST_ID,
+                bloodIndex,
+                "Death Settings: " + (config.playerDeathSettingsEnabled ? "ON" : "OFF"),
+                config.playerDeathSettingsEnabled,
+                HardcoreSettingsPageEventData.KEY_PLAYER_DEATH_SETTINGS_ENABLED
+        );
+        bloodIndex = addSliderEntry(
+                commands,
+                events,
+                BLOOD_MOON_LIST_ID,
+                bloodIndex,
+                "Item Durability Loss",
+                config.playerItemDurabilityLossPercent,
+                HardcoreSettingsPageEventData.KEY_PLAYER_ITEM_DURABILITY_LOSS_PERCENT,
+                MIN_PERCENT,
+                MAX_PERCENT,
+                PERCENT_STEP,
+                this::formatPercent
+        );
+        addSliderEntry(
+                commands,
+                events,
+                BLOOD_MOON_LIST_ID,
+                bloodIndex,
+                "Inventory Drop Loss",
+                config.playerItemDropPercent,
+                HardcoreSettingsPageEventData.KEY_PLAYER_ITEM_DROP_PERCENT,
+                MIN_PERCENT,
+                MAX_PERCENT,
+                PERCENT_STEP,
+                this::formatPercent
+        );
     }
 
     private int addToggleEntry(
@@ -476,6 +548,18 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
         );
         events.addEventBinding(CustomUIEventBindingType.ValueChanged, entry + " #Toggle", toggleData, false);
 
+        return index + 1;
+    }
+
+    private int addHeaderEntry(
+            UICommandBuilder commands,
+            String listId,
+            int index,
+            String label
+    ) {
+        String entry = listId + "[" + index + "]";
+        commands.append(listId, ENTRY_HEADER_PATH);
+        commands.set(entry + " #Label.Text", label);
         return index + 1;
     }
 
@@ -773,5 +857,10 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
     private String formatHour(float value) {
         int hour = Math.round(value);
         return String.format(Locale.ROOT, "%02d:00", hour);
+    }
+
+    private String formatPercent(float value) {
+        int percent = Math.round(value);
+        return percent + "%";
     }
 }

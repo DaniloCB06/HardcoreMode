@@ -5,6 +5,9 @@ import com.example.plugin.config.HardcoreModeConfig;
 import com.example.plugin.systems.HardcoreMobDamageSystem;
 import com.example.plugin.systems.HardcoreMobSetupSystem;
 import com.example.plugin.systems.HardcoreBloodMoonSystem;
+import com.example.plugin.systems.HardcorePlayerDeathConfigSystem;
+import com.example.plugin.systems.HardcoreMobStatRefreshSystem;
+import com.example.plugin.systems.HardcorePlayerPresenceSystem;
 import com.hypixel.hytale.component.ArchetypeChunk;
 import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
@@ -36,6 +39,9 @@ public class HardcoreModePlugin extends JavaPlugin {
     private final HardcoreMobSetupSystem mobSetupSystem;
     private final HardcoreMobDamageSystem mobDamageSystem;
     private final HardcoreBloodMoonSystem bloodMoonSystem;
+    private final HardcorePlayerDeathConfigSystem playerDeathConfigSystem;
+    private final HardcoreMobStatRefreshSystem mobStatRefreshSystem;
+    private final HardcorePlayerPresenceSystem playerPresenceSystem;
     private Ref<EntityStore> cachedPlayerRef;
     private boolean bloodMoonActive;
     private Long forcedBloodMoonEndHourOfEpoch;
@@ -46,6 +52,9 @@ public class HardcoreModePlugin extends JavaPlugin {
         this.mobSetupSystem = new HardcoreMobSetupSystem(this);
         this.mobDamageSystem = new HardcoreMobDamageSystem(this);
         this.bloodMoonSystem = new HardcoreBloodMoonSystem(this);
+        this.playerDeathConfigSystem = new HardcorePlayerDeathConfigSystem(this);
+        this.mobStatRefreshSystem = new HardcoreMobStatRefreshSystem(this);
+        this.playerPresenceSystem = new HardcorePlayerPresenceSystem(this);
         instance = this;
     }
 
@@ -67,6 +76,9 @@ public class HardcoreModePlugin extends JavaPlugin {
         getEntityStoreRegistry().registerSystem(mobSetupSystem);
         getEntityStoreRegistry().registerSystem(mobDamageSystem);
         getEntityStoreRegistry().registerSystem(bloodMoonSystem);
+        getEntityStoreRegistry().registerSystem(playerDeathConfigSystem);
+        getEntityStoreRegistry().registerSystem(mobStatRefreshSystem);
+        getEntityStoreRegistry().registerSystem(playerPresenceSystem);
         getCommandRegistry().registerCommand(new HardcoreGuiCommand(this));
     }
 
@@ -189,10 +201,18 @@ public class HardcoreModePlugin extends JavaPlugin {
     }
 
     public MobDisposition resolveMobDisposition(Store<EntityStore> store, NPCEntity npcEntity) {
-        return resolveMobDisposition(store, npcEntity, getAnyPlayerRef(store));
+        return resolveMobDispositionInternal(store, npcEntity, getAnyPlayerRef(store));
     }
 
-    private MobDisposition resolveMobDisposition(
+    public MobDisposition resolveMobDisposition(
+            Store<EntityStore> store,
+            NPCEntity npcEntity,
+            Ref<EntityStore> playerRef
+    ) {
+        return resolveMobDispositionInternal(store, npcEntity, playerRef);
+    }
+
+    private MobDisposition resolveMobDispositionInternal(
             Store<EntityStore> store,
             NPCEntity npcEntity,
             Ref<EntityStore> playerRef
@@ -226,8 +246,17 @@ public class HardcoreModePlugin extends JavaPlugin {
             return;
         }
 
-        Query<EntityStore> query = Query.any();
         Ref<EntityStore> playerRef = getAnyPlayerRef(store);
+        applyToExistingMobs(store, playerRef);
+    }
+
+    public void applyToExistingMobs(Store<EntityStore> store, Ref<EntityStore> playerRef) {
+        if (store == null || playerRef == null || !playerRef.isValid()) {
+            return;
+        }
+
+        cachedPlayerRef = playerRef;
+        Query<EntityStore> query = Query.any();
         store.forEachChunk(query, (chunk, commandBuffer) -> {
             applyToChunk(store, chunk, playerRef);
             return true;
@@ -239,6 +268,10 @@ public class HardcoreModePlugin extends JavaPlugin {
             ArchetypeChunk<EntityStore> chunk,
             Ref<EntityStore> playerRef
     ) {
+        if (playerRef == null || !playerRef.isValid()) {
+            return;
+        }
+
         ComponentType<EntityStore, Player> playerType = Player.getComponentType();
         ComponentType<EntityStore, NPCEntity> npcType = NPCEntity.getComponentType();
         ComponentType<EntityStore, EntityStatMap> statType = EntityStatMap.getComponentType();
@@ -444,7 +477,7 @@ public class HardcoreModePlugin extends JavaPlugin {
         return attitude == null ? Attitude.NEUTRAL : attitude;
     }
 
-    private Ref<EntityStore> getAnyPlayerRef(Store<EntityStore> store) {
+    public Ref<EntityStore> getAnyPlayerRef(Store<EntityStore> store) {
         ComponentType<EntityStore, Player> playerType = Player.getComponentType();
         if (store == null || playerType == null) {
             return null;
