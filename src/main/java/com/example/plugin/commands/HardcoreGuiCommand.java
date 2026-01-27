@@ -1,7 +1,7 @@
 package com.example.plugin.commands;
 
 import com.example.plugin.HardcoreModePlugin;
-import com.example.plugin.ui.HardcoreSettingsPage;
+import com.example.plugin.ui.HardcoreMainMenuPage;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.Message;
@@ -43,6 +43,6 @@ public class HardcoreGuiCommand extends AbstractPlayerCommand {
             return;
         }
         
-        player.getPageManager().openCustomPage(ref, store, new HardcoreSettingsPage(plugin, playerRef));
+        player.getPageManager().openCustomPage(ref, store, new HardcoreMainMenuPage(plugin, playerRef));
     }
 }

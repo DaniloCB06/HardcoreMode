@@ -32,6 +32,7 @@ public class HardcoreSettingsPageEventData {
     public static final String KEY_PLAYER_DEATH_SETTINGS_ENABLED = "@PlayerDeathSettingsEnabled";
     public static final String KEY_PLAYER_ITEM_DURABILITY_LOSS_PERCENT = "@PlayerItemDurabilityLossPercent";
     public static final String KEY_PLAYER_ITEM_DROP_PERCENT = "@PlayerItemDropPercent";
+    public static final String KEY_GO_BACK = "@GoBack";
 
     public static final BuilderCodec<HardcoreSettingsPageEventData> CODEC = BuilderCodec
             .builder(HardcoreSettingsPageEventData.class, HardcoreSettingsPageEventData::new)
@@ -143,6 +144,10 @@ public class HardcoreSettingsPageEventData {
                     (data, value) -> data.playerItemDropPercent = value,
                     data -> data.playerItemDropPercent)
             .add()
+            .append(new KeyedCodec<>(KEY_GO_BACK, Codec.BOOLEAN),
+                    (data, value) -> data.goBack = value,
+                    data -> data.goBack)
+            .add()
             .build();
 
     private Boolean enabled;
@@ -172,6 +177,7 @@ public class HardcoreSettingsPageEventData {
     private Boolean playerDeathSettingsEnabled;
     private Float playerItemDurabilityLossPercent;
     private Float playerItemDropPercent;
+    private Boolean goBack;
 
     public HardcoreSettingsPageEventData() {
     }
@@ -282,5 +288,9 @@ public class HardcoreSettingsPageEventData {
 
     public Float getPlayerItemDropPercent() {
         return playerItemDropPercent;
+    }
+
+    public Boolean getGoBack() {
+        return goBack;
     }
 }
