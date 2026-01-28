@@ -37,6 +37,16 @@ public class HardcoreSettingsPageEventData {
     public static final String KEY_BLOOD_MOON_HOSTILE_HEALTH = "@BloodMoonHostileHealthMultiplier";
     public static final String KEY_BLOOD_MOON_HOSTILE_DAMAGE = "@BloodMoonHostileDamageMultiplier";
     public static final String KEY_BLOOD_MOON_XP_MULTIPLIER = "@BloodMoonXpMultiplier";
+    public static final String KEY_BLOOD_MOON_HOSTILE_ENABLED = "@BloodMoonHostileEnabled";
+    public static final String KEY_BLOOD_MOON_ELITE_ENABLED = "@BloodMoonEliteEnabled";
+    public static final String KEY_BLOOD_MOON_ELITE_HEALTH = "@BloodMoonEliteHealthMultiplier";
+    public static final String KEY_BLOOD_MOON_ELITE_DAMAGE = "@BloodMoonEliteDamageMultiplier";
+    public static final String KEY_BLOOD_MOON_MINIBOSS_ENABLED = "@BloodMoonMinibossEnabled";
+    public static final String KEY_BLOOD_MOON_MINIBOSS_HEALTH = "@BloodMoonMinibossHealthMultiplier";
+    public static final String KEY_BLOOD_MOON_MINIBOSS_DAMAGE = "@BloodMoonMinibossDamageMultiplier";
+    public static final String KEY_BLOOD_MOON_WORLDBOSS_ENABLED = "@BloodMoonWorldbossEnabled";
+    public static final String KEY_BLOOD_MOON_WORLDBOSS_HEALTH = "@BloodMoonWorldbossHealthMultiplier";
+    public static final String KEY_BLOOD_MOON_WORLDBOSS_DAMAGE = "@BloodMoonWorldbossDamageMultiplier";
     public static final String KEY_BLOOD_MOON_FORCE = "@BloodMoonForce";
     public static final String KEY_PLAYER_DEATH_SETTINGS_ENABLED = "@PlayerDeathSettingsEnabled";
     public static final String KEY_PLAYER_ITEM_DURABILITY_LOSS_PERCENT = "@PlayerItemDurabilityLossPercent";
@@ -169,6 +179,46 @@ public class HardcoreSettingsPageEventData {
                     (data, value) -> data.bloodMoonHostileDamageMultiplier = value,
                     data -> data.bloodMoonHostileDamageMultiplier)
             .add()
+            .append(new KeyedCodec<>(KEY_BLOOD_MOON_HOSTILE_ENABLED, Codec.BOOLEAN),
+                    (data, value) -> data.bloodMoonHostileEnabled = value,
+                    data -> data.bloodMoonHostileEnabled)
+            .add()
+            .append(new KeyedCodec<>(KEY_BLOOD_MOON_ELITE_ENABLED, Codec.BOOLEAN),
+                    (data, value) -> data.bloodMoonEliteEnabled = value,
+                    data -> data.bloodMoonEliteEnabled)
+            .add()
+            .append(new KeyedCodec<>(KEY_BLOOD_MOON_ELITE_HEALTH, Codec.FLOAT),
+                    (data, value) -> data.bloodMoonEliteHealthMultiplier = value,
+                    data -> data.bloodMoonEliteHealthMultiplier)
+            .add()
+            .append(new KeyedCodec<>(KEY_BLOOD_MOON_ELITE_DAMAGE, Codec.FLOAT),
+                    (data, value) -> data.bloodMoonEliteDamageMultiplier = value,
+                    data -> data.bloodMoonEliteDamageMultiplier)
+            .add()
+            .append(new KeyedCodec<>(KEY_BLOOD_MOON_MINIBOSS_ENABLED, Codec.BOOLEAN),
+                    (data, value) -> data.bloodMoonMinibossEnabled = value,
+                    data -> data.bloodMoonMinibossEnabled)
+            .add()
+            .append(new KeyedCodec<>(KEY_BLOOD_MOON_MINIBOSS_HEALTH, Codec.FLOAT),
+                    (data, value) -> data.bloodMoonMinibossHealthMultiplier = value,
+                    data -> data.bloodMoonMinibossHealthMultiplier)
+            .add()
+            .append(new KeyedCodec<>(KEY_BLOOD_MOON_MINIBOSS_DAMAGE, Codec.FLOAT),
+                    (data, value) -> data.bloodMoonMinibossDamageMultiplier = value,
+                    data -> data.bloodMoonMinibossDamageMultiplier)
+            .add()
+            .append(new KeyedCodec<>(KEY_BLOOD_MOON_WORLDBOSS_ENABLED, Codec.BOOLEAN),
+                    (data, value) -> data.bloodMoonWorldbossEnabled = value,
+                    data -> data.bloodMoonWorldbossEnabled)
+            .add()
+            .append(new KeyedCodec<>(KEY_BLOOD_MOON_WORLDBOSS_HEALTH, Codec.FLOAT),
+                    (data, value) -> data.bloodMoonWorldbossHealthMultiplier = value,
+                    data -> data.bloodMoonWorldbossHealthMultiplier)
+            .add()
+            .append(new KeyedCodec<>(KEY_BLOOD_MOON_WORLDBOSS_DAMAGE, Codec.FLOAT),
+                    (data, value) -> data.bloodMoonWorldbossDamageMultiplier = value,
+                    data -> data.bloodMoonWorldbossDamageMultiplier)
+            .add()
             .append(new KeyedCodec<>(KEY_BLOOD_MOON_XP_MULTIPLIER, Codec.FLOAT),
                     (data, value) -> data.bloodMoonXpMultiplier = value,
                     data -> data.bloodMoonXpMultiplier)
@@ -227,6 +277,16 @@ public class HardcoreSettingsPageEventData {
     private Float bloodMoonHostileHealthMultiplier;
     private Float bloodMoonHostileDamageMultiplier;
     private Float bloodMoonXpMultiplier;
+    private Boolean bloodMoonHostileEnabled;
+    private Boolean bloodMoonEliteEnabled;
+    private Float bloodMoonEliteHealthMultiplier;
+    private Float bloodMoonEliteDamageMultiplier;
+    private Boolean bloodMoonMinibossEnabled;
+    private Float bloodMoonMinibossHealthMultiplier;
+    private Float bloodMoonMinibossDamageMultiplier;
+    private Boolean bloodMoonWorldbossEnabled;
+    private Float bloodMoonWorldbossHealthMultiplier;
+    private Float bloodMoonWorldbossDamageMultiplier;
     private Boolean bloodMoonForce;
     private Boolean playerDeathSettingsEnabled;
     private Float playerItemDurabilityLossPercent;
@@ -362,6 +422,46 @@ public class HardcoreSettingsPageEventData {
 
     public Float getBloodMoonXpMultiplier() {
         return bloodMoonXpMultiplier;
+    }
+
+    public Boolean getBloodMoonHostileEnabled() {
+        return bloodMoonHostileEnabled;
+    }
+
+    public Boolean getBloodMoonEliteEnabled() {
+        return bloodMoonEliteEnabled;
+    }
+
+    public Float getBloodMoonEliteHealthMultiplier() {
+        return bloodMoonEliteHealthMultiplier;
+    }
+
+    public Float getBloodMoonEliteDamageMultiplier() {
+        return bloodMoonEliteDamageMultiplier;
+    }
+
+    public Boolean getBloodMoonMinibossEnabled() {
+        return bloodMoonMinibossEnabled;
+    }
+
+    public Float getBloodMoonMinibossHealthMultiplier() {
+        return bloodMoonMinibossHealthMultiplier;
+    }
+
+    public Float getBloodMoonMinibossDamageMultiplier() {
+        return bloodMoonMinibossDamageMultiplier;
+    }
+
+    public Boolean getBloodMoonWorldbossEnabled() {
+        return bloodMoonWorldbossEnabled;
+    }
+
+    public Float getBloodMoonWorldbossHealthMultiplier() {
+        return bloodMoonWorldbossHealthMultiplier;
+    }
+
+    public Float getBloodMoonWorldbossDamageMultiplier() {
+        return bloodMoonWorldbossDamageMultiplier;
     }
 
     public Boolean getBloodMoonForce() {

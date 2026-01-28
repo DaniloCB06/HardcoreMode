@@ -27,12 +27,19 @@ import com.hypixel.hytale.server.core.util.EventTitleUtil;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.npc.entities.NPCEntity;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class HardcoreModePlugin extends JavaPlugin {
     private static HardcoreModePlugin instance;
     private static final String RPG_LEVELING_PLUGIN_CLASS = "org.zuxaw.plugin.RPGLevelingPlugin";
     private static final String RPG_LEVELING_CONFIG_CLASS = "org.zuxaw.plugin.config.LevelingConfig";
+
+    // Generic fix: Store<EntityStore> instead of EntityStore
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    private final AtomicReference<Store<EntityStore>> activeStoreRef = new AtomicReference<>();
 
     private final Config<HardcoreModeConfig> config;
     private final MobCategoryResolver mobCategoryResolver;
@@ -106,12 +113,11 @@ public class HardcoreModePlugin extends JavaPlugin {
     }
 
     private void registerPlayerDeathConfigSystemWithFallback() {
-        HardcorePlayerDeathConfigSystem.DependencyMode[] modes =
-                new HardcorePlayerDeathConfigSystem.DependencyMode[]{
-                        HardcorePlayerDeathConfigSystem.DependencyMode.STRICT,
-                        HardcorePlayerDeathConfigSystem.DependencyMode.AFTER_CONFIG,
-                        HardcorePlayerDeathConfigSystem.DependencyMode.NONE
-                };
+        HardcorePlayerDeathConfigSystem.DependencyMode[] modes = new HardcorePlayerDeathConfigSystem.DependencyMode[] {
+                HardcorePlayerDeathConfigSystem.DependencyMode.STRICT,
+                HardcorePlayerDeathConfigSystem.DependencyMode.AFTER_CONFIG,
+                HardcorePlayerDeathConfigSystem.DependencyMode.NONE
+        };
 
         for (HardcorePlayerDeathConfigSystem.DependencyMode mode : modes) {
             try {
@@ -119,16 +125,20 @@ public class HardcoreModePlugin extends JavaPlugin {
                 System.out.println("[HardcoreMode] PlayerDeathConfigSystem registrado com mode=" + mode);
                 return;
             } catch (Throwable t) {
-                System.out.println("[HardcoreMode] Falha ao registrar PlayerDeathConfigSystem com mode=" + mode + " -> " + t);
+                System.out.println(
+                        "[HardcoreMode] Falha ao registrar PlayerDeathConfigSystem com mode=" + mode + " -> " + t);
             }
         }
 
-        System.out.println("[HardcoreMode] PlayerDeathConfigSystem não pôde ser registrado. O mod continuará sem alterar morte do player.");
+        System.out.println(
+                "[HardcoreMode] PlayerDeathConfigSystem não pôde ser registrado. O mod continuará sem alterar morte do player.");
     }
 
     @Override
     protected void start() {
         // No startup work needed.
+        startHeartbeat();
+        Runtime.getRuntime().addShutdownHook(new Thread(this::stopHeartbeat));
     }
 
     public void applyHealthModifier(EntityStatMap statMap, MobCategory category) {
@@ -146,8 +156,7 @@ public class HardcoreModePlugin extends JavaPlugin {
         StaticModifier modifier = new StaticModifier(
                 Modifier.ModifierTarget.MAX,
                 StaticModifier.CalculationType.MULTIPLICATIVE,
-                Math.max(1.0f, multiplier)
-        );
+                Math.max(1.0f, multiplier));
         statMap.putModifier(healthStat, key, modifier);
         statMap.maximizeStatValue(healthStat);
     }
@@ -156,7 +165,17 @@ public class HardcoreModePlugin extends JavaPlugin {
         HardcoreModeConfig data = config.get();
         float base = resolveCategoryMultiplier(category, true);
         if (isBloodMoonActive() && isBloodMoonAffected(category)) {
-            return resolveMultiplier(data.bloodMoonHostileHealthMultiplier, base);
+            switch (category) {
+                case ELITE:
+                    return resolveMultiplier(data.bloodMoonEliteHealthMultiplier, base);
+                case MINIBOSS:
+                    return resolveMultiplier(data.bloodMoonMinibossHealthMultiplier, base);
+                case WORLDBOSS:
+                    return resolveMultiplier(data.bloodMoonWorldbossHealthMultiplier, base);
+                case HOSTILE:
+                default:
+                    return resolveMultiplier(data.bloodMoonHostileHealthMultiplier, base);
+            }
         }
         return base;
     }
@@ -165,7 +184,17 @@ public class HardcoreModePlugin extends JavaPlugin {
         HardcoreModeConfig data = config.get();
         float base = resolveCategoryMultiplier(category, false);
         if (isBloodMoonActive() && isBloodMoonAffected(category)) {
-            return resolveMultiplier(data.bloodMoonHostileDamageMultiplier, base);
+            switch (category) {
+                case ELITE:
+                    return resolveMultiplier(data.bloodMoonEliteDamageMultiplier, base);
+                case MINIBOSS:
+                    return resolveMultiplier(data.bloodMoonMinibossDamageMultiplier, base);
+                case WORLDBOSS:
+                    return resolveMultiplier(data.bloodMoonWorldbossDamageMultiplier, base);
+                case HOSTILE:
+                default:
+                    return resolveMultiplier(data.bloodMoonHostileDamageMultiplier, base);
+            }
         }
         return base;
     }
@@ -174,24 +203,31 @@ public class HardcoreModePlugin extends JavaPlugin {
         HardcoreModeConfig data = config.get();
         switch (category) {
             case PASSIVE:
-                return resolveMultiplier(health ? data.passiveHealthMultiplier : data.passiveDamageMultiplier, health ? data.healthMultiplier : data.damageMultiplier);
+                return resolveMultiplier(health ? data.passiveHealthMultiplier : data.passiveDamageMultiplier,
+                        health ? data.healthMultiplier : data.damageMultiplier);
             case CRITTER:
-                return resolveMultiplier(health ? data.critterHealthMultiplier : data.critterDamageMultiplier, health ? data.healthMultiplier : data.damageMultiplier);
+                return resolveMultiplier(health ? data.critterHealthMultiplier : data.critterDamageMultiplier,
+                        health ? data.healthMultiplier : data.damageMultiplier);
             case HOSTILE:
-                return resolveMultiplier(health ? data.hostileHealthMultiplier : data.hostileDamageMultiplier, health ? data.healthMultiplier : data.damageMultiplier);
+                return resolveMultiplier(health ? data.hostileHealthMultiplier : data.hostileDamageMultiplier,
+                        health ? data.healthMultiplier : data.damageMultiplier);
             case ELITE:
-                return resolveMultiplier(health ? data.eliteHealthMultiplier : data.eliteDamageMultiplier, health ? data.healthMultiplier : data.damageMultiplier);
+                return resolveMultiplier(health ? data.eliteHealthMultiplier : data.eliteDamageMultiplier,
+                        health ? data.healthMultiplier : data.damageMultiplier);
             case MINIBOSS:
-                return resolveMultiplier(health ? data.minibossHealthMultiplier : data.minibossDamageMultiplier, health ? data.healthMultiplier : data.damageMultiplier);
+                return resolveMultiplier(health ? data.minibossHealthMultiplier : data.minibossDamageMultiplier,
+                        health ? data.healthMultiplier : data.damageMultiplier);
             case WORLDBOSS:
-                return resolveMultiplier(health ? data.worldbossHealthMultiplier : data.worldbossDamageMultiplier, health ? data.healthMultiplier : data.damageMultiplier);
+                return resolveMultiplier(health ? data.worldbossHealthMultiplier : data.worldbossDamageMultiplier,
+                        health ? data.healthMultiplier : data.damageMultiplier);
             case NONE:
             default:
-                return resolveMultiplier(health ? data.healthMultiplier : data.damageMultiplier, health ? data.healthMultiplier : data.damageMultiplier);
+                return resolveMultiplier(health ? data.healthMultiplier : data.damageMultiplier,
+                        health ? data.healthMultiplier : data.damageMultiplier);
         }
     }
 
-    private boolean isBloodMoonAffected(MobCategory category) {
+    public boolean isBloodMoonAffected(MobCategory category) {
         switch (category) {
             case HOSTILE:
             case ELITE:
@@ -226,7 +262,18 @@ public class HardcoreModePlugin extends JavaPlugin {
 
     public boolean isMobEnabled(MobCategory category) {
         if (isBloodMoonActive() && isBloodMoonAffected(category)) {
-            return true;
+            HardcoreModeConfig data = config.get();
+            switch (category) {
+                case ELITE:
+                    return data.bloodMoonEliteEnabled;
+                case MINIBOSS:
+                    return data.bloodMoonMinibossEnabled;
+                case WORLDBOSS:
+                    return data.bloodMoonWorldbossEnabled;
+                case HOSTILE:
+                default:
+                    return data.bloodMoonHostileEnabled;
+            }
         }
         return isCategoryEnabled(category);
     }
@@ -238,6 +285,11 @@ public class HardcoreModePlugin extends JavaPlugin {
     public void refreshBloodMoonState(Store<EntityStore> store, boolean applyToMobs) {
         boolean active = computeBloodMoonActive(store);
         boolean changed = active != bloodMoonActive;
+
+        if (changed) {
+            System.out.println("[HardcoreDebug] Blood Moon State Changed! New Active: " + active + " Old: "
+                    + bloodMoonActive + " StoreHash: " + System.identityHashCode(store));
+        }
 
         bloodMoonActive = active;
         syncRpgLevelingMultiplier(active);
@@ -267,6 +319,9 @@ public class HardcoreModePlugin extends JavaPlugin {
 
         long currentHourOfEpoch = getCurrentHourOfEpoch(time);
         forcedBloodMoonEndHourOfEpoch = currentHourOfEpoch + durationHours;
+        System.out.println("[HardcoreDebug] Forcing Blood Moon Now. Duration: " + durationHours + " CurrentHour: "
+                + currentHourOfEpoch + " EndHour: " + forcedBloodMoonEndHourOfEpoch + " StoreHash: "
+                + System.identityHashCode(store));
         refreshBloodMoonState(store, true);
     }
 
@@ -299,8 +354,7 @@ public class HardcoreModePlugin extends JavaPlugin {
     private void applyToChunk(
             Store<EntityStore> store,
             ArchetypeChunk<EntityStore> chunk,
-            Ref<EntityStore> playerRef
-    ) {
+            Ref<EntityStore> playerRef) {
         if (playerRef == null || !playerRef.isValid()) {
             return;
         }
@@ -389,6 +443,30 @@ public class HardcoreModePlugin extends JavaPlugin {
             data.bloodMoonHostileDamageMultiplier = data.hostileDamageMultiplier;
             changed = true;
         }
+        if (data.bloodMoonEliteHealthMultiplier <= 0.0f) {
+            data.bloodMoonEliteHealthMultiplier = data.eliteHealthMultiplier;
+            changed = true;
+        }
+        if (data.bloodMoonEliteDamageMultiplier <= 0.0f) {
+            data.bloodMoonEliteDamageMultiplier = data.eliteDamageMultiplier;
+            changed = true;
+        }
+        if (data.bloodMoonMinibossHealthMultiplier <= 0.0f) {
+            data.bloodMoonMinibossHealthMultiplier = data.minibossHealthMultiplier;
+            changed = true;
+        }
+        if (data.bloodMoonMinibossDamageMultiplier <= 0.0f) {
+            data.bloodMoonMinibossDamageMultiplier = data.minibossDamageMultiplier;
+            changed = true;
+        }
+        if (data.bloodMoonWorldbossHealthMultiplier <= 0.0f) {
+            data.bloodMoonWorldbossHealthMultiplier = data.worldbossHealthMultiplier;
+            changed = true;
+        }
+        if (data.bloodMoonWorldbossDamageMultiplier <= 0.0f) {
+            data.bloodMoonWorldbossDamageMultiplier = data.worldbossDamageMultiplier;
+            changed = true;
+        }
         if (!isValidBloodMoonDuration(data.bloodMoonDurationHours)) {
             data.bloodMoonDurationHours = 3;
             changed = true;
@@ -423,6 +501,8 @@ public class HardcoreModePlugin extends JavaPlugin {
             if (currentHourOfEpoch < forcedEnd) {
                 return true;
             }
+            System.out.println(
+                    "[HardcoreDebug] Forced Blood Moon Expired. Current: " + currentHourOfEpoch + " End: " + forcedEnd);
             forcedBloodMoonEndHourOfEpoch = null;
         }
 
@@ -447,14 +527,36 @@ public class HardcoreModePlugin extends JavaPlugin {
             startHour = 23;
         }
 
-        long scheduledDay = epochDay - Math.floorMod(epochDay, intervalDays);
-        long startHourOfEpoch = (scheduledDay * 24L) + startHour;
-        if (currentHourOfEpoch < startHourOfEpoch) {
-            startHourOfEpoch -= intervalDays * 24L;
+        // Calculate 'Current' Window (aligned to current epoch block)
+        long scheduledDayCurrent = epochDay - Math.floorMod(epochDay, intervalDays);
+        long startEpochCurrent = (scheduledDayCurrent * 24L) + startHour;
+        long endEpochCurrent = startEpochCurrent + durationHours;
+
+        // Calculate 'Previous' Window (one interval ago, handling overlap)
+        long startEpochPrev = startEpochCurrent - (intervalDays * 24L);
+        long endEpochPrev = startEpochPrev + durationHours;
+
+        boolean activeCurrent = currentHourOfEpoch >= startEpochCurrent && currentHourOfEpoch < endEpochCurrent;
+        boolean activePrev = currentHourOfEpoch >= startEpochPrev && currentHourOfEpoch < endEpochPrev;
+        boolean active = activeCurrent || activePrev;
+
+        // Debug Log: Trigger if active, OR if we are close to the Current Window start
+        // (next 24h or last 24h)
+        // This helps debug why it might NOT be starting.
+        if (active || (currentHourOfEpoch >= startEpochCurrent - 24 && currentHourOfEpoch <= startEpochCurrent + 24)) {
+            System.out.println("[HardcoreDebug] Natural Calc: CurrentEpoch=" + currentHourOfEpoch
+                    + " EpochDay=" + epochDay
+                    + " Interval=" + intervalDays
+                    + " StartCur=" + startEpochCurrent
+                    + " EndCur=" + endEpochCurrent
+                    + " ActiveCur=" + activeCurrent
+                    + " StartPrev=" + startEpochPrev
+                    + " EndPrev=" + endEpochPrev
+                    + " ActivePrev=" + activePrev
+                    + " FINAL_ACTIVE=" + active);
         }
 
-        long endHourOfEpoch = startHourOfEpoch + durationHours;
-        return currentHourOfEpoch >= startHourOfEpoch && currentHourOfEpoch < endHourOfEpoch;
+        return active;
     }
 
     private void announceBloodMoon(boolean started, Store<EntityStore> store) {
@@ -466,8 +568,7 @@ public class HardcoreModePlugin extends JavaPlugin {
 
         com.hypixel.hytale.server.core.Message title = com.hypixel.hytale.server.core.Message.raw("Blood Moon");
         com.hypixel.hytale.server.core.Message subtitle = com.hypixel.hytale.server.core.Message.raw(
-                started ? "has begun" : "has ended"
-        );
+                started ? "has begun" : "has ended");
         EventTitleUtil.showEventTitleToUniverse(
                 title,
                 subtitle,
@@ -475,8 +576,7 @@ public class HardcoreModePlugin extends JavaPlugin {
                 EventTitleUtil.DEFAULT_ZONE,
                 EventTitleUtil.DEFAULT_DURATION,
                 EventTitleUtil.DEFAULT_FADE_DURATION,
-                EventTitleUtil.DEFAULT_FADE_DURATION
-        );
+                EventTitleUtil.DEFAULT_FADE_DURATION);
     }
 
     private boolean isValidBloodMoonDuration(int hours) {
@@ -655,4 +755,60 @@ public class HardcoreModePlugin extends JavaPlugin {
 
         return rpgLevelingAvailable;
     }
+
+    /**
+     * Sets the active store reference for the heartbeat scheduler.
+     * Called by the TickingSystem when it processes a tick (if it processes).
+     */
+    /**
+     * Sets the active store reference for the heartbeat scheduler.
+     * Called by the TickingSystem when it processes a tick (if it processes).
+     */
+    public void setActiveStore(Store<EntityStore> store) {
+        if (store != null) {
+            activeStoreRef.set(store);
+        }
+    }
+
+    private void startHeartbeat() {
+        // Run every 1 second
+        scheduler.scheduleAtFixedRate(this::checkBloodMoonHeartbeat, 1, 1, TimeUnit.SECONDS);
+        System.out.println("[HardcoreMode] Scheduler Heartbeat started.");
+    }
+
+    private void stopHeartbeat() {
+        scheduler.shutdown();
+        try {
+            if (!scheduler.awaitTermination(2, TimeUnit.SECONDS)) {
+                scheduler.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            scheduler.shutdownNow();
+        }
+        System.out.println("[HardcoreMode] Scheduler Heartbeat stopped.");
+    }
+
+    private void checkBloodMoonHeartbeat() {
+        try {
+            Store<EntityStore> store = activeStoreRef.get();
+            if (store == null) {
+                return;
+            }
+
+            // Verify if WorldTimeResource still exists or if world invalid
+            WorldTimeResource time = store.getResource(WorldTimeResource.getResourceType());
+            if (time == null) {
+                return;
+            }
+
+            // Force refresh. If the server loop is sleeping, this ensures we still catch
+            // the time change
+            // (assuming time resource is advancing locally or we just need to catch up).
+            refreshBloodMoonState(store, true);
+        } catch (Exception e) {
+            System.err.println("[HardcoreMode] Heartbeat error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
 }

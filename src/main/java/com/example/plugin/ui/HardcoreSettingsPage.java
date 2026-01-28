@@ -137,6 +137,16 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 Boolean bloodMoonDuration12h = data.getBloodMoonDuration12h();
                 Float bloodMoonHostileHealthMultiplier = data.getBloodMoonHostileHealthMultiplier();
                 Float bloodMoonHostileDamageMultiplier = data.getBloodMoonHostileDamageMultiplier();
+                Boolean bloodMoonHostileEnabled = data.getBloodMoonHostileEnabled();
+                Boolean bloodMoonEliteEnabled = data.getBloodMoonEliteEnabled();
+                Float bloodMoonEliteHealthMultiplier = data.getBloodMoonEliteHealthMultiplier();
+                Float bloodMoonEliteDamageMultiplier = data.getBloodMoonEliteDamageMultiplier();
+                Boolean bloodMoonMinibossEnabled = data.getBloodMoonMinibossEnabled();
+                Float bloodMoonMinibossHealthMultiplier = data.getBloodMoonMinibossHealthMultiplier();
+                Float bloodMoonMinibossDamageMultiplier = data.getBloodMoonMinibossDamageMultiplier();
+                Boolean bloodMoonWorldbossEnabled = data.getBloodMoonWorldbossEnabled();
+                Float bloodMoonWorldbossHealthMultiplier = data.getBloodMoonWorldbossHealthMultiplier();
+                Float bloodMoonWorldbossDamageMultiplier = data.getBloodMoonWorldbossDamageMultiplier();
                 Float bloodMoonXpMultiplier = data.getBloodMoonXpMultiplier();
                 Boolean bloodMoonForce = data.getBloodMoonForce();
                 Boolean playerDeathSettingsEnabled = data.getPlayerDeathSettingsEnabled();
@@ -179,6 +189,16 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 && bloodMoonDuration12h == null
                                 && bloodMoonHostileHealthMultiplier == null
                                 && bloodMoonHostileDamageMultiplier == null
+                                && bloodMoonHostileEnabled == null
+                                && bloodMoonEliteEnabled == null
+                                && bloodMoonEliteHealthMultiplier == null
+                                && bloodMoonEliteDamageMultiplier == null
+                                && bloodMoonMinibossEnabled == null
+                                && bloodMoonMinibossHealthMultiplier == null
+                                && bloodMoonMinibossDamageMultiplier == null
+                                && bloodMoonWorldbossEnabled == null
+                                && bloodMoonWorldbossHealthMultiplier == null
+                                && bloodMoonWorldbossDamageMultiplier == null
                                 && bloodMoonXpMultiplier == null
                                 && bloodMoonForce == null
                                 && playerDeathSettingsEnabled == null
@@ -339,6 +359,46 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 MAX_MULTIPLIER,
                                 STEP,
                                 value -> config.bloodMoonHostileDamageMultiplier = value);
+                changed |= applyEnabled(
+                                bloodMoonHostileEnabled,
+                                config.bloodMoonHostileEnabled,
+                                value -> config.bloodMoonHostileEnabled = value);
+                changed |= applyEnabled(
+                                bloodMoonEliteEnabled,
+                                config.bloodMoonEliteEnabled,
+                                value -> config.bloodMoonEliteEnabled = value);
+                changed |= applyMultiplier(
+                                bloodMoonEliteHealthMultiplier,
+                                config.bloodMoonEliteHealthMultiplier,
+                                value -> config.bloodMoonEliteHealthMultiplier = value);
+                changed |= applyMultiplier(
+                                bloodMoonEliteDamageMultiplier,
+                                config.bloodMoonEliteDamageMultiplier,
+                                value -> config.bloodMoonEliteDamageMultiplier = value);
+                changed |= applyEnabled(
+                                bloodMoonMinibossEnabled,
+                                config.bloodMoonMinibossEnabled,
+                                value -> config.bloodMoonMinibossEnabled = value);
+                changed |= applyMultiplier(
+                                bloodMoonMinibossHealthMultiplier,
+                                config.bloodMoonMinibossHealthMultiplier,
+                                value -> config.bloodMoonMinibossHealthMultiplier = value);
+                changed |= applyMultiplier(
+                                bloodMoonMinibossDamageMultiplier,
+                                config.bloodMoonMinibossDamageMultiplier,
+                                value -> config.bloodMoonMinibossDamageMultiplier = value);
+                changed |= applyEnabled(
+                                bloodMoonWorldbossEnabled,
+                                config.bloodMoonWorldbossEnabled,
+                                value -> config.bloodMoonWorldbossEnabled = value);
+                changed |= applyMultiplier(
+                                bloodMoonWorldbossHealthMultiplier,
+                                config.bloodMoonWorldbossHealthMultiplier,
+                                value -> config.bloodMoonWorldbossHealthMultiplier = value);
+                changed |= applyMultiplier(
+                                bloodMoonWorldbossDamageMultiplier,
+                                config.bloodMoonWorldbossDamageMultiplier,
+                                value -> config.bloodMoonWorldbossDamageMultiplier = value);
                 changed |= applyFloatSetting(
                                 bloodMoonXpMultiplier,
                                 config.bloodMoonXpMultiplier,
@@ -477,7 +537,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 int rightIndex = 0;
 
                 leftIndex = addCategorySection(commands, events, leftList, leftIndex,
-                                "Passive Creatures: " + (config.passiveEnabled ? "ON" : "OFF"),
+                                getCategoryLabel("Passive Creatures", config.passiveEnabled, MobCategory.PASSIVE),
                                 config.passiveEnabled,
                                 HardcoreSettingsPageEventData.KEY_PASSIVE_ENABLED,
                                 passiveHealth,
@@ -486,7 +546,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 HardcoreSettingsPageEventData.KEY_PASSIVE_DAMAGE);
 
                 leftIndex = addCategorySection(commands, events, leftList, leftIndex,
-                                "Critter Creatures: " + (config.critterEnabled ? "ON" : "OFF"),
+                                getCategoryLabel("Critter Creatures", config.critterEnabled, MobCategory.CRITTER),
                                 config.critterEnabled,
                                 HardcoreSettingsPageEventData.KEY_CRITTER_ENABLED,
                                 critterHealth,
@@ -495,7 +555,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 HardcoreSettingsPageEventData.KEY_CRITTER_DAMAGE);
 
                 leftIndex = addCategorySection(commands, events, leftList, leftIndex,
-                                "Hostile Creatures: " + (config.hostileEnabled ? "ON" : "OFF"),
+                                getCategoryLabel("Hostile Creatures", config.hostileEnabled, MobCategory.HOSTILE),
                                 config.hostileEnabled,
                                 HardcoreSettingsPageEventData.KEY_HOSTILE_ENABLED,
                                 hostileHealth,
@@ -504,7 +564,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 HardcoreSettingsPageEventData.KEY_HOSTILE_DAMAGE);
 
                 rightIndex = addCategorySection(commands, events, rightList, rightIndex,
-                                "Elite Creatures: " + (config.eliteEnabled ? "ON" : "OFF"),
+                                getCategoryLabel("Elite Creatures", config.eliteEnabled, MobCategory.ELITE),
                                 config.eliteEnabled,
                                 HardcoreSettingsPageEventData.KEY_ELITE_ENABLED,
                                 eliteHealth,
@@ -513,7 +573,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 HardcoreSettingsPageEventData.KEY_ELITE_DAMAGE);
 
                 rightIndex = addCategorySection(commands, events, rightList, rightIndex,
-                                "Minibosses: " + (config.minibossEnabled ? "ON" : "OFF"),
+                                getCategoryLabel("Minibosses", config.minibossEnabled, MobCategory.MINIBOSS),
                                 config.minibossEnabled,
                                 HardcoreSettingsPageEventData.KEY_MINIBOSS_ENABLED,
                                 minibossHealth,
@@ -522,7 +582,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 HardcoreSettingsPageEventData.KEY_MINIBOSS_DAMAGE);
 
                 addCategorySection(commands, events, rightList, rightIndex,
-                                "World Bosses: " + (config.worldbossEnabled ? "ON" : "OFF"),
+                                getCategoryLabel("World Bosses", config.worldbossEnabled, MobCategory.WORLDBOSS),
                                 config.worldbossEnabled,
                                 HardcoreSettingsPageEventData.KEY_WORLDBOSS_ENABLED,
                                 worldbossHealth,
@@ -576,22 +636,55 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 SETTINGS_LIST_ID,
                                 index,
                                 config.bloodMoonDurationHours);
-                index = addSliderEntry(
-                                commands,
-                                events,
-                                SETTINGS_LIST_ID,
-                                index,
-                                "Hostile Health",
+                // Grid layout for detailed settings
+                String gridEntry = SETTINGS_LIST_ID + "[" + index + "]";
+                commands.append(SETTINGS_LIST_ID, ENTRY_TWO_COLUMN_PATH);
+
+                String leftList = gridEntry + " #LeftColumn";
+                String rightList = gridEntry + " #RightColumn";
+                int leftIndex = 0;
+                int rightIndex = 0;
+
+                // Hostile
+                leftIndex = addCategorySection(commands, events, leftList, leftIndex,
+                                "Hostile: " + (config.bloodMoonHostileEnabled ? "ON" : "OFF"),
+                                config.bloodMoonHostileEnabled,
+                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_HOSTILE_ENABLED,
                                 config.bloodMoonHostileHealthMultiplier,
-                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_HOSTILE_HEALTH);
-                index = addSliderEntry(
-                                commands,
-                                events,
-                                SETTINGS_LIST_ID,
-                                index,
-                                "Hostile Damage",
+                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_HOSTILE_HEALTH,
                                 config.bloodMoonHostileDamageMultiplier,
                                 HardcoreSettingsPageEventData.KEY_BLOOD_MOON_HOSTILE_DAMAGE);
+
+                // Minibosses
+                leftIndex = addCategorySection(commands, events, leftList, leftIndex,
+                                "Minibosses: " + (config.bloodMoonMinibossEnabled ? "ON" : "OFF"),
+                                config.bloodMoonMinibossEnabled,
+                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_MINIBOSS_ENABLED,
+                                config.bloodMoonMinibossHealthMultiplier,
+                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_MINIBOSS_HEALTH,
+                                config.bloodMoonMinibossDamageMultiplier,
+                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_MINIBOSS_DAMAGE);
+
+                // Elite
+                rightIndex = addCategorySection(commands, events, rightList, rightIndex,
+                                "Elite: " + (config.bloodMoonEliteEnabled ? "ON" : "OFF"),
+                                config.bloodMoonEliteEnabled,
+                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_ELITE_ENABLED,
+                                config.bloodMoonEliteHealthMultiplier,
+                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_ELITE_HEALTH,
+                                config.bloodMoonEliteDamageMultiplier,
+                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_ELITE_DAMAGE);
+
+                // World Bosses
+                rightIndex = addCategorySection(commands, events, rightList, rightIndex,
+                                "World Bosses: " + (config.bloodMoonWorldbossEnabled ? "ON" : "OFF"),
+                                config.bloodMoonWorldbossEnabled,
+                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_WORLDBOSS_ENABLED,
+                                config.bloodMoonWorldbossHealthMultiplier,
+                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_WORLDBOSS_HEALTH,
+                                config.bloodMoonWorldbossDamageMultiplier,
+                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_WORLDBOSS_DAMAGE);
+                index++;
                 if (plugin.isRpgLevelingAvailable()) {
                         index = addSliderEntry(
                                         commands,
@@ -990,5 +1083,13 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
         private String formatPercent(float value) {
                 int percent = Math.round(value);
                 return percent + "%";
+        }
+
+        private String getCategoryLabel(String prefix, boolean enabled, MobCategory category) {
+                String label = prefix + ": " + (enabled ? "ON" : "OFF");
+                if (plugin.isBloodMoonActive() && plugin.isBloodMoonAffected(category)) {
+                        label += " (Blood Moon Priority)";
+                }
+                return label;
         }
 }
