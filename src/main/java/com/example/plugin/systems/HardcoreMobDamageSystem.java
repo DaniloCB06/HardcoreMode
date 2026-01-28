@@ -1,7 +1,7 @@
 package com.example.plugin.systems;
 
 import com.example.plugin.HardcoreModePlugin;
-import com.example.plugin.MobDisposition;
+import com.example.plugin.MobCategory;
 import com.hypixel.hytale.component.ArchetypeChunk;
 import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.component.ComponentType;
@@ -82,11 +82,11 @@ public class HardcoreMobDamageSystem extends DamageEventSystem {
         NPCEntity npcEntity = NPCEntity.getComponentType() == null
                 ? null
                 : store.getComponent(sourceRef, NPCEntity.getComponentType());
-        MobDisposition disposition = plugin.resolveMobDisposition(store, npcEntity, playerRef);
-        if (!plugin.isMobEnabled(disposition)) {
+        MobCategory category = plugin.resolveMobCategory(npcEntity);
+        if (!plugin.isMobEnabled(category)) {
             return;
         }
-        float multiplier = plugin.getDamageMultiplier(disposition);
+        float multiplier = plugin.getDamageMultiplier(category);
         if (multiplier <= 1.0f) {
             return;
         }

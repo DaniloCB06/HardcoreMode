@@ -1,7 +1,7 @@
 package com.example.plugin.systems;
 
 import com.example.plugin.HardcoreModePlugin;
-import com.example.plugin.MobDisposition;
+import com.example.plugin.MobCategory;
 import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
@@ -79,7 +79,7 @@ public class HardcoreMobStatRefreshSystem extends RefChangeSystem<EntityStore, E
 
         ComponentType<EntityStore, NPCEntity> npcType = NPCEntity.getComponentType();
         NPCEntity npcEntity = npcType == null ? null : store.getComponent(ref, npcType);
-        MobDisposition disposition = plugin.resolveMobDisposition(store, npcEntity, playerRef);
-        plugin.applyHealthModifier(statMap, disposition);
+        MobCategory category = plugin.resolveMobCategory(npcEntity);
+        plugin.applyHealthModifier(statMap, category);
     }
 }

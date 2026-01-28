@@ -53,7 +53,7 @@ public class HardcoreMobSetupSystem extends HolderSystem<EntityStore> {
 
         ComponentType<EntityStore, NPCEntity> npcType = NPCEntity.getComponentType();
         NPCEntity npcEntity = npcType == null ? null : holder.getComponent(npcType);
-        plugin.applyHealthModifier(statMap, plugin.resolveMobDisposition(store, npcEntity, playerRef));
+        plugin.applyHealthModifier(statMap, plugin.resolveMobCategory(npcEntity));
     }
 
     @Override

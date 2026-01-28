@@ -8,15 +8,24 @@ public class HardcoreModeConfig {
     public static final String KEY_ENABLED = "Enabled";
     public static final String KEY_HEALTH_MULTIPLIER = "HealthMultiplier";
     public static final String KEY_DAMAGE_MULTIPLIER = "DamageMultiplier";
-    public static final String KEY_PEACEFUL_ENABLED = "PeacefulEnabled";
-    public static final String KEY_PEACEFUL_HEALTH_MULTIPLIER = "PeacefulHealthMultiplier";
-    public static final String KEY_PEACEFUL_DAMAGE_MULTIPLIER = "PeacefulDamageMultiplier";
-    public static final String KEY_NEUTRAL_ENABLED = "NeutralEnabled";
-    public static final String KEY_NEUTRAL_HEALTH_MULTIPLIER = "NeutralHealthMultiplier";
-    public static final String KEY_NEUTRAL_DAMAGE_MULTIPLIER = "NeutralDamageMultiplier";
+    public static final String KEY_PASSIVE_ENABLED = "PassiveEnabled";
+    public static final String KEY_PASSIVE_HEALTH_MULTIPLIER = "PassiveHealthMultiplier";
+    public static final String KEY_PASSIVE_DAMAGE_MULTIPLIER = "PassiveDamageMultiplier";
+    public static final String KEY_CRITTER_ENABLED = "CritterEnabled";
+    public static final String KEY_CRITTER_HEALTH_MULTIPLIER = "CritterHealthMultiplier";
+    public static final String KEY_CRITTER_DAMAGE_MULTIPLIER = "CritterDamageMultiplier";
     public static final String KEY_HOSTILE_ENABLED = "HostileEnabled";
     public static final String KEY_HOSTILE_HEALTH_MULTIPLIER = "HostileHealthMultiplier";
     public static final String KEY_HOSTILE_DAMAGE_MULTIPLIER = "HostileDamageMultiplier";
+    public static final String KEY_ELITE_ENABLED = "EliteEnabled";
+    public static final String KEY_ELITE_HEALTH_MULTIPLIER = "EliteHealthMultiplier";
+    public static final String KEY_ELITE_DAMAGE_MULTIPLIER = "EliteDamageMultiplier";
+    public static final String KEY_MINIBOSS_ENABLED = "MinibossEnabled";
+    public static final String KEY_MINIBOSS_HEALTH_MULTIPLIER = "MinibossHealthMultiplier";
+    public static final String KEY_MINIBOSS_DAMAGE_MULTIPLIER = "MinibossDamageMultiplier";
+    public static final String KEY_WORLDBOSS_ENABLED = "WorldbossEnabled";
+    public static final String KEY_WORLDBOSS_HEALTH_MULTIPLIER = "WorldbossHealthMultiplier";
+    public static final String KEY_WORLDBOSS_DAMAGE_MULTIPLIER = "WorldbossDamageMultiplier";
     public static final String KEY_BLOOD_MOON_ENABLED = "BloodMoonEnabled";
     public static final String KEY_BLOOD_MOON_INTERVAL_DAYS = "BloodMoonIntervalDays";
     public static final String KEY_BLOOD_MOON_START_HOUR = "BloodMoonStartHour";
@@ -42,29 +51,29 @@ public class HardcoreModeConfig {
                     (config, value) -> config.damageMultiplier = value,
                     config -> config.damageMultiplier)
             .add()
-            .append(new KeyedCodec<>(KEY_PEACEFUL_ENABLED, Codec.BOOLEAN),
-                    (config, value) -> config.peacefulEnabled = value,
-                    config -> config.peacefulEnabled)
+            .append(new KeyedCodec<>(KEY_PASSIVE_ENABLED, Codec.BOOLEAN),
+                    (config, value) -> config.passiveEnabled = value,
+                    config -> config.passiveEnabled)
             .add()
-            .append(new KeyedCodec<>(KEY_PEACEFUL_HEALTH_MULTIPLIER, Codec.FLOAT),
-                    (config, value) -> config.peacefulHealthMultiplier = value,
-                    config -> config.peacefulHealthMultiplier)
+            .append(new KeyedCodec<>(KEY_PASSIVE_HEALTH_MULTIPLIER, Codec.FLOAT),
+                    (config, value) -> config.passiveHealthMultiplier = value,
+                    config -> config.passiveHealthMultiplier)
             .add()
-            .append(new KeyedCodec<>(KEY_PEACEFUL_DAMAGE_MULTIPLIER, Codec.FLOAT),
-                    (config, value) -> config.peacefulDamageMultiplier = value,
-                    config -> config.peacefulDamageMultiplier)
+            .append(new KeyedCodec<>(KEY_PASSIVE_DAMAGE_MULTIPLIER, Codec.FLOAT),
+                    (config, value) -> config.passiveDamageMultiplier = value,
+                    config -> config.passiveDamageMultiplier)
             .add()
-            .append(new KeyedCodec<>(KEY_NEUTRAL_ENABLED, Codec.BOOLEAN),
-                    (config, value) -> config.neutralEnabled = value,
-                    config -> config.neutralEnabled)
+            .append(new KeyedCodec<>(KEY_CRITTER_ENABLED, Codec.BOOLEAN),
+                    (config, value) -> config.critterEnabled = value,
+                    config -> config.critterEnabled)
             .add()
-            .append(new KeyedCodec<>(KEY_NEUTRAL_HEALTH_MULTIPLIER, Codec.FLOAT),
-                    (config, value) -> config.neutralHealthMultiplier = value,
-                    config -> config.neutralHealthMultiplier)
+            .append(new KeyedCodec<>(KEY_CRITTER_HEALTH_MULTIPLIER, Codec.FLOAT),
+                    (config, value) -> config.critterHealthMultiplier = value,
+                    config -> config.critterHealthMultiplier)
             .add()
-            .append(new KeyedCodec<>(KEY_NEUTRAL_DAMAGE_MULTIPLIER, Codec.FLOAT),
-                    (config, value) -> config.neutralDamageMultiplier = value,
-                    config -> config.neutralDamageMultiplier)
+            .append(new KeyedCodec<>(KEY_CRITTER_DAMAGE_MULTIPLIER, Codec.FLOAT),
+                    (config, value) -> config.critterDamageMultiplier = value,
+                    config -> config.critterDamageMultiplier)
             .add()
             .append(new KeyedCodec<>(KEY_HOSTILE_ENABLED, Codec.BOOLEAN),
                     (config, value) -> config.hostileEnabled = value,
@@ -77,6 +86,42 @@ public class HardcoreModeConfig {
             .append(new KeyedCodec<>(KEY_HOSTILE_DAMAGE_MULTIPLIER, Codec.FLOAT),
                     (config, value) -> config.hostileDamageMultiplier = value,
                     config -> config.hostileDamageMultiplier)
+            .add()
+            .append(new KeyedCodec<>(KEY_ELITE_ENABLED, Codec.BOOLEAN),
+                    (config, value) -> config.eliteEnabled = value,
+                    config -> config.eliteEnabled)
+            .add()
+            .append(new KeyedCodec<>(KEY_ELITE_HEALTH_MULTIPLIER, Codec.FLOAT),
+                    (config, value) -> config.eliteHealthMultiplier = value,
+                    config -> config.eliteHealthMultiplier)
+            .add()
+            .append(new KeyedCodec<>(KEY_ELITE_DAMAGE_MULTIPLIER, Codec.FLOAT),
+                    (config, value) -> config.eliteDamageMultiplier = value,
+                    config -> config.eliteDamageMultiplier)
+            .add()
+            .append(new KeyedCodec<>(KEY_MINIBOSS_ENABLED, Codec.BOOLEAN),
+                    (config, value) -> config.minibossEnabled = value,
+                    config -> config.minibossEnabled)
+            .add()
+            .append(new KeyedCodec<>(KEY_MINIBOSS_HEALTH_MULTIPLIER, Codec.FLOAT),
+                    (config, value) -> config.minibossHealthMultiplier = value,
+                    config -> config.minibossHealthMultiplier)
+            .add()
+            .append(new KeyedCodec<>(KEY_MINIBOSS_DAMAGE_MULTIPLIER, Codec.FLOAT),
+                    (config, value) -> config.minibossDamageMultiplier = value,
+                    config -> config.minibossDamageMultiplier)
+            .add()
+            .append(new KeyedCodec<>(KEY_WORLDBOSS_ENABLED, Codec.BOOLEAN),
+                    (config, value) -> config.worldbossEnabled = value,
+                    config -> config.worldbossEnabled)
+            .add()
+            .append(new KeyedCodec<>(KEY_WORLDBOSS_HEALTH_MULTIPLIER, Codec.FLOAT),
+                    (config, value) -> config.worldbossHealthMultiplier = value,
+                    config -> config.worldbossHealthMultiplier)
+            .add()
+            .append(new KeyedCodec<>(KEY_WORLDBOSS_DAMAGE_MULTIPLIER, Codec.FLOAT),
+                    (config, value) -> config.worldbossDamageMultiplier = value,
+                    config -> config.worldbossDamageMultiplier)
             .add()
             .append(new KeyedCodec<>(KEY_BLOOD_MOON_ENABLED, Codec.BOOLEAN),
                     (config, value) -> config.bloodMoonEnabled = value,
@@ -123,15 +168,24 @@ public class HardcoreModeConfig {
     public boolean enabled = false;
     public float healthMultiplier = 2.0f;
     public float damageMultiplier = 2.0f;
-    public boolean peacefulEnabled = false;
-    public float peacefulHealthMultiplier = 2.0f;
-    public float peacefulDamageMultiplier = 2.0f;
-    public boolean neutralEnabled = false;
-    public float neutralHealthMultiplier = 2.0f;
-    public float neutralDamageMultiplier = 2.0f;
+    public boolean passiveEnabled = false;
+    public float passiveHealthMultiplier = 2.0f;
+    public float passiveDamageMultiplier = 2.0f;
+    public boolean critterEnabled = false;
+    public float critterHealthMultiplier = 2.0f;
+    public float critterDamageMultiplier = 2.0f;
     public boolean hostileEnabled = false;
     public float hostileHealthMultiplier = 2.0f;
     public float hostileDamageMultiplier = 2.0f;
+    public boolean eliteEnabled = false;
+    public float eliteHealthMultiplier = 2.0f;
+    public float eliteDamageMultiplier = 2.0f;
+    public boolean minibossEnabled = false;
+    public float minibossHealthMultiplier = 2.0f;
+    public float minibossDamageMultiplier = 2.0f;
+    public boolean worldbossEnabled = false;
+    public float worldbossHealthMultiplier = 2.0f;
+    public float worldbossDamageMultiplier = 2.0f;
     public boolean bloodMoonEnabled = false;
     public int bloodMoonIntervalDays = 7;
     public int bloodMoonStartHour = 20;

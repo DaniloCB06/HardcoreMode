@@ -8,15 +8,24 @@ public class HardcoreSettingsPageEventData {
     public static final String KEY_ENABLED = "@Enabled";
     public static final String KEY_GLOBAL_HEALTH = "@GlobalHealthMultiplier";
     public static final String KEY_GLOBAL_DAMAGE = "@GlobalDamageMultiplier";
-    public static final String KEY_PEACEFUL_ENABLED = "@PeacefulEnabled";
-    public static final String KEY_PEACEFUL_HEALTH = "@PeacefulHealthMultiplier";
-    public static final String KEY_PEACEFUL_DAMAGE = "@PeacefulDamageMultiplier";
-    public static final String KEY_NEUTRAL_ENABLED = "@NeutralEnabled";
-    public static final String KEY_NEUTRAL_HEALTH = "@NeutralHealthMultiplier";
-    public static final String KEY_NEUTRAL_DAMAGE = "@NeutralDamageMultiplier";
+    public static final String KEY_PASSIVE_ENABLED = "@PassiveEnabled";
+    public static final String KEY_PASSIVE_HEALTH = "@PassiveHealthMultiplier";
+    public static final String KEY_PASSIVE_DAMAGE = "@PassiveDamageMultiplier";
+    public static final String KEY_CRITTER_ENABLED = "@CritterEnabled";
+    public static final String KEY_CRITTER_HEALTH = "@CritterHealthMultiplier";
+    public static final String KEY_CRITTER_DAMAGE = "@CritterDamageMultiplier";
     public static final String KEY_HOSTILE_ENABLED = "@HostileEnabled";
     public static final String KEY_HOSTILE_HEALTH = "@HostileHealthMultiplier";
     public static final String KEY_HOSTILE_DAMAGE = "@HostileDamageMultiplier";
+    public static final String KEY_ELITE_ENABLED = "@EliteEnabled";
+    public static final String KEY_ELITE_HEALTH = "@EliteHealthMultiplier";
+    public static final String KEY_ELITE_DAMAGE = "@EliteDamageMultiplier";
+    public static final String KEY_MINIBOSS_ENABLED = "@MinibossEnabled";
+    public static final String KEY_MINIBOSS_HEALTH = "@MinibossHealthMultiplier";
+    public static final String KEY_MINIBOSS_DAMAGE = "@MinibossDamageMultiplier";
+    public static final String KEY_WORLDBOSS_ENABLED = "@WorldbossEnabled";
+    public static final String KEY_WORLDBOSS_HEALTH = "@WorldbossHealthMultiplier";
+    public static final String KEY_WORLDBOSS_DAMAGE = "@WorldbossDamageMultiplier";
     public static final String KEY_BLOOD_MOON_ENABLED = "@BloodMoonEnabled";
     public static final String KEY_BLOOD_MOON_INTERVAL_DAYS = "@BloodMoonIntervalDays";
     public static final String KEY_BLOOD_MOON_START_HOUR = "@BloodMoonStartHour";
@@ -48,29 +57,29 @@ public class HardcoreSettingsPageEventData {
                     (data, value) -> data.globalDamageMultiplier = value,
                     data -> data.globalDamageMultiplier)
             .add()
-            .append(new KeyedCodec<>(KEY_PEACEFUL_ENABLED, Codec.BOOLEAN),
-                    (data, value) -> data.peacefulEnabled = value,
-                    data -> data.peacefulEnabled)
+            .append(new KeyedCodec<>(KEY_PASSIVE_ENABLED, Codec.BOOLEAN),
+                    (data, value) -> data.passiveEnabled = value,
+                    data -> data.passiveEnabled)
             .add()
-            .append(new KeyedCodec<>(KEY_PEACEFUL_HEALTH, Codec.FLOAT),
-                    (data, value) -> data.peacefulHealthMultiplier = value,
-                    data -> data.peacefulHealthMultiplier)
+            .append(new KeyedCodec<>(KEY_PASSIVE_HEALTH, Codec.FLOAT),
+                    (data, value) -> data.passiveHealthMultiplier = value,
+                    data -> data.passiveHealthMultiplier)
             .add()
-            .append(new KeyedCodec<>(KEY_PEACEFUL_DAMAGE, Codec.FLOAT),
-                    (data, value) -> data.peacefulDamageMultiplier = value,
-                    data -> data.peacefulDamageMultiplier)
+            .append(new KeyedCodec<>(KEY_PASSIVE_DAMAGE, Codec.FLOAT),
+                    (data, value) -> data.passiveDamageMultiplier = value,
+                    data -> data.passiveDamageMultiplier)
             .add()
-            .append(new KeyedCodec<>(KEY_NEUTRAL_ENABLED, Codec.BOOLEAN),
-                    (data, value) -> data.neutralEnabled = value,
-                    data -> data.neutralEnabled)
+            .append(new KeyedCodec<>(KEY_CRITTER_ENABLED, Codec.BOOLEAN),
+                    (data, value) -> data.critterEnabled = value,
+                    data -> data.critterEnabled)
             .add()
-            .append(new KeyedCodec<>(KEY_NEUTRAL_HEALTH, Codec.FLOAT),
-                    (data, value) -> data.neutralHealthMultiplier = value,
-                    data -> data.neutralHealthMultiplier)
+            .append(new KeyedCodec<>(KEY_CRITTER_HEALTH, Codec.FLOAT),
+                    (data, value) -> data.critterHealthMultiplier = value,
+                    data -> data.critterHealthMultiplier)
             .add()
-            .append(new KeyedCodec<>(KEY_NEUTRAL_DAMAGE, Codec.FLOAT),
-                    (data, value) -> data.neutralDamageMultiplier = value,
-                    data -> data.neutralDamageMultiplier)
+            .append(new KeyedCodec<>(KEY_CRITTER_DAMAGE, Codec.FLOAT),
+                    (data, value) -> data.critterDamageMultiplier = value,
+                    data -> data.critterDamageMultiplier)
             .add()
             .append(new KeyedCodec<>(KEY_HOSTILE_ENABLED, Codec.BOOLEAN),
                     (data, value) -> data.hostileEnabled = value,
@@ -83,6 +92,42 @@ public class HardcoreSettingsPageEventData {
             .append(new KeyedCodec<>(KEY_HOSTILE_DAMAGE, Codec.FLOAT),
                     (data, value) -> data.hostileDamageMultiplier = value,
                     data -> data.hostileDamageMultiplier)
+            .add()
+            .append(new KeyedCodec<>(KEY_ELITE_ENABLED, Codec.BOOLEAN),
+                    (data, value) -> data.eliteEnabled = value,
+                    data -> data.eliteEnabled)
+            .add()
+            .append(new KeyedCodec<>(KEY_ELITE_HEALTH, Codec.FLOAT),
+                    (data, value) -> data.eliteHealthMultiplier = value,
+                    data -> data.eliteHealthMultiplier)
+            .add()
+            .append(new KeyedCodec<>(KEY_ELITE_DAMAGE, Codec.FLOAT),
+                    (data, value) -> data.eliteDamageMultiplier = value,
+                    data -> data.eliteDamageMultiplier)
+            .add()
+            .append(new KeyedCodec<>(KEY_MINIBOSS_ENABLED, Codec.BOOLEAN),
+                    (data, value) -> data.minibossEnabled = value,
+                    data -> data.minibossEnabled)
+            .add()
+            .append(new KeyedCodec<>(KEY_MINIBOSS_HEALTH, Codec.FLOAT),
+                    (data, value) -> data.minibossHealthMultiplier = value,
+                    data -> data.minibossHealthMultiplier)
+            .add()
+            .append(new KeyedCodec<>(KEY_MINIBOSS_DAMAGE, Codec.FLOAT),
+                    (data, value) -> data.minibossDamageMultiplier = value,
+                    data -> data.minibossDamageMultiplier)
+            .add()
+            .append(new KeyedCodec<>(KEY_WORLDBOSS_ENABLED, Codec.BOOLEAN),
+                    (data, value) -> data.worldbossEnabled = value,
+                    data -> data.worldbossEnabled)
+            .add()
+            .append(new KeyedCodec<>(KEY_WORLDBOSS_HEALTH, Codec.FLOAT),
+                    (data, value) -> data.worldbossHealthMultiplier = value,
+                    data -> data.worldbossHealthMultiplier)
+            .add()
+            .append(new KeyedCodec<>(KEY_WORLDBOSS_DAMAGE, Codec.FLOAT),
+                    (data, value) -> data.worldbossDamageMultiplier = value,
+                    data -> data.worldbossDamageMultiplier)
             .add()
             .append(new KeyedCodec<>(KEY_BLOOD_MOON_ENABLED, Codec.BOOLEAN),
                     (data, value) -> data.bloodMoonEnabled = value,
@@ -153,15 +198,24 @@ public class HardcoreSettingsPageEventData {
     private Boolean enabled;
     private Float globalHealthMultiplier;
     private Float globalDamageMultiplier;
-    private Boolean peacefulEnabled;
-    private Float peacefulHealthMultiplier;
-    private Float peacefulDamageMultiplier;
-    private Boolean neutralEnabled;
-    private Float neutralHealthMultiplier;
-    private Float neutralDamageMultiplier;
+    private Boolean passiveEnabled;
+    private Float passiveHealthMultiplier;
+    private Float passiveDamageMultiplier;
+    private Boolean critterEnabled;
+    private Float critterHealthMultiplier;
+    private Float critterDamageMultiplier;
     private Boolean hostileEnabled;
     private Float hostileHealthMultiplier;
     private Float hostileDamageMultiplier;
+    private Boolean eliteEnabled;
+    private Float eliteHealthMultiplier;
+    private Float eliteDamageMultiplier;
+    private Boolean minibossEnabled;
+    private Float minibossHealthMultiplier;
+    private Float minibossDamageMultiplier;
+    private Boolean worldbossEnabled;
+    private Float worldbossHealthMultiplier;
+    private Float worldbossDamageMultiplier;
     private Boolean bloodMoonEnabled;
     private Float bloodMoonIntervalDays;
     private Float bloodMoonStartHour;
@@ -194,28 +248,28 @@ public class HardcoreSettingsPageEventData {
         return globalDamageMultiplier;
     }
 
-    public Boolean getPeacefulEnabled() {
-        return peacefulEnabled;
+    public Boolean getPassiveEnabled() {
+        return passiveEnabled;
     }
 
-    public Float getPeacefulHealthMultiplier() {
-        return peacefulHealthMultiplier;
+    public Float getPassiveHealthMultiplier() {
+        return passiveHealthMultiplier;
     }
 
-    public Float getPeacefulDamageMultiplier() {
-        return peacefulDamageMultiplier;
+    public Float getPassiveDamageMultiplier() {
+        return passiveDamageMultiplier;
     }
 
-    public Boolean getNeutralEnabled() {
-        return neutralEnabled;
+    public Boolean getCritterEnabled() {
+        return critterEnabled;
     }
 
-    public Float getNeutralHealthMultiplier() {
-        return neutralHealthMultiplier;
+    public Float getCritterHealthMultiplier() {
+        return critterHealthMultiplier;
     }
 
-    public Float getNeutralDamageMultiplier() {
-        return neutralDamageMultiplier;
+    public Float getCritterDamageMultiplier() {
+        return critterDamageMultiplier;
     }
 
     public Boolean getHostileEnabled() {
@@ -228,6 +282,42 @@ public class HardcoreSettingsPageEventData {
 
     public Float getHostileDamageMultiplier() {
         return hostileDamageMultiplier;
+    }
+
+    public Boolean getEliteEnabled() {
+        return eliteEnabled;
+    }
+
+    public Float getEliteHealthMultiplier() {
+        return eliteHealthMultiplier;
+    }
+
+    public Float getEliteDamageMultiplier() {
+        return eliteDamageMultiplier;
+    }
+
+    public Boolean getMinibossEnabled() {
+        return minibossEnabled;
+    }
+
+    public Float getMinibossHealthMultiplier() {
+        return minibossHealthMultiplier;
+    }
+
+    public Float getMinibossDamageMultiplier() {
+        return minibossDamageMultiplier;
+    }
+
+    public Boolean getWorldbossEnabled() {
+        return worldbossEnabled;
+    }
+
+    public Float getWorldbossHealthMultiplier() {
+        return worldbossHealthMultiplier;
+    }
+
+    public Float getWorldbossDamageMultiplier() {
+        return worldbossDamageMultiplier;
     }
 
     public Boolean getBloodMoonEnabled() {

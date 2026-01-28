@@ -1,7 +1,7 @@
 package com.example.plugin.ui;
 
 import com.example.plugin.HardcoreModePlugin;
-import com.example.plugin.MobDisposition;
+import com.example.plugin.MobCategory;
 import com.example.plugin.config.HardcoreModeConfig;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
@@ -20,9 +20,12 @@ import java.util.function.Consumer;
 
 public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettingsPageEventData> {
     private static final String PAGE_PATH = "Pages/HardcoreSettingsSectionPage.ui";
+    private static final String PAGE_PATH_ENEMY = "Pages/HardcoreSettingsSectionEnemyPage.ui";
     private static final String ENTRY_TOGGLE_PATH = "Pages/HardcoreToggleRow.ui";
     private static final String ENTRY_CATEGORY_TOGGLE_PATH = "Pages/HardcoreCategoryToggleRow.ui";
     private static final String ENTRY_SLIDER_PATH = "Pages/HardcoreSliderRow.ui";
+    private static final String ENTRY_TWO_COLUMN_PATH = "Pages/HardcoreTwoColumnRow.ui";
+    private static final String ENTRY_SPACER_PATH = "Pages/HardcoreSpacerRow.ui";
     private static final String ENTRY_DURATION_PATH = "Pages/HardcoreBloodMoonDurationRow.ui";
     private static final String ENTRY_FORCE_PATH = "Pages/HardcoreBloodMoonForceRow.ui";
     private static final String ENTRY_HEADER_PATH = "Pages/HardcoreHeaderRow.ui";
@@ -91,7 +94,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
             UIEventBuilder events,
             Store<EntityStore> store
     ) {
-        commands.append(PAGE_PATH);
+        commands.append(section == SettingsSection.ENEMY ? PAGE_PATH_ENEMY : PAGE_PATH);
         fillHeader(commands);
         buildSettingsList(commands, events);
         bindNavigation(events);
@@ -106,15 +109,24 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
         Boolean enabled = data.getEnabled();
         Float globalHealthMultiplier = data.getGlobalHealthMultiplier();
         Float globalDamageMultiplier = data.getGlobalDamageMultiplier();
-        Boolean peacefulEnabled = data.getPeacefulEnabled();
-        Float peacefulHealthMultiplier = data.getPeacefulHealthMultiplier();
-        Float peacefulDamageMultiplier = data.getPeacefulDamageMultiplier();
-        Boolean neutralEnabled = data.getNeutralEnabled();
-        Float neutralHealthMultiplier = data.getNeutralHealthMultiplier();
-        Float neutralDamageMultiplier = data.getNeutralDamageMultiplier();
+        Boolean passiveEnabled = data.getPassiveEnabled();
+        Float passiveHealthMultiplier = data.getPassiveHealthMultiplier();
+        Float passiveDamageMultiplier = data.getPassiveDamageMultiplier();
+        Boolean critterEnabled = data.getCritterEnabled();
+        Float critterHealthMultiplier = data.getCritterHealthMultiplier();
+        Float critterDamageMultiplier = data.getCritterDamageMultiplier();
         Boolean hostileEnabled = data.getHostileEnabled();
         Float hostileHealthMultiplier = data.getHostileHealthMultiplier();
         Float hostileDamageMultiplier = data.getHostileDamageMultiplier();
+        Boolean eliteEnabled = data.getEliteEnabled();
+        Float eliteHealthMultiplier = data.getEliteHealthMultiplier();
+        Float eliteDamageMultiplier = data.getEliteDamageMultiplier();
+        Boolean minibossEnabled = data.getMinibossEnabled();
+        Float minibossHealthMultiplier = data.getMinibossHealthMultiplier();
+        Float minibossDamageMultiplier = data.getMinibossDamageMultiplier();
+        Boolean worldbossEnabled = data.getWorldbossEnabled();
+        Float worldbossHealthMultiplier = data.getWorldbossHealthMultiplier();
+        Float worldbossDamageMultiplier = data.getWorldbossDamageMultiplier();
         Boolean bloodMoonEnabled = data.getBloodMoonEnabled();
         Float bloodMoonIntervalDays = data.getBloodMoonIntervalDays();
         Float bloodMoonStartHour = data.getBloodMoonStartHour();
@@ -139,15 +151,24 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
         if (enabled == null
                 && globalHealthMultiplier == null
                 && globalDamageMultiplier == null
-                && peacefulEnabled == null
-                && peacefulHealthMultiplier == null
-                && peacefulDamageMultiplier == null
-                && neutralEnabled == null
-                && neutralHealthMultiplier == null
-                && neutralDamageMultiplier == null
+                && passiveEnabled == null
+                && passiveHealthMultiplier == null
+                && passiveDamageMultiplier == null
+                && critterEnabled == null
+                && critterHealthMultiplier == null
+                && critterDamageMultiplier == null
                 && hostileEnabled == null
                 && hostileHealthMultiplier == null
                 && hostileDamageMultiplier == null
+                && eliteEnabled == null
+                && eliteHealthMultiplier == null
+                && eliteDamageMultiplier == null
+                && minibossEnabled == null
+                && minibossHealthMultiplier == null
+                && minibossDamageMultiplier == null
+                && worldbossEnabled == null
+                && worldbossHealthMultiplier == null
+                && worldbossDamageMultiplier == null
                 && bloodMoonEnabled == null
                 && bloodMoonIntervalDays == null
                 && bloodMoonStartHour == null
@@ -172,9 +193,12 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
 
         if (enabled != null && enabled != config.enabled) {
             config.enabled = enabled;
-            config.peacefulEnabled = enabled;
-            config.neutralEnabled = enabled;
             config.hostileEnabled = enabled;
+            config.passiveEnabled = enabled;
+            config.critterEnabled = enabled;
+            config.eliteEnabled = enabled;
+            config.minibossEnabled = enabled;
+            config.worldbossEnabled = enabled;
             changed = true;
         }
 
@@ -183,9 +207,12 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 config.healthMultiplier,
                 value -> {
                     config.healthMultiplier = value;
-                    config.peacefulHealthMultiplier = value;
-                    config.neutralHealthMultiplier = value;
                     config.hostileHealthMultiplier = value;
+                    config.passiveHealthMultiplier = value;
+                    config.critterHealthMultiplier = value;
+                    config.eliteHealthMultiplier = value;
+                    config.minibossHealthMultiplier = value;
+                    config.worldbossHealthMultiplier = value;
                 }
         );
         changed |= applyMultiplier(
@@ -193,40 +220,43 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 config.damageMultiplier,
                 value -> {
                     config.damageMultiplier = value;
-                    config.peacefulDamageMultiplier = value;
-                    config.neutralDamageMultiplier = value;
                     config.hostileDamageMultiplier = value;
+                    config.passiveDamageMultiplier = value;
+                    config.critterDamageMultiplier = value;
+                    config.eliteDamageMultiplier = value;
+                    config.minibossDamageMultiplier = value;
+                    config.worldbossDamageMultiplier = value;
                 }
         );
         changed |= applyEnabled(
-                peacefulEnabled,
-                config.peacefulEnabled,
-                value -> config.peacefulEnabled = value
+                passiveEnabled,
+                config.passiveEnabled,
+                value -> config.passiveEnabled = value
         );
         changed |= applyMultiplier(
-                peacefulHealthMultiplier,
-                config.peacefulHealthMultiplier,
-                value -> config.peacefulHealthMultiplier = value
+                passiveHealthMultiplier,
+                config.passiveHealthMultiplier,
+                value -> config.passiveHealthMultiplier = value
         );
         changed |= applyMultiplier(
-                peacefulDamageMultiplier,
-                config.peacefulDamageMultiplier,
-                value -> config.peacefulDamageMultiplier = value
+                passiveDamageMultiplier,
+                config.passiveDamageMultiplier,
+                value -> config.passiveDamageMultiplier = value
         );
         changed |= applyEnabled(
-                neutralEnabled,
-                config.neutralEnabled,
-                value -> config.neutralEnabled = value
+                critterEnabled,
+                config.critterEnabled,
+                value -> config.critterEnabled = value
         );
         changed |= applyMultiplier(
-                neutralHealthMultiplier,
-                config.neutralHealthMultiplier,
-                value -> config.neutralHealthMultiplier = value
+                critterHealthMultiplier,
+                config.critterHealthMultiplier,
+                value -> config.critterHealthMultiplier = value
         );
         changed |= applyMultiplier(
-                neutralDamageMultiplier,
-                config.neutralDamageMultiplier,
-                value -> config.neutralDamageMultiplier = value
+                critterDamageMultiplier,
+                config.critterDamageMultiplier,
+                value -> config.critterDamageMultiplier = value
         );
         changed |= applyEnabled(
                 hostileEnabled,
@@ -242,6 +272,51 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 hostileDamageMultiplier,
                 config.hostileDamageMultiplier,
                 value -> config.hostileDamageMultiplier = value
+        );
+        changed |= applyEnabled(
+                eliteEnabled,
+                config.eliteEnabled,
+                value -> config.eliteEnabled = value
+        );
+        changed |= applyMultiplier(
+                eliteHealthMultiplier,
+                config.eliteHealthMultiplier,
+                value -> config.eliteHealthMultiplier = value
+        );
+        changed |= applyMultiplier(
+                eliteDamageMultiplier,
+                config.eliteDamageMultiplier,
+                value -> config.eliteDamageMultiplier = value
+        );
+        changed |= applyEnabled(
+                minibossEnabled,
+                config.minibossEnabled,
+                value -> config.minibossEnabled = value
+        );
+        changed |= applyMultiplier(
+                minibossHealthMultiplier,
+                config.minibossHealthMultiplier,
+                value -> config.minibossHealthMultiplier = value
+        );
+        changed |= applyMultiplier(
+                minibossDamageMultiplier,
+                config.minibossDamageMultiplier,
+                value -> config.minibossDamageMultiplier = value
+        );
+        changed |= applyEnabled(
+                worldbossEnabled,
+                config.worldbossEnabled,
+                value -> config.worldbossEnabled = value
+        );
+        changed |= applyMultiplier(
+                worldbossHealthMultiplier,
+                config.worldbossHealthMultiplier,
+                value -> config.worldbossHealthMultiplier = value
+        );
+        changed |= applyMultiplier(
+                worldbossDamageMultiplier,
+                config.worldbossDamageMultiplier,
+                value -> config.worldbossDamageMultiplier = value
         );
         changed |= applyEnabled(
                 bloodMoonEnabled,
@@ -387,19 +462,25 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
             HardcoreModeConfig config,
             int index
     ) {
-        float peacefulHealth = plugin.getHealthMultiplier(MobDisposition.PEACEFUL);
-        float peacefulDamage = plugin.getDamageMultiplier(MobDisposition.PEACEFUL);
-        float neutralHealth = plugin.getHealthMultiplier(MobDisposition.NEUTRAL);
-        float neutralDamage = plugin.getDamageMultiplier(MobDisposition.NEUTRAL);
-        float hostileHealth = plugin.getHealthMultiplier(MobDisposition.HOSTILE);
-        float hostileDamage = plugin.getDamageMultiplier(MobDisposition.HOSTILE);
+        float passiveHealth = plugin.getHealthMultiplier(MobCategory.PASSIVE);
+        float passiveDamage = plugin.getDamageMultiplier(MobCategory.PASSIVE);
+        float critterHealth = plugin.getHealthMultiplier(MobCategory.CRITTER);
+        float critterDamage = plugin.getDamageMultiplier(MobCategory.CRITTER);
+        float hostileHealth = plugin.getHealthMultiplier(MobCategory.HOSTILE);
+        float hostileDamage = plugin.getDamageMultiplier(MobCategory.HOSTILE);
+        float eliteHealth = plugin.getHealthMultiplier(MobCategory.ELITE);
+        float eliteDamage = plugin.getDamageMultiplier(MobCategory.ELITE);
+        float minibossHealth = plugin.getHealthMultiplier(MobCategory.MINIBOSS);
+        float minibossDamage = plugin.getDamageMultiplier(MobCategory.MINIBOSS);
+        float worldbossHealth = plugin.getHealthMultiplier(MobCategory.WORLDBOSS);
+        float worldbossDamage = plugin.getDamageMultiplier(MobCategory.WORLDBOSS);
 
         index = addToggleEntry(
                 commands,
                 events,
                 SETTINGS_LIST_ID,
                 index,
-                "Global Hardcore Mode: " + (config.enabled ? "ON" : "OFF"),
+                "Global Enemy Settings: " + (config.enabled ? "ON" : "OFF"),
                 config.enabled
         );
         index = addSliderEntry(
@@ -420,87 +501,76 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 config.damageMultiplier,
                 HardcoreSettingsPageEventData.KEY_GLOBAL_DAMAGE
         );
-        index = addCategoryToggleEntry(
-                commands,
-                events,
-                SETTINGS_LIST_ID,
-                index,
-                "Peaceful Creatures: " + (config.peacefulEnabled ? "ON" : "OFF"),
-                config.peacefulEnabled,
-                HardcoreSettingsPageEventData.KEY_PEACEFUL_ENABLED
+        // Two-column grid: left = Passive, Critter, Hostile; right = Elite, Miniboss, Worldboss.
+        String gridEntry = SETTINGS_LIST_ID + "[" + index + "]";
+        commands.append(SETTINGS_LIST_ID, ENTRY_TWO_COLUMN_PATH);
+
+        String leftList = gridEntry + " #LeftColumn";
+        String rightList = gridEntry + " #RightColumn";
+        int leftIndex = 0;
+        int rightIndex = 0;
+
+        leftIndex = addCategorySection(commands, events, leftList, leftIndex,
+                "Passive Creatures: " + (config.passiveEnabled ? "ON" : "OFF"),
+                config.passiveEnabled,
+                HardcoreSettingsPageEventData.KEY_PASSIVE_ENABLED,
+                passiveHealth,
+                HardcoreSettingsPageEventData.KEY_PASSIVE_HEALTH,
+                passiveDamage,
+                HardcoreSettingsPageEventData.KEY_PASSIVE_DAMAGE
         );
-        index = addSliderEntry(
-                commands,
-                events,
-                SETTINGS_LIST_ID,
-                index,
-                "Mob Health",
-                peacefulHealth,
-                HardcoreSettingsPageEventData.KEY_PEACEFUL_HEALTH
+
+        leftIndex = addCategorySection(commands, events, leftList, leftIndex,
+                "Critter Creatures: " + (config.critterEnabled ? "ON" : "OFF"),
+                config.critterEnabled,
+                HardcoreSettingsPageEventData.KEY_CRITTER_ENABLED,
+                critterHealth,
+                HardcoreSettingsPageEventData.KEY_CRITTER_HEALTH,
+                critterDamage,
+                HardcoreSettingsPageEventData.KEY_CRITTER_DAMAGE
         );
-        index = addSliderEntry(
-                commands,
-                events,
-                SETTINGS_LIST_ID,
-                index,
-                "Mob Damage",
-                peacefulDamage,
-                HardcoreSettingsPageEventData.KEY_PEACEFUL_DAMAGE
-        );
-        index = addCategoryToggleEntry(
-                commands,
-                events,
-                SETTINGS_LIST_ID,
-                index,
-                "Neutral Creatures: " + (config.neutralEnabled ? "ON" : "OFF"),
-                config.neutralEnabled,
-                HardcoreSettingsPageEventData.KEY_NEUTRAL_ENABLED
-        );
-        index = addSliderEntry(
-                commands,
-                events,
-                SETTINGS_LIST_ID,
-                index,
-                "Mob Health",
-                neutralHealth,
-                HardcoreSettingsPageEventData.KEY_NEUTRAL_HEALTH
-        );
-        index = addSliderEntry(
-                commands,
-                events,
-                SETTINGS_LIST_ID,
-                index,
-                "Mob Damage",
-                neutralDamage,
-                HardcoreSettingsPageEventData.KEY_NEUTRAL_DAMAGE
-        );
-        index = addCategoryToggleEntry(
-                commands,
-                events,
-                SETTINGS_LIST_ID,
-                index,
+
+        leftIndex = addCategorySection(commands, events, leftList, leftIndex,
                 "Hostile Creatures: " + (config.hostileEnabled ? "ON" : "OFF"),
                 config.hostileEnabled,
-                HardcoreSettingsPageEventData.KEY_HOSTILE_ENABLED
-        );
-        index = addSliderEntry(
-                commands,
-                events,
-                SETTINGS_LIST_ID,
-                index,
-                "Mob Health",
+                HardcoreSettingsPageEventData.KEY_HOSTILE_ENABLED,
                 hostileHealth,
-                HardcoreSettingsPageEventData.KEY_HOSTILE_HEALTH
-        );
-        return addSliderEntry(
-                commands,
-                events,
-                SETTINGS_LIST_ID,
-                index,
-                "Mob Damage",
+                HardcoreSettingsPageEventData.KEY_HOSTILE_HEALTH,
                 hostileDamage,
                 HardcoreSettingsPageEventData.KEY_HOSTILE_DAMAGE
         );
+
+        rightIndex = addCategorySection(commands, events, rightList, rightIndex,
+                "Elite Creatures: " + (config.eliteEnabled ? "ON" : "OFF"),
+                config.eliteEnabled,
+                HardcoreSettingsPageEventData.KEY_ELITE_ENABLED,
+                eliteHealth,
+                HardcoreSettingsPageEventData.KEY_ELITE_HEALTH,
+                eliteDamage,
+                HardcoreSettingsPageEventData.KEY_ELITE_DAMAGE
+        );
+
+        rightIndex = addCategorySection(commands, events, rightList, rightIndex,
+                "Minibosses: " + (config.minibossEnabled ? "ON" : "OFF"),
+                config.minibossEnabled,
+                HardcoreSettingsPageEventData.KEY_MINIBOSS_ENABLED,
+                minibossHealth,
+                HardcoreSettingsPageEventData.KEY_MINIBOSS_HEALTH,
+                minibossDamage,
+                HardcoreSettingsPageEventData.KEY_MINIBOSS_DAMAGE
+        );
+
+        addCategorySection(commands, events, rightList, rightIndex,
+                "World Bosses: " + (config.worldbossEnabled ? "ON" : "OFF"),
+                config.worldbossEnabled,
+                HardcoreSettingsPageEventData.KEY_WORLDBOSS_ENABLED,
+                worldbossHealth,
+                HardcoreSettingsPageEventData.KEY_WORLDBOSS_HEALTH,
+                worldbossDamage,
+                HardcoreSettingsPageEventData.KEY_WORLDBOSS_DAMAGE
+        );
+
+        return index + 1;
     }
 
     private int buildBloodMoonSettings(
@@ -718,6 +788,28 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 STEP,
                 this::formatMultiplierText
         );
+    }
+
+    private int addCategorySection(
+            UICommandBuilder commands,
+            UIEventBuilder events,
+            String listId,
+            int index,
+            String label,
+            boolean enabled,
+            String enabledKey,
+            float healthValue,
+            String healthKey,
+            float damageValue,
+            String damageKey
+    ) {
+        index = addCategoryToggleEntry(commands, events, listId, index, label, enabled, enabledKey);
+        index = addSliderEntry(commands, events, listId, index, "Mob Health", healthValue, healthKey);
+        index = addSliderEntry(commands, events, listId, index, "Mob Damage", damageValue, damageKey);
+        // Spacer to visually separate categories inside the column
+        String spacerEntry = listId + "[" + index + "]";
+        commands.append(listId, ENTRY_SPACER_PATH);
+        return index + 1;
     }
 
     private int addSliderEntry(

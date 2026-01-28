@@ -13,7 +13,6 @@ import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
-import com.hypixel.hytale.server.core.asset.type.attitude.Attitude;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
 import com.hypixel.hytale.server.core.modules.entitystats.asset.DefaultEntityStatTypes;
@@ -26,10 +25,7 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.Config;
 import com.hypixel.hytale.server.core.util.EventTitleUtil;
 import com.hypixel.hytale.server.core.universe.Universe;
-import com.hypixel.hytale.server.npc.blackboard.Blackboard;
-import com.hypixel.hytale.server.npc.blackboard.view.attitude.AttitudeView;
 import com.hypixel.hytale.server.npc.entities.NPCEntity;
-import com.hypixel.hytale.server.npc.role.Role;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -39,6 +35,7 @@ public class HardcoreModePlugin extends JavaPlugin {
     private static final String RPG_LEVELING_CONFIG_CLASS = "org.zuxaw.plugin.config.LevelingConfig";
 
     private final Config<HardcoreModeConfig> config;
+    private final MobCategoryResolver mobCategoryResolver;
     private final HardcoreMobSetupSystem mobSetupSystem;
     private final HardcoreMobDamageSystem mobDamageSystem;
     private final HardcoreBloodMoonSystem bloodMoonSystem;
@@ -62,6 +59,7 @@ public class HardcoreModePlugin extends JavaPlugin {
     public HardcoreModePlugin(JavaPluginInit init) {
         super(init);
         this.config = withConfig("HardcoreMode", HardcoreModeConfig.CODEC);
+        this.mobCategoryResolver = new MobCategoryResolver();
         this.mobSetupSystem = new HardcoreMobSetupSystem(this);
         this.mobDamageSystem = new HardcoreMobDamageSystem(this);
         this.bloodMoonSystem = new HardcoreBloodMoonSystem(this);
@@ -80,6 +78,10 @@ public class HardcoreModePlugin extends JavaPlugin {
 
     public Config<HardcoreModeConfig> getConfig() {
         return config;
+    }
+
+    public MobCategory resolveMobCategory(String creatureId) {
+        return mobCategoryResolver.resolve(creatureId);
     }
 
     @Override
@@ -125,13 +127,13 @@ public class HardcoreModePlugin extends JavaPlugin {
         // No startup work needed.
     }
 
-    public void applyHealthModifier(EntityStatMap statMap, MobDisposition disposition) {
+    public void applyHealthModifier(EntityStatMap statMap, MobCategory category) {
         HardcoreModeConfig data = config.get();
         int healthStat = DefaultEntityStatTypes.getHealth();
         String key = HardcoreMobSetupSystem.HEALTH_MODIFIER_KEY;
-        float multiplier = getHealthMultiplier(disposition);
+        float multiplier = getHealthMultiplier(category);
 
-        if (!isMobEnabled(disposition) || multiplier <= 1.0f) {
+        if (!isMobEnabled(category) || multiplier <= 1.0f) {
             statMap.removeModifier(healthStat, key);
             statMap.maximizeStatValue(healthStat);
             return;
@@ -146,58 +148,83 @@ public class HardcoreModePlugin extends JavaPlugin {
         statMap.maximizeStatValue(healthStat);
     }
 
-    public float getHealthMultiplier(MobDisposition disposition) {
+    public float getHealthMultiplier(MobCategory category) {
         HardcoreModeConfig data = config.get();
-        switch (disposition) {
-            case PEACEFUL:
-                return resolveMultiplier(data.peacefulHealthMultiplier, data.healthMultiplier);
-            case NEUTRAL:
-                return resolveMultiplier(data.neutralHealthMultiplier, data.healthMultiplier);
+        float base = resolveCategoryMultiplier(category, true);
+        if (isBloodMoonActive() && isBloodMoonAffected(category)) {
+            return resolveMultiplier(data.bloodMoonHostileHealthMultiplier, base);
+        }
+        return base;
+    }
+
+    public float getDamageMultiplier(MobCategory category) {
+        HardcoreModeConfig data = config.get();
+        float base = resolveCategoryMultiplier(category, false);
+        if (isBloodMoonActive() && isBloodMoonAffected(category)) {
+            return resolveMultiplier(data.bloodMoonHostileDamageMultiplier, base);
+        }
+        return base;
+    }
+
+    private float resolveCategoryMultiplier(MobCategory category, boolean health) {
+        HardcoreModeConfig data = config.get();
+        switch (category) {
+            case PASSIVE:
+                return resolveMultiplier(health ? data.passiveHealthMultiplier : data.passiveDamageMultiplier, health ? data.healthMultiplier : data.damageMultiplier);
+            case CRITTER:
+                return resolveMultiplier(health ? data.critterHealthMultiplier : data.critterDamageMultiplier, health ? data.healthMultiplier : data.damageMultiplier);
             case HOSTILE:
+                return resolveMultiplier(health ? data.hostileHealthMultiplier : data.hostileDamageMultiplier, health ? data.healthMultiplier : data.damageMultiplier);
+            case ELITE:
+                return resolveMultiplier(health ? data.eliteHealthMultiplier : data.eliteDamageMultiplier, health ? data.healthMultiplier : data.damageMultiplier);
+            case MINIBOSS:
+                return resolveMultiplier(health ? data.minibossHealthMultiplier : data.minibossDamageMultiplier, health ? data.healthMultiplier : data.damageMultiplier);
+            case WORLDBOSS:
+                return resolveMultiplier(health ? data.worldbossHealthMultiplier : data.worldbossDamageMultiplier, health ? data.healthMultiplier : data.damageMultiplier);
+            case NONE:
             default:
-                float base = resolveMultiplier(data.hostileHealthMultiplier, data.healthMultiplier);
-                if (isBloodMoonActive()) {
-                    return resolveMultiplier(data.bloodMoonHostileHealthMultiplier, base);
-                }
-                return base;
+                return resolveMultiplier(health ? data.healthMultiplier : data.damageMultiplier, health ? data.healthMultiplier : data.damageMultiplier);
         }
     }
 
-    public float getDamageMultiplier(MobDisposition disposition) {
-        HardcoreModeConfig data = config.get();
-        switch (disposition) {
-            case PEACEFUL:
-                return resolveMultiplier(data.peacefulDamageMultiplier, data.damageMultiplier);
-            case NEUTRAL:
-                return resolveMultiplier(data.neutralDamageMultiplier, data.damageMultiplier);
+    private boolean isBloodMoonAffected(MobCategory category) {
+        switch (category) {
             case HOSTILE:
+            case ELITE:
+            case MINIBOSS:
+            case WORLDBOSS:
+                return true;
             default:
-                float base = resolveMultiplier(data.hostileDamageMultiplier, data.damageMultiplier);
-                if (isBloodMoonActive()) {
-                    return resolveMultiplier(data.bloodMoonHostileDamageMultiplier, base);
-                }
-                return base;
+                return false;
         }
     }
 
-    public boolean isCategoryEnabled(MobDisposition disposition) {
+    public boolean isCategoryEnabled(MobCategory category) {
         HardcoreModeConfig data = config.get();
-        switch (disposition) {
-            case PEACEFUL:
-                return data.peacefulEnabled;
-            case NEUTRAL:
-                return data.neutralEnabled;
+        switch (category) {
+            case PASSIVE:
+                return data.passiveEnabled;
+            case CRITTER:
+                return data.critterEnabled;
             case HOSTILE:
-            default:
                 return data.hostileEnabled;
+            case ELITE:
+                return data.eliteEnabled;
+            case MINIBOSS:
+                return data.minibossEnabled;
+            case WORLDBOSS:
+                return data.worldbossEnabled;
+            case NONE:
+            default:
+                return false;
         }
     }
 
-    public boolean isMobEnabled(MobDisposition disposition) {
-        if (disposition == MobDisposition.HOSTILE && isBloodMoonActive()) {
+    public boolean isMobEnabled(MobCategory category) {
+        if (isBloodMoonActive() && isBloodMoonAffected(category)) {
             return true;
         }
-        return isCategoryEnabled(disposition);
+        return isCategoryEnabled(category);
     }
 
     public boolean isBloodMoonActive() {
@@ -239,45 +266,8 @@ public class HardcoreModePlugin extends JavaPlugin {
         refreshBloodMoonState(store, true);
     }
 
-    public MobDisposition resolveMobDisposition(Store<EntityStore> store, NPCEntity npcEntity) {
-        return resolveMobDispositionInternal(store, npcEntity, getAnyPlayerRef(store));
-    }
-
-    public MobDisposition resolveMobDisposition(
-            Store<EntityStore> store,
-            NPCEntity npcEntity,
-            Ref<EntityStore> playerRef
-    ) {
-        return resolveMobDispositionInternal(store, npcEntity, playerRef);
-    }
-
-    private MobDisposition resolveMobDispositionInternal(
-            Store<EntityStore> store,
-            NPCEntity npcEntity,
-            Ref<EntityStore> playerRef
-    ) {
-        Role role = npcEntity == null ? null : npcEntity.getRole();
-        if (role == null) {
-            return MobDisposition.NEUTRAL;
-        }
-
-        Attitude attitude = resolveAttitude(store, role, playerRef);
-        if (attitude == null) {
-            return MobDisposition.NEUTRAL;
-        }
-
-        switch (attitude) {
-            case HOSTILE:
-                return MobDisposition.HOSTILE;
-            case NEUTRAL:
-                return MobDisposition.NEUTRAL;
-            case IGNORE:
-            case FRIENDLY:
-            case REVERED:
-                return MobDisposition.PEACEFUL;
-            default:
-                return MobDisposition.NEUTRAL;
-        }
+    public MobCategory resolveMobCategory(NPCEntity npcEntity) {
+        return mobCategoryResolver.resolve(npcEntity);
     }
 
     public void applyToExistingMobs(Store<EntityStore> store) {
@@ -330,8 +320,8 @@ public class HardcoreModePlugin extends JavaPlugin {
             }
 
             NPCEntity npcEntity = npcType == null ? null : chunk.getComponent(i, npcType);
-            MobDisposition disposition = resolveMobDisposition(store, npcEntity, playerRef);
-            applyHealthModifier(statMap, disposition);
+            MobCategory category = resolveMobCategory(npcEntity);
+            applyHealthModifier(statMap, category);
         }
     }
 
@@ -339,20 +329,20 @@ public class HardcoreModePlugin extends JavaPlugin {
         HardcoreModeConfig data = config.get();
         boolean changed = false;
 
-        if (data.peacefulHealthMultiplier <= 0.0f) {
-            data.peacefulHealthMultiplier = data.healthMultiplier;
+        if (data.passiveHealthMultiplier <= 0.0f) {
+            data.passiveHealthMultiplier = data.healthMultiplier;
             changed = true;
         }
-        if (data.peacefulDamageMultiplier <= 0.0f) {
-            data.peacefulDamageMultiplier = data.damageMultiplier;
+        if (data.passiveDamageMultiplier <= 0.0f) {
+            data.passiveDamageMultiplier = data.damageMultiplier;
             changed = true;
         }
-        if (data.neutralHealthMultiplier <= 0.0f) {
-            data.neutralHealthMultiplier = data.healthMultiplier;
+        if (data.critterHealthMultiplier <= 0.0f) {
+            data.critterHealthMultiplier = data.healthMultiplier;
             changed = true;
         }
-        if (data.neutralDamageMultiplier <= 0.0f) {
-            data.neutralDamageMultiplier = data.damageMultiplier;
+        if (data.critterDamageMultiplier <= 0.0f) {
+            data.critterDamageMultiplier = data.damageMultiplier;
             changed = true;
         }
         if (data.hostileHealthMultiplier <= 0.0f) {
@@ -361,6 +351,30 @@ public class HardcoreModePlugin extends JavaPlugin {
         }
         if (data.hostileDamageMultiplier <= 0.0f) {
             data.hostileDamageMultiplier = data.damageMultiplier;
+            changed = true;
+        }
+        if (data.eliteHealthMultiplier <= 0.0f) {
+            data.eliteHealthMultiplier = data.healthMultiplier;
+            changed = true;
+        }
+        if (data.eliteDamageMultiplier <= 0.0f) {
+            data.eliteDamageMultiplier = data.damageMultiplier;
+            changed = true;
+        }
+        if (data.minibossHealthMultiplier <= 0.0f) {
+            data.minibossHealthMultiplier = data.healthMultiplier;
+            changed = true;
+        }
+        if (data.minibossDamageMultiplier <= 0.0f) {
+            data.minibossDamageMultiplier = data.damageMultiplier;
+            changed = true;
+        }
+        if (data.worldbossHealthMultiplier <= 0.0f) {
+            data.worldbossHealthMultiplier = data.healthMultiplier;
+            changed = true;
+        }
+        if (data.worldbossDamageMultiplier <= 0.0f) {
+            data.worldbossDamageMultiplier = data.damageMultiplier;
             changed = true;
         }
         if (data.bloodMoonHostileHealthMultiplier <= 0.0f) {
@@ -483,37 +497,6 @@ public class HardcoreModePlugin extends JavaPlugin {
     private long getCurrentHourOfEpoch(WorldTimeResource time) {
         long epochDay = time.getGameDateTime().toLocalDate().toEpochDay();
         return (epochDay * 24L) + time.getCurrentHour();
-    }
-
-    private Attitude resolveAttitude(Store<EntityStore> store, Role role, Ref<EntityStore> playerRef) {
-        if (store == null || role == null) {
-            return Attitude.NEUTRAL;
-        }
-
-        if (playerRef == null || !playerRef.isValid()) {
-            return defaultPlayerAttitude(role);
-        }
-
-        Blackboard blackboard = store.getResource(Blackboard.getResourceType());
-        if (blackboard == null) {
-            return defaultPlayerAttitude(role);
-        }
-
-        AttitudeView view = blackboard.getView(AttitudeView.class, playerRef, store);
-        if (view == null) {
-            return defaultPlayerAttitude(role);
-        }
-
-        return view.getAttitude(playerRef, role, playerRef, store);
-    }
-
-    private Attitude defaultPlayerAttitude(Role role) {
-        if (role == null || role.getWorldSupport() == null) {
-            return Attitude.NEUTRAL;
-        }
-
-        Attitude attitude = role.getWorldSupport().getDefaultPlayerAttitude();
-        return attitude == null ? Attitude.NEUTRAL : attitude;
     }
 
     public Ref<EntityStore> getAnyPlayerRef(Store<EntityStore> store) {
