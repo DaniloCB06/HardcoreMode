@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -28,20 +29,30 @@ import java.util.regex.Pattern;
 public class MobCategoryResolver {
     private static final Logger LOGGER = Logger.getLogger(MobCategoryResolver.class.getName());
     private static final String CLASSIFICATION_FILE = "Criaturas_classificadas.txt";
+    private static final String JSON_CLASSIFICATION_FILE = "HardcoreModeCategories.json";
     private static final Pattern SECTION_PATTERN = Pattern.compile(
             "mobs_(\\w+)\\s*=\\s*\\{([^}]*)\\}",
             Pattern.CASE_INSENSITIVE | Pattern.DOTALL
     );
     private static final Pattern ENTRY_PATTERN = Pattern.compile("\"([^\"]+)\"");
+    private static final Pattern JSON_ENTRY_PATTERN = Pattern.compile(
+            "\\{\\s*\"category\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"pattern\"\\s*:\\s*\"([^\"]+)\"\\s*}",
+            Pattern.CASE_INSENSITIVE | Pattern.DOTALL
+    );
 
     private final List<CategoryPattern> patterns;
+    private final Path dataDirectory;
+    private final Path jsonPath;
 
     public MobCategoryResolver() {
-        this(loadClassificationText());
+        this(null);
     }
 
-    MobCategoryResolver(String sourceText) {
-        this.patterns = buildPatterns(sourceText);
+    public MobCategoryResolver(Path dataDirectory) {
+        this.dataDirectory = dataDirectory;
+        this.jsonPath = resolveJsonPath();
+        this.patterns = new ArrayList<>();
+        loadPatterns();
     }
 
     /**
@@ -92,9 +103,9 @@ public class MobCategoryResolver {
         return patterns.size();
     }
 
-    private static String loadClassificationText() {
-        // 1) Try external file (same directory as the mod jar / working dir)
-        Path external = Path.of(CLASSIFICATION_FILE);
+    private String loadClassificationText() {
+        // 1) Try external file (data directory if available, then working dir)
+        Path external = dataDirectory != null ? dataDirectory.resolve(CLASSIFICATION_FILE) : Path.of(CLASSIFICATION_FILE);
         if (Files.isRegularFile(external)) {
             try {
                 return Files.readString(external, StandardCharsets.UTF_8);
@@ -117,7 +128,66 @@ public class MobCategoryResolver {
         return "";
     }
 
-    private List<CategoryPattern> buildPatterns(String sourceText) {
+    public List<CategoryEntry> getEntries() {
+        List<CategoryEntry> entries = new ArrayList<>();
+        for (CategoryPattern p : patterns) {
+            entries.add(new CategoryEntry(p.category, p.rawPattern));
+        }
+        return Collections.unmodifiableList(entries);
+    }
+
+    public void reload() {
+        patterns.clear();
+        loadPatterns();
+    }
+
+    private void loadPatterns() {
+        List<CategoryPattern> loaded = tryLoadFromJson();
+        if (loaded.isEmpty()) {
+            String sourceText = loadClassificationText();
+            loaded = buildPatternsFromText(sourceText);
+            writeJsonSnapshot(loaded);
+        }
+        patterns.addAll(loaded);
+    }
+
+    private List<CategoryPattern> tryLoadFromJson() {
+        if (jsonPath == null || !Files.isRegularFile(jsonPath)) {
+            return Collections.emptyList();
+        }
+
+        try {
+            String content = Files.readString(jsonPath, StandardCharsets.UTF_8);
+            return buildPatternsFromJson(content);
+        } catch (IOException e) {
+            LOGGER.log(Level.WARNING, "Failed to read mob categories JSON at " + jsonPath, e);
+            return Collections.emptyList();
+        }
+    }
+
+    private List<CategoryPattern> buildPatternsFromJson(String json) {
+        List<CategoryPattern> result = new ArrayList<>();
+        if (json == null || json.isEmpty()) {
+            return result;
+        }
+
+        Matcher matcher = JSON_ENTRY_PATTERN.matcher(json);
+        int order = 0;
+        while (matcher.find()) {
+            String categoryKey = matcher.group(1);
+            String rawPattern = matcher.group(2);
+            MobCategory category = MobCategory.fromFileKey(categoryKey);
+            if (category == MobCategory.NONE) {
+                LOGGER.fine("Ignoring unknown category in JSON: " + categoryKey);
+                continue;
+            }
+            Pattern regex = compileGlob(rawPattern);
+            result.add(new CategoryPattern(category, rawPattern, regex, order++));
+        }
+        return result;
+    }
+
+    private List<CategoryPattern> buildPatternsFromText(String sourceText) {
         List<CategoryPattern> result = new ArrayList<>();
         if (sourceText == null || sourceText.isEmpty()) {
             return result;
@@ -143,6 +213,54 @@ public class MobCategoryResolver {
         }
 
         return result;
+    }
+
+    private void writeJsonSnapshot(List<CategoryPattern> loaded) {
+        if (jsonPath == null || loaded.isEmpty()) {
+            return;
+        }
+        try {
+            Path parent = jsonPath.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            String json = serializeToJson(loaded);
+            Files.writeString(jsonPath, json, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            LOGGER.log(Level.WARNING, "Failed to write mob categories JSON at " + jsonPath, e);
+        }
+    }
+
+    private String serializeToJson(List<CategoryPattern> loaded) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\n  \"entries\": [\n");
+        for (int i = 0; i < loaded.size(); i++) {
+            CategoryPattern p = loaded.get(i);
+            sb.append("    {\"category\": \"")
+                    .append(escapeJson(p.category.name()))
+                    .append("\", \"pattern\": \"")
+                    .append(escapeJson(p.rawPattern))
+                    .append("\"}");
+            if (i < loaded.size() - 1) {
+                sb.append(",");
+            }
+            sb.append("\n");
+        }
+        sb.append("  ]\n}");
+        return sb.toString();
+    }
+
+    private String escapeJson(String value) {
+        return value
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"");
+    }
+
+    private Path resolveJsonPath() {
+        if (dataDirectory != null) {
+            return dataDirectory.resolve(JSON_CLASSIFICATION_FILE);
+        }
+        return Path.of(JSON_CLASSIFICATION_FILE);
     }
 
     private static Pattern compileGlob(String raw) {
@@ -184,6 +302,7 @@ public class MobCategoryResolver {
         private final int literalLength;
         private final int wildcardCount;
         private final int order;
+        private final String rawPattern;
 
         private CategoryPattern(MobCategory category, String rawPattern, Pattern pattern, int order) {
             this.category = category;
@@ -192,6 +311,7 @@ public class MobCategoryResolver {
             this.literalLength = rawPattern.length() - stars;
             this.wildcardCount = stars;
             this.order = order;
+            this.rawPattern = rawPattern;
         }
 
         private boolean isMoreSpecificThan(CategoryPattern other) {
@@ -205,6 +325,16 @@ public class MobCategoryResolver {
                 return wildcardCount < other.wildcardCount;
             }
             return order < other.order;
+        }
+    }
+
+    public static final class CategoryEntry {
+        public final MobCategory category;
+        public final String pattern;
+
+        public CategoryEntry(MobCategory category, String pattern) {
+            this.category = category;
+            this.pattern = pattern;
         }
     }
 }

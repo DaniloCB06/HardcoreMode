@@ -1,0 +1,32 @@
+$C = "../Common.ui";
+
+Group {
+  LayoutMode: Left;
+  Anchor: (Width: 1030, Height: 26);
+  Padding: (Left: 24, Right: 4);
+
+  Label #Key {
+    Anchor: (Width: 0, Height: 0);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 1, TextColor: #000000, VerticalAlignment: Center);
+    Text: "";
+    Visible: false;
+  }
+
+  Label #KeyValue {
+    Anchor: (Width: 0, Height: 0);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 1, TextColor: #000000, VerticalAlignment: Center);
+    Visible: false;
+    Text: "";
+  }
+
+  Label #Label {
+    FlexWeight: 1;
+    Style: (...$C.@DefaultLabelStyle, FontSize: 14, TextColor: #cfd8e3, VerticalAlignment: Center);
+    Text: "Creature";
+  }
+
+  $C.@SmallSecondaryTextButton #ManageButton {
+    Anchor: (Width: 90, Height: 24);
+    Text: "Options";
+  }
+}

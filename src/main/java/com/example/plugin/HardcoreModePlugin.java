@@ -59,7 +59,7 @@ public class HardcoreModePlugin extends JavaPlugin {
     public HardcoreModePlugin(JavaPluginInit init) {
         super(init);
         this.config = withConfig("HardcoreMode", HardcoreModeConfig.CODEC);
-        this.mobCategoryResolver = new MobCategoryResolver();
+        this.mobCategoryResolver = new MobCategoryResolver(getDataDirectory());
         this.mobSetupSystem = new HardcoreMobSetupSystem(this);
         this.mobDamageSystem = new HardcoreMobDamageSystem(this);
         this.bloodMoonSystem = new HardcoreBloodMoonSystem(this);
@@ -82,6 +82,10 @@ public class HardcoreModePlugin extends JavaPlugin {
 
     public MobCategory resolveMobCategory(String creatureId) {
         return mobCategoryResolver.resolve(creatureId);
+    }
+
+    public MobCategoryResolver getMobCategoryResolver() {
+        return mobCategoryResolver;
     }
 
     @Override
