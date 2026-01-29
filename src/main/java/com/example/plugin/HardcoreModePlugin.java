@@ -228,16 +228,25 @@ public class HardcoreModePlugin extends JavaPlugin {
     }
 
     public boolean isBloodMoonAffected(MobCategory category) {
+        HardcoreModeConfig data = config.get();
+        if (data == null) {
+            return false;
+        }
+
         switch (category) {
             case HOSTILE:
+                return data.bloodMoonHostileEnabled;
             case ELITE:
+                return data.bloodMoonEliteEnabled;
             case MINIBOSS:
+                return data.bloodMoonMinibossEnabled;
             case WORLDBOSS:
-                return true;
+                return data.bloodMoonWorldbossEnabled;
             default:
                 return false;
         }
     }
+
 
     public boolean isCategoryEnabled(MobCategory category) {
         HardcoreModeConfig data = config.get();
