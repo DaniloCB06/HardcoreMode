@@ -8,6 +8,7 @@ import com.example.plugin.systems.HardcoreMobSetupSystem;
 import com.example.plugin.systems.HardcoreMobStatRefreshSystem;
 import com.example.plugin.systems.HardcorePlayerDeathConfigSystem;
 import com.example.plugin.systems.HardcorePlayerPresenceSystem;
+import com.example.plugin.systems.HardcoreProgressBarSystem;
 import com.hypixel.hytale.component.ArchetypeChunk;
 import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
@@ -51,6 +52,7 @@ public class HardcoreModePlugin extends JavaPlugin {
     private final HardcoreBloodMoonSystem bloodMoonSystem;
     private final HardcoreMobStatRefreshSystem mobStatRefreshSystem;
     private final HardcorePlayerPresenceSystem playerPresenceSystem;
+    private final HardcoreProgressBarSystem progressBarSystem;
 
     // ✅ Cache de playerRef agora é “por store”
     private volatile Ref<EntityStore> cachedPlayerRef;
@@ -62,6 +64,10 @@ public class HardcoreModePlugin extends JavaPlugin {
 
     private boolean bloodMoonActive;
     private Long forcedBloodMoonEndHourOfEpoch;
+    
+    // ✅ Campos para rastrear progresso da Blood Moon
+    private Long bloodMoonStartHourOfEpoch;
+    private Long bloodMoonEndHourOfEpoch;
 
     private boolean rpgLevelingChecked;
     private boolean rpgLevelingAvailable;
@@ -82,6 +88,7 @@ public class HardcoreModePlugin extends JavaPlugin {
         this.bloodMoonSystem = new HardcoreBloodMoonSystem(this);
         this.mobStatRefreshSystem = new HardcoreMobStatRefreshSystem(this);
         this.playerPresenceSystem = new HardcorePlayerPresenceSystem(this);
+        this.progressBarSystem = new HardcoreProgressBarSystem(this);
         instance = this;
     }
 
@@ -116,6 +123,7 @@ public class HardcoreModePlugin extends JavaPlugin {
         getEntityStoreRegistry().registerSystem(mobSetupSystem);
         getEntityStoreRegistry().registerSystem(mobDamageSystem);
         getEntityStoreRegistry().registerSystem(bloodMoonSystem);
+        getEntityStoreRegistry().registerSystem(progressBarSystem);
 
         // ✅ Registro com fallback (dependência de DropPlayerDeathItems fica opcional)
         registerPlayerDeathConfigSystemWithFallback();
@@ -144,14 +152,11 @@ public class HardcoreModePlugin extends JavaPlugin {
         for (HardcorePlayerDeathConfigSystem.DependencyMode mode : modes) {
             try {
                 getEntityStoreRegistry().registerSystem(new HardcorePlayerDeathConfigSystem(this, mode));
-                System.out.println("[HardcoreMode] PlayerDeathConfigSystem registrado com mode=" + mode);
                 return;
             } catch (Throwable t) {
-                System.out.println("[HardcoreMode] Falha ao registrar PlayerDeathConfigSystem com mode=" + mode + " -> " + t);
+                // Falha silenciosa, tenta próximo modo
             }
         }
-
-        System.out.println("[HardcoreMode] PlayerDeathConfigSystem não pôde ser registrado. O mod continuará sem alterar morte do player.");
     }
 
     /**
@@ -324,15 +329,61 @@ public class HardcoreModePlugin extends JavaPlugin {
     public boolean isBloodMoonActive() {
         return bloodMoonActive;
     }
+    
+    /**
+     * Retorna a porcentagem de progresso da Blood Moon (0.0 a 1.0).
+     * 1.0 = começou (100%), 0.0 = terminou (0%)
+     */
+    public float getBloodMoonProgress(Store<EntityStore> store) {
+        if (!bloodMoonActive || bloodMoonStartHourOfEpoch == null || bloodMoonEndHourOfEpoch == null) {
+            return 0.0f;
+        }
+        
+        WorldTimeResource time = store.getResource(WorldTimeResource.getResourceType());
+        if (time == null) return 0.0f;
+        
+        long currentHourOfEpoch = getCurrentHourOfEpoch(time);
+        long totalDuration = bloodMoonEndHourOfEpoch - bloodMoonStartHourOfEpoch;
+        
+        if (totalDuration <= 0) return 0.0f;
+        
+        long elapsed = currentHourOfEpoch - bloodMoonStartHourOfEpoch;
+        long remaining = bloodMoonEndHourOfEpoch - currentHourOfEpoch;
+        
+        if (remaining <= 0) return 0.0f;
+        if (elapsed < 0) return 1.0f;
+        
+        // Retorna o tempo restante como porcentagem
+        return Math.max(0.0f, Math.min(1.0f, (float) remaining / (float) totalDuration));
+    }
+    
+    /**
+     * Retorna as horas restantes da Blood Moon
+     */
+    public int getBloodMoonHoursRemaining(Store<EntityStore> store) {
+        if (!bloodMoonActive || bloodMoonEndHourOfEpoch == null) {
+            return 0;
+        }
+        
+        WorldTimeResource time = store.getResource(WorldTimeResource.getResourceType());
+        if (time == null) return 0;
+        
+        long currentHourOfEpoch = getCurrentHourOfEpoch(time);
+        long remaining = bloodMoonEndHourOfEpoch - currentHourOfEpoch;
+        
+        return Math.max(0, (int) remaining);
+    }
 
     public void refreshBloodMoonState(Store<EntityStore> store, boolean applyToMobs) {
         boolean active = computeBloodMoonActive(store);
         boolean changed = active != bloodMoonActive;
 
         if (changed) {
-            System.out.println("[HardcoreDebug] Blood Moon State Changed! New Active: " + active
-                    + " Old: " + bloodMoonActive
-                    + " StoreHash: " + System.identityHashCode(store));
+            // Reseta progresso quando a Blood Moon termina
+            if (!active) {
+                bloodMoonStartHourOfEpoch = null;
+                bloodMoonEndHourOfEpoch = null;
+            }
         }
 
         bloodMoonActive = active;
@@ -358,11 +409,6 @@ public class HardcoreModePlugin extends JavaPlugin {
 
         long currentHourOfEpoch = getCurrentHourOfEpoch(time);
         forcedBloodMoonEndHourOfEpoch = currentHourOfEpoch + durationHours;
-
-        System.out.println("[HardcoreDebug] Forcing Blood Moon Now. Duration: " + durationHours
-                + " CurrentHour: " + currentHourOfEpoch
-                + " EndHour: " + forcedBloodMoonEndHourOfEpoch
-                + " StoreHash: " + System.identityHashCode(store));
 
         refreshBloodMoonState(store, true);
     }
@@ -461,9 +507,15 @@ public class HardcoreModePlugin extends JavaPlugin {
 
         Long forcedEnd = forcedBloodMoonEndHourOfEpoch;
         if (forcedEnd != null) {
-            if (currentHourOfEpoch < forcedEnd) return true;
+            if (currentHourOfEpoch < forcedEnd) {
+                // ✅ Define progresso para Blood Moon forçada
+                if (bloodMoonStartHourOfEpoch == null) {
+                    bloodMoonStartHourOfEpoch = currentHourOfEpoch;
+                }
+                bloodMoonEndHourOfEpoch = forcedEnd;
+                return true;
+            }
 
-            System.out.println("[HardcoreDebug] Forced Blood Moon Expired. Current: " + currentHourOfEpoch + " End: " + forcedEnd);
             forcedBloodMoonEndHourOfEpoch = null;
         }
 
@@ -489,18 +541,16 @@ public class HardcoreModePlugin extends JavaPlugin {
         boolean activeCurrent = currentHourOfEpoch >= startEpochCurrent && currentHourOfEpoch < endEpochCurrent;
         boolean activePrev = currentHourOfEpoch >= startEpochPrev && currentHourOfEpoch < endEpochPrev;
         boolean active = activeCurrent || activePrev;
-
-        if (active || (currentHourOfEpoch >= startEpochCurrent - 24 && currentHourOfEpoch <= startEpochCurrent + 24)) {
-            System.out.println("[HardcoreDebug] Natural Calc: CurrentEpoch=" + currentHourOfEpoch
-                    + " EpochDay=" + epochDay
-                    + " Interval=" + intervalDays
-                    + " StartCur=" + startEpochCurrent
-                    + " EndCur=" + endEpochCurrent
-                    + " ActiveCur=" + activeCurrent
-                    + " StartPrev=" + startEpochPrev
-                    + " EndPrev=" + endEpochPrev
-                    + " ActivePrev=" + activePrev
-                    + " FINAL_ACTIVE=" + active);
+        
+        // ✅ Define horas de início e fim quando a Blood Moon está ativa
+        if (active) {
+            if (activeCurrent) {
+                bloodMoonStartHourOfEpoch = startEpochCurrent;
+                bloodMoonEndHourOfEpoch = endEpochCurrent;
+            } else if (activePrev) {
+                bloodMoonStartHourOfEpoch = startEpochPrev;
+                bloodMoonEndHourOfEpoch = endEpochPrev;
+            }
         }
 
         return active;

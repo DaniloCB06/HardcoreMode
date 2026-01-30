@@ -1,6 +1,7 @@
 package com.example.plugin.systems;
 
 import com.example.plugin.HardcoreModePlugin;
+import com.example.plugin.ui.HardcoreProgressBarHud;
 import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
@@ -35,10 +36,22 @@ public class HardcorePlayerPresenceSystem extends RefChangeSystem<EntityStore, P
             Store<EntityStore> store,
             CommandBuffer<EntityStore> commandBuffer
     ) {
-        // ✅ Garante estado correto do Blood Moon ao entrar/trocar de instância (sem custo alto)
         plugin.refreshBloodMoonStateIfNeeded(store, true);
-
         plugin.applyToExistingMobs(store, ref);
+        
+        // Abre a HUD da Blood Moon se estiver ativa
+        if (plugin.isBloodMoonActive()) {
+            float progress = plugin.getBloodMoonProgress(store);
+            int hoursRemaining = plugin.getBloodMoonHoursRemaining(store);
+            
+            HardcoreProgressBarHud hud = new HardcoreProgressBarHud(
+                component.getPlayerRef(),
+                progress,
+                hoursRemaining,
+                true
+            );
+            component.getHudManager().setCustomHud(component.getPlayerRef(), hud);
+        }
     }
 
     @Override
@@ -50,7 +63,6 @@ public class HardcorePlayerPresenceSystem extends RefChangeSystem<EntityStore, P
             CommandBuffer<EntityStore> commandBuffer
     ) {
         plugin.refreshBloodMoonStateIfNeeded(store, true);
-
         plugin.applyToExistingMobs(store, ref);
     }
 
@@ -61,6 +73,6 @@ public class HardcorePlayerPresenceSystem extends RefChangeSystem<EntityStore, P
             Store<EntityStore> store,
             CommandBuffer<EntityStore> commandBuffer
     ) {
-        // No cleanup needed.
+        // Nenhuma limpeza necessária
     }
 }
