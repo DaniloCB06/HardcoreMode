@@ -2,11 +2,10 @@ package com.example.plugin.systems;
 
 import com.example.plugin.HardcoreModePlugin;
 import com.hypixel.hytale.component.AddReason;
+import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Holder;
 import com.hypixel.hytale.component.RemoveReason;
-import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.HolderSystem;
 import com.hypixel.hytale.server.core.entity.entities.Player;
@@ -29,9 +28,12 @@ public class HardcoreMobSetupSystem extends HolderSystem<EntityStore> {
 
     @Override
     public void onEntityAdd(Holder<EntityStore> holder, AddReason reason, Store<EntityStore> store) {
-        plugin.refreshBloodMoonState(store, true);
+        // ✅ Só recalcula se a HORA do mundo mudou (evita spam/custo, e não depende de thread)
+        plugin.refreshBloodMoonStateIfNeeded(store, true);
+
         ComponentType<EntityStore, Player> playerType = Player.getComponentType();
         if (playerType != null && holder.getComponent(playerType) != null) {
+            // Player entrou -> aplica nos mobs existentes (se tiver player, bom momento)
             plugin.applyToExistingMobs(store);
             return;
         }
@@ -46,13 +48,10 @@ public class HardcoreMobSetupSystem extends HolderSystem<EntityStore> {
             return;
         }
 
-        Ref<EntityStore> playerRef = plugin.getAnyPlayerRef(store);
-        if (playerRef == null || !playerRef.isValid()) {
-            return;
-        }
-
+        // ✅ Removido: dependência desnecessária de playerRef (isso é uma fonte de timing/instância)
         ComponentType<EntityStore, NPCEntity> npcType = NPCEntity.getComponentType();
         NPCEntity npcEntity = npcType == null ? null : holder.getComponent(npcType);
+
         plugin.applyHealthModifier(statMap, plugin.resolveMobCategory(npcEntity));
     }
 

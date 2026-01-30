@@ -35,6 +35,9 @@ public class HardcorePlayerPresenceSystem extends RefChangeSystem<EntityStore, P
             Store<EntityStore> store,
             CommandBuffer<EntityStore> commandBuffer
     ) {
+        // ✅ Garante estado correto do Blood Moon ao entrar/trocar de instância (sem custo alto)
+        plugin.refreshBloodMoonStateIfNeeded(store, true);
+
         plugin.applyToExistingMobs(store, ref);
     }
 
@@ -46,6 +49,8 @@ public class HardcorePlayerPresenceSystem extends RefChangeSystem<EntityStore, P
             Store<EntityStore> store,
             CommandBuffer<EntityStore> commandBuffer
     ) {
+        plugin.refreshBloodMoonStateIfNeeded(store, true);
+
         plugin.applyToExistingMobs(store, ref);
     }
 

@@ -42,23 +42,8 @@ public class HardcoreMobDamageSystem extends DamageEventSystem {
             CommandBuffer<EntityStore> commandBuffer,
             Damage damage
     ) {
-        plugin.refreshBloodMoonState(store, true);
-        ComponentType<EntityStore, Player> playerType = Player.getComponentType();
-        Ref<EntityStore> playerRef = null;
-        Ref<EntityStore> targetRef = chunk.getReferenceTo(index);
-        if (playerType != null && targetRef != null && targetRef.isValid()) {
-            if (store.getComponent(targetRef, playerType) != null) {
-                playerRef = targetRef;
-            }
-        }
-
-        if (playerRef == null || !playerRef.isValid()) {
-            playerRef = plugin.getAnyPlayerRef(store);
-        }
-
-        if (playerRef == null || !playerRef.isValid()) {
-            return;
-        }
+        // ✅ Só recalcula se a HORA mudou (e se mudou, aplica em mobs existentes também)
+        plugin.refreshBloodMoonStateIfNeeded(store, true);
 
         Damage.Source source = damage.getSource();
         if (!(source instanceof Damage.EntitySource)) {
@@ -70,22 +55,25 @@ public class HardcoreMobDamageSystem extends DamageEventSystem {
             return;
         }
 
+        // Ignora se o atacante for player
+        ComponentType<EntityStore, Player> playerType = Player.getComponentType();
         if (playerType != null && store.getComponent(sourceRef, playerType) != null) {
             return;
         }
 
-        if (EntityStatMap.getComponentType() == null
-                || store.getComponent(sourceRef, EntityStatMap.getComponentType()) == null) {
+        ComponentType<EntityStore, EntityStatMap> statType = EntityStatMap.getComponentType();
+        if (statType == null || store.getComponent(sourceRef, statType) == null) {
             return;
         }
 
-        NPCEntity npcEntity = NPCEntity.getComponentType() == null
-                ? null
-                : store.getComponent(sourceRef, NPCEntity.getComponentType());
+        ComponentType<EntityStore, NPCEntity> npcType = NPCEntity.getComponentType();
+        NPCEntity npcEntity = npcType == null ? null : store.getComponent(sourceRef, npcType);
+
         MobCategory category = plugin.resolveMobCategory(npcEntity);
         if (!plugin.isMobEnabled(category)) {
             return;
         }
+
         float multiplier = plugin.getDamageMultiplier(category);
         if (multiplier <= 1.0f) {
             return;
