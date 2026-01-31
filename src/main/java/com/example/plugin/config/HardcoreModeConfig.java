@@ -44,6 +44,24 @@ public class HardcoreModeConfig {
         public static final String KEY_BLOOD_MOON_WORLDBOSS_HEALTH_MULTIPLIER = "BloodMoonWorldbossHealthMultiplier";
         public static final String KEY_BLOOD_MOON_WORLDBOSS_DAMAGE_MULTIPLIER = "BloodMoonWorldbossDamageMultiplier";
         public static final String KEY_BLOOD_MOON_HUD_ENABLED = "BloodMoonHudEnabled";
+        // Blood Moon Drop System Keys
+        public static final String KEY_BLOOD_MOON_DROPS_ENABLED = "BloodMoonDropsEnabled";
+        public static final String KEY_BLOOD_MOON_HOSTILE_DROP_ENABLED = "BloodMoonHostileDropEnabled";
+        public static final String KEY_BLOOD_MOON_HOSTILE_DROP_ITEM = "BloodMoonHostileDropItem";
+        public static final String KEY_BLOOD_MOON_HOSTILE_DROP_QUANTITY = "BloodMoonHostileDropQuantity";
+        public static final String KEY_BLOOD_MOON_HOSTILE_DROP_CHANCE = "BloodMoonHostileDropChance";
+        public static final String KEY_BLOOD_MOON_ELITE_DROP_ENABLED = "BloodMoonEliteDropEnabled";
+        public static final String KEY_BLOOD_MOON_ELITE_DROP_ITEM = "BloodMoonEliteDropItem";
+        public static final String KEY_BLOOD_MOON_ELITE_DROP_QUANTITY = "BloodMoonEliteDropQuantity";
+        public static final String KEY_BLOOD_MOON_ELITE_DROP_CHANCE = "BloodMoonEliteDropChance";
+        public static final String KEY_BLOOD_MOON_MINIBOSS_DROP_ENABLED = "BloodMoonMinibossDropEnabled";
+        public static final String KEY_BLOOD_MOON_MINIBOSS_DROP_ITEM = "BloodMoonMinibossDropItem";
+        public static final String KEY_BLOOD_MOON_MINIBOSS_DROP_QUANTITY = "BloodMoonMinibossDropQuantity";
+        public static final String KEY_BLOOD_MOON_MINIBOSS_DROP_CHANCE = "BloodMoonMinibossDropChance";
+        public static final String KEY_BLOOD_MOON_WORLDBOSS_DROP_ENABLED = "BloodMoonWorldbossDropEnabled";
+        public static final String KEY_BLOOD_MOON_WORLDBOSS_DROP_ITEM = "BloodMoonWorldbossDropItem";
+        public static final String KEY_BLOOD_MOON_WORLDBOSS_DROP_QUANTITY = "BloodMoonWorldbossDropQuantity";
+        public static final String KEY_BLOOD_MOON_WORLDBOSS_DROP_CHANCE = "BloodMoonWorldbossDropChance";
         public static final String KEY_PLAYER_DEATH_SETTINGS_ENABLED = "PlayerDeathSettingsEnabled";
         public static final String KEY_PLAYER_ITEM_DURABILITY_LOSS_PERCENT = "PlayerItemDurabilityLossPercent";
         public static final String KEY_PLAYER_ITEM_DROP_PERCENT = "PlayerItemDropPercent";
@@ -206,6 +224,75 @@ public class HardcoreModeConfig {
                                         (config, value) -> config.bloodMoonHudEnabled = value,
                                         config -> config.bloodMoonHudEnabled)
                         .add()
+                        // Blood Moon Drop System Codecs
+                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_DROPS_ENABLED, Codec.BOOLEAN),
+                                        (config, value) -> config.bloodMoonDropsEnabled = value,
+                                        config -> config.bloodMoonDropsEnabled)
+                        .add()
+                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_HOSTILE_DROP_ENABLED, Codec.BOOLEAN),
+                                        (config, value) -> config.bloodMoonHostileDropEnabled = value,
+                                        config -> config.bloodMoonHostileDropEnabled)
+                        .add()
+                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_HOSTILE_DROP_ITEM, Codec.STRING),
+                                        (config, value) -> config.bloodMoonHostileDropItem = value,
+                                        config -> config.bloodMoonHostileDropItem)
+                        .add()
+                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_HOSTILE_DROP_QUANTITY, Codec.INTEGER),
+                                        (config, value) -> config.bloodMoonHostileDropQuantity = value,
+                                        config -> config.bloodMoonHostileDropQuantity)
+                        .add()
+                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_HOSTILE_DROP_CHANCE, Codec.FLOAT),
+                                        (config, value) -> config.bloodMoonHostileDropChance = value,
+                                        config -> config.bloodMoonHostileDropChance)
+                        .add()
+                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_ELITE_DROP_ENABLED, Codec.BOOLEAN),
+                                        (config, value) -> config.bloodMoonEliteDropEnabled = value,
+                                        config -> config.bloodMoonEliteDropEnabled)
+                        .add()
+                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_ELITE_DROP_ITEM, Codec.STRING),
+                                        (config, value) -> config.bloodMoonEliteDropItem = value,
+                                        config -> config.bloodMoonEliteDropItem)
+                        .add()
+                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_ELITE_DROP_QUANTITY, Codec.INTEGER),
+                                        (config, value) -> config.bloodMoonEliteDropQuantity = value,
+                                        config -> config.bloodMoonEliteDropQuantity)
+                        .add()
+                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_ELITE_DROP_CHANCE, Codec.FLOAT),
+                                        (config, value) -> config.bloodMoonEliteDropChance = value,
+                                        config -> config.bloodMoonEliteDropChance)
+                        .add()
+                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_MINIBOSS_DROP_ENABLED, Codec.BOOLEAN),
+                                        (config, value) -> config.bloodMoonMinibossDropEnabled = value,
+                                        config -> config.bloodMoonMinibossDropEnabled)
+                        .add()
+                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_MINIBOSS_DROP_ITEM, Codec.STRING),
+                                        (config, value) -> config.bloodMoonMinibossDropItem = value,
+                                        config -> config.bloodMoonMinibossDropItem)
+                        .add()
+                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_MINIBOSS_DROP_QUANTITY, Codec.INTEGER),
+                                        (config, value) -> config.bloodMoonMinibossDropQuantity = value,
+                                        config -> config.bloodMoonMinibossDropQuantity)
+                        .add()
+                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_MINIBOSS_DROP_CHANCE, Codec.FLOAT),
+                                        (config, value) -> config.bloodMoonMinibossDropChance = value,
+                                        config -> config.bloodMoonMinibossDropChance)
+                        .add()
+                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_WORLDBOSS_DROP_ENABLED, Codec.BOOLEAN),
+                                        (config, value) -> config.bloodMoonWorldbossDropEnabled = value,
+                                        config -> config.bloodMoonWorldbossDropEnabled)
+                        .add()
+                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_WORLDBOSS_DROP_ITEM, Codec.STRING),
+                                        (config, value) -> config.bloodMoonWorldbossDropItem = value,
+                                        config -> config.bloodMoonWorldbossDropItem)
+                        .add()
+                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_WORLDBOSS_DROP_QUANTITY, Codec.INTEGER),
+                                        (config, value) -> config.bloodMoonWorldbossDropQuantity = value,
+                                        config -> config.bloodMoonWorldbossDropQuantity)
+                        .add()
+                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_WORLDBOSS_DROP_CHANCE, Codec.FLOAT),
+                                        (config, value) -> config.bloodMoonWorldbossDropChance = value,
+                                        config -> config.bloodMoonWorldbossDropChance)
+                        .add()
                         .append(new KeyedCodec<>(KEY_PLAYER_DEATH_SETTINGS_ENABLED, Codec.BOOLEAN),
                                         (config, value) -> config.playerDeathSettingsEnabled = value,
                                         config -> config.playerDeathSettingsEnabled)
@@ -259,6 +346,24 @@ public class HardcoreModeConfig {
         public float bloodMoonWorldbossHealthMultiplier = 2.0f;
         public float bloodMoonWorldbossDamageMultiplier = 2.0f;
         public boolean bloodMoonHudEnabled = true;
+        // Blood Moon Drop System Fields
+        public boolean bloodMoonDropsEnabled = true;
+        public boolean bloodMoonHostileDropEnabled = true;
+        public String bloodMoonHostileDropItem = "Ingredient_Bar_Iron";
+        public int bloodMoonHostileDropQuantity = 1;
+        public float bloodMoonHostileDropChance = 100.0f;
+        public boolean bloodMoonEliteDropEnabled = true;
+        public String bloodMoonEliteDropItem = "Ingredient_Bar_Thorium";
+        public int bloodMoonEliteDropQuantity = 1;
+        public float bloodMoonEliteDropChance = 100.0f;
+        public boolean bloodMoonMinibossDropEnabled = true;
+        public String bloodMoonMinibossDropItem = "Ingredient_Bar_Adamantite";
+        public int bloodMoonMinibossDropQuantity = 1;
+        public float bloodMoonMinibossDropChance = 100.0f;
+        public boolean bloodMoonWorldbossDropEnabled = true;
+        public String bloodMoonWorldbossDropItem = "Ingredient_Bar_Mithril";
+        public int bloodMoonWorldbossDropQuantity = 1;
+        public float bloodMoonWorldbossDropChance = 100.0f;
         public boolean playerDeathSettingsEnabled = false;
         public int playerItemDurabilityLossPercent = 20;
         public int playerItemDropPercent = 20;

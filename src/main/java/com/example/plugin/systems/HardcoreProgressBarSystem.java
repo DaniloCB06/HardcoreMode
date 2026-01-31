@@ -13,18 +13,13 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Sistema que gerencia a exibição e atualização da barra de progresso da Blood Moon na HUD.
- */
 public class HardcoreProgressBarSystem extends TickingSystem<EntityStore> {
     private final HardcoreModePlugin plugin;
     
-    // Rastreamento de último progresso por referência do jogador
     private final Map<Ref<EntityStore>, Float> lastProgress = new ConcurrentHashMap<>();
     
-    // Controle de atualização (atualiza a cada 1 segundo)
     private int tickCounter = 0;
-    private static final int UPDATE_INTERVAL_TICKS = 20; // 20 ticks = ~1 segundo
+    private static final int UPDATE_INTERVAL_TICKS = 20;
     
     private boolean wasBloodMoonActive = false;
 
@@ -44,20 +39,16 @@ public class HardcoreProgressBarSystem extends TickingSystem<EntityStore> {
         }
         tickCounter = 0;
 
-        // Verifica se a Blood Moon está ativa
         boolean bloodMoonActive = plugin.isBloodMoonActive();
         boolean hudEnabled = plugin.getConfigData().bloodMoonHudEnabled;
         
         if (bloodMoonActive && hudEnabled) {
-            // Calcula o progresso atual
             float progress = plugin.getBloodMoonProgress(store);
             int hoursRemaining = plugin.getBloodMoonHoursRemaining(store);
             
-            // Atualiza a HUD de todos os jogadores
             updateAllPlayers(store, progress, hoursRemaining);
             wasBloodMoonActive = true;
         } else if (wasBloodMoonActive || (bloodMoonActive && !hudEnabled)) {
-            // Blood Moon terminou ou HUD foi desativada, remove a HUD de todos os jogadores
             removeHudFromAllPlayers(store);
             lastProgress.clear();
             wasBloodMoonActive = false;
@@ -65,7 +56,7 @@ public class HardcoreProgressBarSystem extends TickingSystem<EntityStore> {
     }
 
     /**
-     * Atualiza a HUD de todos os jogadores online
+     * Updates the HUD for all online players
      */
     private void updateAllPlayers(Store<EntityStore> store, float progress, int hoursRemaining) {
         ComponentType<EntityStore, Player> playerType = Player.getComponentType();
@@ -87,7 +78,7 @@ public class HardcoreProgressBarSystem extends TickingSystem<EntityStore> {
                     continue;
                 }
 
-                // Verifica se precisa atualizar (progresso mudou >5%)
+                // Check if update is needed (progress changed >5%)
                 Float lastProg = lastProgress.get(ref);
                 if (lastProg == null || Math.abs(lastProg - progress) > 0.05f) {
                     HardcoreProgressBarHud hud = new HardcoreProgressBarHud(
@@ -105,7 +96,7 @@ public class HardcoreProgressBarSystem extends TickingSystem<EntityStore> {
     }
     
     /**
-     * Remove a HUD de todos os jogadores online
+     * Removes the HUD from all online players
      */
     private void removeHudFromAllPlayers(Store<EntityStore> store) {
         ComponentType<EntityStore, Player> playerType = Player.getComponentType();
@@ -136,7 +127,7 @@ public class HardcoreProgressBarSystem extends TickingSystem<EntityStore> {
     }
 
     /**
-     * Limpa o estado (útil ao desligar o servidor)
+     * Clears the state (useful when shutting down the server)
      */
     public void cleanup() {
         lastProgress.clear();

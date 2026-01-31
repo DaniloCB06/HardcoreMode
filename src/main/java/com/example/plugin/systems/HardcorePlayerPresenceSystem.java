@@ -73,6 +73,5 @@ public class HardcorePlayerPresenceSystem extends RefChangeSystem<EntityStore, P
             Store<EntityStore> store,
             CommandBuffer<EntityStore> commandBuffer
     ) {
-        // Nenhuma limpeza necessária
     }
 }

@@ -1,10 +1,10 @@
 package com.example.plugin;
 
 /**
- * Categoria especializada de criatura/mob no HardcoreMode.
+ * Specialized creature/mob category in HardcoreMode.
  *
- * A lista foi extraída de {@code Criaturas_classificadas.txt} e usada pelo
- * {@link MobCategoryResolver} para mapear IDs (ex.: {@code Dragon_Fire}).
+ * The list was extracted from {@code Criaturas_classificadas.txt} and is used by
+ * {@link MobCategoryResolver} to map IDs (e.g., {@code Dragon_Fire}).
  */
 public enum MobCategory {
     PASSIVE,

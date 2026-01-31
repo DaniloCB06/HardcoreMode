@@ -32,11 +32,11 @@ public class HardcoreProgressBarPage extends InteractiveCustomUIPage<HardcorePro
         commands.append(PAGE_PATH);
         
         if (isVisible) {
-            // Atualiza o texto da porcentagem
+            // Update percentage text
             int percentage = Math.round(currentProgress * 100.0f);
             commands.set("#ProgressText.Text", percentage + "%");
             
-            // Atualiza o tempo restante
+            // Update remaining time
             String timeText;
             if (hoursRemaining > 1) {
                 timeText = "Time Remaining: " + hoursRemaining + " hours";
@@ -47,7 +47,7 @@ public class HardcoreProgressBarPage extends InteractiveCustomUIPage<HardcorePro
             }
             commands.set("#TimeRemaining.Text", timeText);
             
-            // Muda a cor da barra conforme o progresso diminui
+            // Change bar color as progress decreases
             String color = getProgressColor(currentProgress);
             commands.set("#ProgressFill.Background.Color", color);
             
@@ -63,22 +63,15 @@ public class HardcoreProgressBarPage extends InteractiveCustomUIPage<HardcorePro
             Store<EntityStore> store,
             HardcoreProgressBarPageEventData data
     ) {
-        // Não precisa processar eventos vindos do cliente
     }
 
-    /**
-     * Retorna a cor da barra baseada no progresso
-     * 100-50%: Vermelho escuro (#CC0000)
-     * 50-25%: Laranja (#FF6600)
-     * 25-0%: Amarelo (#FFCC00)
-     */
     private String getProgressColor(float progress) {
         if (progress > 0.5f) {
-            return "#CC0000"; // Vermelho
+            return "#CC0000";
         } else if (progress > 0.25f) {
-            return "#FF6600"; // Laranja
+            return "#FF6600";
         } else {
-            return "#FFCC00"; // Amarelo
+            return "#FFCC00";
         }
     }
 

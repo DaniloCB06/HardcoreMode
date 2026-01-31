@@ -5,8 +5,8 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 
 /**
- * HUD customizado que exibe a barra de progresso da Blood Moon.
- * Diferente de InteractiveCustomUIPage, este elemento não pausa o jogo.
+ * Custom HUD that displays the Blood Moon progress bar.
+ * Unlike InteractiveCustomUIPage, this element doesn't pause the game.
  */
 public class HardcoreProgressBarHud extends CustomUIHud {
     private static final String HUD_PATH = "Hud/HardcoreProgressBar.ui";
@@ -27,22 +27,22 @@ public class HardcoreProgressBarHud extends CustomUIHud {
         commands.append(HUD_PATH);
         
         if (isVisible) {
-            // 18 segmentos = intervalo de ~10 minutos cada (180 min / 18 = 10 min)
+            // 18 segments = ~10 minute intervals each (180 min / 18 = 10 min)
             int visibleSegments = (int) Math.ceil(currentProgress * 18.0f);
             
-            // Atualiza visibilidade dos segmentos (esvazia da direita para esquerda)
+            // Update segment visibility (empties from right to left)
             for (int i = 0; i < 18; i++) {
                 boolean isSegmentVisible = i < visibleSegments;
                 commands.set("#ProgressSegment" + i + ".Visible", isSegmentVisible);
             }
             
-            // Atualiza a cor de todos os segmentos
+            // Update color for all segments
             String color = getProgressColor(currentProgress);
             for (int i = 0; i < 18; i++) {
                 commands.set("#ProgressSegment" + i + ".Background.Color", color);
             }
             
-            // Atualiza o texto da porcentagem
+            // Update percentage text
             int percentage = Math.round(currentProgress * 100.0f);
             commands.set("#ProgressText.Text", percentage + "%");
             
@@ -52,23 +52,23 @@ public class HardcoreProgressBarHud extends CustomUIHud {
         }
     }
     /**
-     * Retorna a cor da barra baseada no progresso
-     * 100-50%: Vermelho escuro (#CC0000)
-     * 50-25%: Laranja (#FF6600)
-     * 25-0%: Amarelo (#FFCC00)
+     * Returns the bar color based on progress
+     * 100-50%: Dark red (#CC0000)
+     * 50-25%: Orange (#FF6600)
+     * 25-0%: Yellow (#FFCC00)
      */
     private String getProgressColor(float progress) {
         if (progress > 0.5f) {
-            return "#CC0000"; // Vermelho
+            return "#CC0000"; // Red
         } else if (progress > 0.25f) {
-            return "#FF6600"; // Laranja
+            return "#FF6600"; // Orange
         } else {
-            return "#FFCC00"; // Amarelo
+            return "#FFCC00"; // Yellow
         }
     }
     
     /**
-     * HUD vazio usado para remover a Blood Moon HUD da tela
+     * Empty HUD used to remove the Blood Moon HUD from the screen
      */
     public static class EmptyHud extends CustomUIHud {
         public EmptyHud(PlayerRef playerRef) {

@@ -42,7 +42,6 @@ public class HardcoreMobDamageSystem extends DamageEventSystem {
             CommandBuffer<EntityStore> commandBuffer,
             Damage damage
     ) {
-        // ✅ Só recalcula se a HORA mudou (e se mudou, aplica em mobs existentes também)
         plugin.refreshBloodMoonStateIfNeeded(store, true);
 
         Damage.Source source = damage.getSource();
@@ -55,7 +54,7 @@ public class HardcoreMobDamageSystem extends DamageEventSystem {
             return;
         }
 
-        // Ignora se o atacante for player
+        // Ignore if attacker is a player
         ComponentType<EntityStore, Player> playerType = Player.getComponentType();
         if (playerType != null && store.getComponent(sourceRef, playerType) != null) {
             return;

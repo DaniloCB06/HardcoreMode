@@ -8,8 +8,6 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 public class HardcoreBloodMoonSystem extends TickingSystem<EntityStore> {
     private final HardcoreModePlugin plugin;
-
-    // ✅ Travar por hora do mundo (não por tick)
     private long lastProcessedHourOfEpoch = Long.MIN_VALUE;
 
     public HardcoreBloodMoonSystem(HardcoreModePlugin plugin) {
@@ -30,16 +28,12 @@ public class HardcoreBloodMoonSystem extends TickingSystem<EntityStore> {
         long epochDay = time.getGameDateTime().toLocalDate().toEpochDay();
         long currentHourOfEpoch = (epochDay * 24L) + (long) time.getCurrentHour();
 
-        // ✅ Só processa quando a hora muda
         if (currentHourOfEpoch == lastProcessedHourOfEpoch) {
             return;
         }
         lastProcessedHourOfEpoch = currentHourOfEpoch;
 
-        // Compat/debug (não faz lógica fora do tick)
         plugin.setActiveStore(store);
-
-        // ✅ Atualiza estado do Blood Moon (aplica nos mobs apenas se mudou, dentro do plugin)
         plugin.refreshBloodMoonState(store, true);
     }
 }

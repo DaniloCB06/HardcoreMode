@@ -28,7 +28,7 @@ public class HardcoreMobSetupSystem extends HolderSystem<EntityStore> {
 
     @Override
     public void onEntityAdd(Holder<EntityStore> holder, AddReason reason, Store<EntityStore> store) {
-        // ✅ Só recalcula se a HORA do mundo mudou (evita spam/custo, e não depende de thread)
+
         plugin.refreshBloodMoonStateIfNeeded(store, true);
 
         ComponentType<EntityStore, Player> playerType = Player.getComponentType();
@@ -48,7 +48,6 @@ public class HardcoreMobSetupSystem extends HolderSystem<EntityStore> {
             return;
         }
 
-        // ✅ Removido: dependência desnecessária de playerRef (isso é uma fonte de timing/instância)
         ComponentType<EntityStore, NPCEntity> npcType = NPCEntity.getComponentType();
         NPCEntity npcEntity = npcType == null ? null : holder.getComponent(npcType);
 

@@ -13,21 +13,10 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Resolve a creature ID (ex.: {@code Dragon_Fire}) to a {@link MobCategory}
- * using the mapping provided in {@code Criaturas_classificadas.txt}.
- *
- * - Supports wildcard entries (e.g. {@code Frog_*}, {@code *_Cub}, {@code Piranha*}).
- * - Keeps the order from the source file; first pattern match wins.
- * - Falls back to {@link MobCategory#NONE} when no entry matches.
- */
 public class MobCategoryResolver {
-    private static final Logger LOGGER = Logger.getLogger(MobCategoryResolver.class.getName());
     private static final String CLASSIFICATION_FILE = "Criaturas_classificadas.txt";
     private static final String JSON_CLASSIFICATION_FILE = "HardcoreModeCategories.json";
     private static final Pattern SECTION_PATTERN = Pattern.compile(
@@ -55,9 +44,6 @@ public class MobCategoryResolver {
         loadPatterns();
     }
 
-    /**
-     * Resolve category for an NPC entity, trying multiple identifiers.
-     */
     public MobCategory resolve(NPCEntity npcEntity) {
         if (npcEntity == null) {
             return MobCategory.NONE;
@@ -73,9 +59,6 @@ public class MobCategoryResolver {
         return MobCategory.NONE;
     }
 
-    /**
-     * Resolve category for a raw creature ID (e.g., "Frog_Blue").
-     */
     public MobCategory resolve(String creatureId) {
         if (creatureId == null || creatureId.isEmpty()) {
             return MobCategory.NONE;
@@ -96,35 +79,27 @@ public class MobCategoryResolver {
         return best == null ? MobCategory.NONE : best.category;
     }
 
-    /**
-     * Exposes loaded pattern count for sanity checks/tests.
-     */
     int getPatternCount() {
         return patterns.size();
     }
 
     private String loadClassificationText() {
-        // 1) Try external file (data directory if available, then working dir)
         Path external = dataDirectory != null ? dataDirectory.resolve(CLASSIFICATION_FILE) : Path.of(CLASSIFICATION_FILE);
         if (Files.isRegularFile(external)) {
             try {
                 return Files.readString(external, StandardCharsets.UTF_8);
-            } catch (IOException e) {
-                LOGGER.log(Level.WARNING, "Failed to read " + external.toAbsolutePath(), e);
+            } catch (IOException ignored) {
             }
         }
 
-        // 2) Fallback to classpath resource bundled with the mod
         try (InputStream stream = MobCategoryResolver.class.getClassLoader()
                 .getResourceAsStream(CLASSIFICATION_FILE)) {
             if (stream != null) {
                 return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
             }
-        } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "Failed to read bundled classification resource.", e);
+        } catch (IOException ignored) {
         }
 
-        LOGGER.warning("No creature classification source found; all mobs will map to NONE.");
         return "";
     }
 
@@ -159,8 +134,7 @@ public class MobCategoryResolver {
         try {
             String content = Files.readString(jsonPath, StandardCharsets.UTF_8);
             return buildPatternsFromJson(content);
-        } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "Failed to read mob categories JSON at " + jsonPath, e);
+        } catch (IOException ignored) {
             return Collections.emptyList();
         }
     }
@@ -178,7 +152,6 @@ public class MobCategoryResolver {
             String rawPattern = matcher.group(2);
             MobCategory category = MobCategory.fromFileKey(categoryKey);
             if (category == MobCategory.NONE) {
-                LOGGER.fine("Ignoring unknown category in JSON: " + categoryKey);
                 continue;
             }
             Pattern regex = compileGlob(rawPattern);
@@ -199,7 +172,6 @@ public class MobCategoryResolver {
             String sectionKey = sectionMatcher.group(1);
             MobCategory category = MobCategory.fromFileKey(sectionKey);
             if (category == MobCategory.NONE) {
-                LOGGER.fine("Ignoring unknown category key: " + sectionKey);
                 continue;
             }
 
@@ -226,8 +198,7 @@ public class MobCategoryResolver {
             }
             String json = serializeToJson(loaded);
             Files.writeString(jsonPath, json, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "Failed to write mob categories JSON at " + jsonPath, e);
+        } catch (IOException ignored) {
         }
     }
 
@@ -264,7 +235,6 @@ public class MobCategoryResolver {
     }
 
     private static Pattern compileGlob(String raw) {
-        // Convert '*' into '.*' and escape everything else.
         String[] parts = raw.split("\\*", -1);
         StringBuilder builder = new StringBuilder("^");
         for (int i = 0; i < parts.length; i++) {

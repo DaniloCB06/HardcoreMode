@@ -20,12 +20,11 @@ import java.util.Set;
 
 public class HardcorePlayerDeathConfigSystem extends DeathSystems.OnDeathSystem {
     public enum DependencyMode {
-        STRICT,       // AFTER PlayerDropItemsConfig + BEFORE DropPlayerDeathItems (se existir)
-        AFTER_CONFIG, // só AFTER PlayerDropItemsConfig (se existir)
-        NONE          // sem dependências
+        STRICT,
+        AFTER_CONFIG,
+        NONE
     }
 
-    // Usamos strings pra NÃO referenciar classes internas diretamente (evita quebra em builds diferentes)
     private static final String PLAYER_DROP_CONFIG_CLASS =
             "com.hypixel.hytale.server.core.modules.entity.damage.DeathSystems$PlayerDropItemsConfig";
     private static final String DROP_PLAYER_DEATH_ITEMS_CLASS =
@@ -53,7 +52,6 @@ public class HardcorePlayerDeathConfigSystem extends DeathSystems.OnDeathSystem 
         }
 
         if (dependencyMode == DependencyMode.STRICT) {
-            // Esse era o ponto que quebrava o servidor do player quando o system NÃO estava registrado
             addSystemDependencyIfPresent(deps, Order.BEFORE, DROP_PLAYER_DEATH_ITEMS_CLASS);
         }
 

@@ -150,6 +150,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 Float bloodMoonXpMultiplier = data.getBloodMoonXpMultiplier();
                 Boolean bloodMoonForce = data.getBloodMoonForce();
                 Boolean bloodMoonHudEnabled = data.getBloodMoonHudEnabled();
+                Boolean bloodMoonDropsEnabled = data.getBloodMoonDropsEnabled();
                 Boolean playerDeathSettingsEnabled = data.getPlayerDeathSettingsEnabled();
                 Float playerItemDurabilityLossPercent = data.getPlayerItemDurabilityLossPercent();
                 Float playerItemDropPercent = data.getPlayerItemDropPercent();
@@ -203,6 +204,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 && bloodMoonXpMultiplier == null
                                 && bloodMoonForce == null
                                 && bloodMoonHudEnabled == null
+                                && bloodMoonDropsEnabled == null
                                 && playerDeathSettingsEnabled == null
                                 && playerItemDurabilityLossPercent == null
                                 && playerItemDropPercent == null) {
@@ -432,6 +434,11 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                         changed = true;
                 }
 
+                if (bloodMoonDropsEnabled != null && bloodMoonDropsEnabled != config.bloodMoonDropsEnabled) {
+                        config.bloodMoonDropsEnabled = bloodMoonDropsEnabled;
+                        changed = true;
+                }
+
                 if (Boolean.TRUE.equals(bloodMoonForce)) {
                         plugin.forceBloodMoonNow(store);
                 }
@@ -621,6 +628,14 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 "Show Blood Moon HUD: " + (config.bloodMoonHudEnabled ? "ON" : "OFF"),
                                 config.bloodMoonHudEnabled,
                                 HardcoreSettingsPageEventData.KEY_BLOOD_MOON_HUD_ENABLED);
+                index = addToggleEntry(
+                                commands,
+                                events,
+                                SETTINGS_LIST_ID,
+                                index,
+                                "Blood Moon Drops: " + (config.bloodMoonDropsEnabled ? "ON" : "OFF"),
+                                config.bloodMoonDropsEnabled,
+                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_DROPS_ENABLED);
                 index = addSliderEntry(
                                 commands,
                                 events,

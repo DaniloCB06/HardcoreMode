@@ -1,0 +1,46 @@
+{
+  "description": "Blood Moon drop configuration. Each category can have multiple items.",
+  "note": "minQuantity and maxQuantity define the quantity range. Drop amount is randomized between these values.",
+  "drops": [
+    {
+      "category": "HOSTILE",
+      "enabled": true,
+      "itemId": "Ingredient_Bar_Iron",
+      "minQuantity": 1,
+      "maxQuantity": 2,
+      "dropChance": 50.0
+    },
+    {
+      "category": "HOSTILE",
+      "enabled": true,
+      "itemId": "Ingredient_Void_Essence",
+      "minQuantity": 1,
+      "maxQuantity": 1,
+      "dropChance": 25.0
+    },
+    {
+      "category": "ELITE",
+      "enabled": true,
+      "itemId": "Ingredient_Bar_Thorium",
+      "minQuantity": 2,
+      "maxQuantity": 3,
+      "dropChance": 60.0
+    },
+    {
+      "category": "MINIBOSS",
+      "enabled": true,
+      "itemId": "Ingredient_Bar_Adamantite",
+      "minQuantity": 3,
+      "maxQuantity": 5,
+      "dropChance": 75.0
+    },
+    {
+      "category": "WORLDBOSS",
+      "enabled": true,
+      "itemId": "Ingredient_Bar_Mithril",
+      "minQuantity": 5,
+      "maxQuantity": 8,
+      "dropChance": 100.0
+    }
+  ]
+}

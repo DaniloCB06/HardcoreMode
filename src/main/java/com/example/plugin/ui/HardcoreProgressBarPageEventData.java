@@ -3,8 +3,8 @@ package com.example.plugin.ui;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
 
 /**
- * EventData para a página da barra de progresso da Blood Moon.
- * Como a barra só recebe dados do servidor, não precisa processar eventos do cliente.
+ * EventData for the Blood Moon progress bar page.
+ * Since the bar only receives data from the server, it doesn't need to process client events.
  */
 public class HardcoreProgressBarPageEventData {
     public static final BuilderCodec<HardcoreProgressBarPageEventData> CODEC = BuilderCodec
@@ -12,6 +12,5 @@ public class HardcoreProgressBarPageEventData {
             .build();
 
     public HardcoreProgressBarPageEventData() {
-        // Construtor vazio - não precisa de dados
     }
 }

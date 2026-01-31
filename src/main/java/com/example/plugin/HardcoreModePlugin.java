@@ -1,7 +1,9 @@
 package com.example.plugin;
 
 import com.example.plugin.commands.HardcoreGuiCommand;
+import com.example.plugin.config.BloodMoonDropConfig;
 import com.example.plugin.config.HardcoreModeConfig;
+import com.example.plugin.systems.HardcoreBloodMoonDropSystem;
 import com.example.plugin.systems.HardcoreBloodMoonSystem;
 import com.example.plugin.systems.HardcoreMobDamageSystem;
 import com.example.plugin.systems.HardcoreMobSetupSystem;
@@ -39,33 +41,29 @@ public class HardcoreModePlugin extends JavaPlugin {
     private static final String RPG_LEVELING_PLUGIN_CLASS = "org.zuxaw.plugin.RPGLevelingPlugin";
     private static final String RPG_LEVELING_CONFIG_CLASS = "org.zuxaw.plugin.config.LevelingConfig";
 
-    /**
-     * (Opcional / compat) Guardamos um store “ativo” se você quiser logar/debuggar.
-     * Não é usado para rodar lógica fora do tick.
-     */
+
     private final AtomicReference<Store<EntityStore>> activeStoreRef = new AtomicReference<>();
 
     private final Config<HardcoreModeConfig> config;
+    private final BloodMoonDropConfig bloodMoonDropConfig;
     private final MobCategoryResolver mobCategoryResolver;
     private final HardcoreMobSetupSystem mobSetupSystem;
     private final HardcoreMobDamageSystem mobDamageSystem;
     private final HardcoreBloodMoonSystem bloodMoonSystem;
+    private final HardcoreBloodMoonDropSystem bloodMoonDropSystem;
     private final HardcoreMobStatRefreshSystem mobStatRefreshSystem;
     private final HardcorePlayerPresenceSystem playerPresenceSystem;
     private final HardcoreProgressBarSystem progressBarSystem;
 
-    // ✅ Cache de playerRef agora é “por store”
     private volatile Ref<EntityStore> cachedPlayerRef;
     private volatile Store<EntityStore> cachedPlayerStore;
 
-    // ✅ Cache de “última hora processada” por store (pra não recalcular toda hora)
     private final Map<Store<EntityStore>, Long> lastHourByStore =
             Collections.synchronizedMap(new WeakHashMap<>());
 
     private boolean bloodMoonActive;
     private Long forcedBloodMoonEndHourOfEpoch;
     
-    // ✅ Campos para rastrear progresso da Blood Moon
     private Long bloodMoonStartHourOfEpoch;
     private Long bloodMoonEndHourOfEpoch;
 
@@ -82,10 +80,12 @@ public class HardcoreModePlugin extends JavaPlugin {
     public HardcoreModePlugin(JavaPluginInit init) {
         super(init);
         this.config = withConfig("HardcoreMode", HardcoreModeConfig.CODEC);
+        this.bloodMoonDropConfig = new BloodMoonDropConfig(getDataDirectory());
         this.mobCategoryResolver = new MobCategoryResolver(getDataDirectory());
         this.mobSetupSystem = new HardcoreMobSetupSystem(this);
         this.mobDamageSystem = new HardcoreMobDamageSystem(this);
         this.bloodMoonSystem = new HardcoreBloodMoonSystem(this);
+        this.bloodMoonDropSystem = new HardcoreBloodMoonDropSystem(this);
         this.mobStatRefreshSystem = new HardcoreMobStatRefreshSystem(this);
         this.playerPresenceSystem = new HardcorePlayerPresenceSystem(this);
         this.progressBarSystem = new HardcoreProgressBarSystem(this);
@@ -116,6 +116,10 @@ public class HardcoreModePlugin extends JavaPlugin {
         return mobCategoryResolver;
     }
 
+    public BloodMoonDropConfig getBloodMoonDropConfig() {
+        return bloodMoonDropConfig;
+    }
+
     @Override
     protected void setup() {
         normalizeConfig();
@@ -123,9 +127,9 @@ public class HardcoreModePlugin extends JavaPlugin {
         getEntityStoreRegistry().registerSystem(mobSetupSystem);
         getEntityStoreRegistry().registerSystem(mobDamageSystem);
         getEntityStoreRegistry().registerSystem(bloodMoonSystem);
+        getEntityStoreRegistry().registerSystem(bloodMoonDropSystem);
         getEntityStoreRegistry().registerSystem(progressBarSystem);
 
-        // ✅ Registro com fallback (dependência de DropPlayerDeathItems fica opcional)
         registerPlayerDeathConfigSystemWithFallback();
 
         getEntityStoreRegistry().registerSystem(mobStatRefreshSystem);
@@ -136,10 +140,6 @@ public class HardcoreModePlugin extends JavaPlugin {
 
     @Override
     protected void start() {
-        // ✅ Sem heartbeat/thread tocando Store.
-        // Atualizações passam a acontecer via:
-        // - HardcoreBloodMoonSystem (quando o mundo tickar)
-        // - refreshBloodMoonStateIfNeeded(...) chamado em eventos (spawn/dano/join/etc.)
     }
 
     private void registerPlayerDeathConfigSystemWithFallback() {
@@ -154,15 +154,11 @@ public class HardcoreModePlugin extends JavaPlugin {
                 getEntityStoreRegistry().registerSystem(new HardcorePlayerDeathConfigSystem(this, mode));
                 return;
             } catch (Throwable t) {
-                // Falha silenciosa, tenta próximo modo
             }
         }
     }
 
-    /**
-     * ✅ Método novo: recalcula Blood Moon só quando a HORA do mundo mudou (por Store).
-     * Use isso em sistemas que rodam quando “algo acontece” (spawn, dano, player entra...).
-     */
+
     public void refreshBloodMoonStateIfNeeded(Store<EntityStore> store, boolean applyToMobs) {
         if (store == null) return;
 
@@ -330,10 +326,6 @@ public class HardcoreModePlugin extends JavaPlugin {
         return bloodMoonActive;
     }
     
-    /**
-     * Retorna a porcentagem de progresso da Blood Moon (0.0 a 1.0).
-     * 1.0 = começou (100%), 0.0 = terminou (0%)
-     */
     public float getBloodMoonProgress(Store<EntityStore> store) {
         if (!bloodMoonActive || bloodMoonStartHourOfEpoch == null || bloodMoonEndHourOfEpoch == null) {
             return 0.0f;
@@ -353,13 +345,9 @@ public class HardcoreModePlugin extends JavaPlugin {
         if (remaining <= 0) return 0.0f;
         if (elapsed < 0) return 1.0f;
         
-        // Retorna o tempo restante como porcentagem
         return Math.max(0.0f, Math.min(1.0f, (float) remaining / (float) totalDuration));
     }
     
-    /**
-     * Retorna as horas restantes da Blood Moon
-     */
     public int getBloodMoonHoursRemaining(Store<EntityStore> store) {
         if (!bloodMoonActive || bloodMoonEndHourOfEpoch == null) {
             return 0;
@@ -379,7 +367,6 @@ public class HardcoreModePlugin extends JavaPlugin {
         boolean changed = active != bloodMoonActive;
 
         if (changed) {
-            // Reseta progresso quando a Blood Moon termina
             if (!active) {
                 bloodMoonStartHourOfEpoch = null;
                 bloodMoonEndHourOfEpoch = null;
@@ -425,7 +412,6 @@ public class HardcoreModePlugin extends JavaPlugin {
             return;
         }
 
-        // ✅ Cache por store (evita ref cruzada entre instâncias)
         cachedPlayerRef = playerRef;
         cachedPlayerStore = store;
 
@@ -508,7 +494,6 @@ public class HardcoreModePlugin extends JavaPlugin {
         Long forcedEnd = forcedBloodMoonEndHourOfEpoch;
         if (forcedEnd != null) {
             if (currentHourOfEpoch < forcedEnd) {
-                // ✅ Define progresso para Blood Moon forçada
                 if (bloodMoonStartHourOfEpoch == null) {
                     bloodMoonStartHourOfEpoch = currentHourOfEpoch;
                 }
@@ -542,7 +527,6 @@ public class HardcoreModePlugin extends JavaPlugin {
         boolean activePrev = currentHourOfEpoch >= startEpochPrev && currentHourOfEpoch < endEpochPrev;
         boolean active = activeCurrent || activePrev;
         
-        // ✅ Define horas de início e fim quando a Blood Moon está ativa
         if (active) {
             if (activeCurrent) {
                 bloodMoonStartHourOfEpoch = startEpochCurrent;
@@ -598,9 +582,6 @@ public class HardcoreModePlugin extends JavaPlugin {
         return (epochDay * 24L) + time.getCurrentHour();
     }
 
-    /**
-     * ✅ FIX PRINCIPAL: nunca reutilizar cachedPlayerRef em outro Store.
-     */
     public Ref<EntityStore> getAnyPlayerRef(Store<EntityStore> store) {
         ComponentType<EntityStore, Player> playerType = Player.getComponentType();
         if (store == null || playerType == null) {
@@ -750,7 +731,6 @@ public class HardcoreModePlugin extends JavaPlugin {
         return rpgLevelingAvailable;
     }
 
-    // Mantido para compatibilidade/debug
     public void setActiveStore(Store<EntityStore> store) {
         if (store != null) {
             activeStoreRef.set(store);
