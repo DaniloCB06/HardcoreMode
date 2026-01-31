@@ -46,8 +46,9 @@ public class HardcoreProgressBarSystem extends TickingSystem<EntityStore> {
 
         // Verifica se a Blood Moon está ativa
         boolean bloodMoonActive = plugin.isBloodMoonActive();
+        boolean hudEnabled = plugin.getConfigData().bloodMoonHudEnabled;
         
-        if (bloodMoonActive) {
+        if (bloodMoonActive && hudEnabled) {
             // Calcula o progresso atual
             float progress = plugin.getBloodMoonProgress(store);
             int hoursRemaining = plugin.getBloodMoonHoursRemaining(store);
@@ -55,8 +56,8 @@ public class HardcoreProgressBarSystem extends TickingSystem<EntityStore> {
             // Atualiza a HUD de todos os jogadores
             updateAllPlayers(store, progress, hoursRemaining);
             wasBloodMoonActive = true;
-        } else if (wasBloodMoonActive) {
-            // Blood Moon terminou, remove a HUD de todos os jogadores
+        } else if (wasBloodMoonActive || (bloodMoonActive && !hudEnabled)) {
+            // Blood Moon terminou ou HUD foi desativada, remove a HUD de todos os jogadores
             removeHudFromAllPlayers(store);
             lastProgress.clear();
             wasBloodMoonActive = false;

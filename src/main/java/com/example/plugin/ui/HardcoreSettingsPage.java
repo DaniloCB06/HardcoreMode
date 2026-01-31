@@ -149,6 +149,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 Float bloodMoonWorldbossDamageMultiplier = data.getBloodMoonWorldbossDamageMultiplier();
                 Float bloodMoonXpMultiplier = data.getBloodMoonXpMultiplier();
                 Boolean bloodMoonForce = data.getBloodMoonForce();
+                Boolean bloodMoonHudEnabled = data.getBloodMoonHudEnabled();
                 Boolean playerDeathSettingsEnabled = data.getPlayerDeathSettingsEnabled();
                 Float playerItemDurabilityLossPercent = data.getPlayerItemDurabilityLossPercent();
                 Float playerItemDropPercent = data.getPlayerItemDropPercent();
@@ -201,6 +202,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 && bloodMoonWorldbossDamageMultiplier == null
                                 && bloodMoonXpMultiplier == null
                                 && bloodMoonForce == null
+                                && bloodMoonHudEnabled == null
                                 && playerDeathSettingsEnabled == null
                                 && playerItemDurabilityLossPercent == null
                                 && playerItemDropPercent == null) {
@@ -425,6 +427,11 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 PERCENT_STEP,
                                 value -> config.playerItemDropPercent = value);
 
+                if (bloodMoonHudEnabled != null && bloodMoonHudEnabled != config.bloodMoonHudEnabled) {
+                        config.bloodMoonHudEnabled = bloodMoonHudEnabled;
+                        changed = true;
+                }
+
                 if (Boolean.TRUE.equals(bloodMoonForce)) {
                         plugin.forceBloodMoonNow(store);
                 }
@@ -606,6 +613,14 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 "Blood Moon: " + (config.bloodMoonEnabled ? "ON" : "OFF"),
                                 config.bloodMoonEnabled,
                                 HardcoreSettingsPageEventData.KEY_BLOOD_MOON_ENABLED);
+                index = addToggleEntry(
+                                commands,
+                                events,
+                                SETTINGS_LIST_ID,
+                                index,
+                                "Show Blood Moon HUD: " + (config.bloodMoonHudEnabled ? "ON" : "OFF"),
+                                config.bloodMoonHudEnabled,
+                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_HUD_ENABLED);
                 index = addSliderEntry(
                                 commands,
                                 events,
@@ -757,13 +772,24 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                         int index,
                         String label,
                         boolean checkboxValue) {
+                return addToggleEntry(commands, events, listId, index, label, checkboxValue, HardcoreSettingsPageEventData.KEY_ENABLED);
+        }
+
+        private int addToggleEntry(
+                        UICommandBuilder commands,
+                        UIEventBuilder events,
+                        String listId,
+                        int index,
+                        String label,
+                        boolean checkboxValue,
+                        String key) {
                 String entry = listId + "[" + index + "]";
                 commands.append(listId, ENTRY_TOGGLE_PATH);
                 commands.set(entry + " #Label.Text", label);
                 commands.set(entry + " #Toggle.Value", checkboxValue);
 
                 EventData toggleData = EventData.of(
-                                HardcoreSettingsPageEventData.KEY_ENABLED,
+                                key,
                                 entry + " #Toggle.Value");
                 events.addEventBinding(CustomUIEventBindingType.ValueChanged, entry + " #Toggle", toggleData, false);
 

@@ -43,6 +43,7 @@ public class HardcoreModeConfig {
         public static final String KEY_BLOOD_MOON_WORLDBOSS_ENABLED = "BloodMoonWorldbossEnabled";
         public static final String KEY_BLOOD_MOON_WORLDBOSS_HEALTH_MULTIPLIER = "BloodMoonWorldbossHealthMultiplier";
         public static final String KEY_BLOOD_MOON_WORLDBOSS_DAMAGE_MULTIPLIER = "BloodMoonWorldbossDamageMultiplier";
+        public static final String KEY_BLOOD_MOON_HUD_ENABLED = "BloodMoonHudEnabled";
         public static final String KEY_PLAYER_DEATH_SETTINGS_ENABLED = "PlayerDeathSettingsEnabled";
         public static final String KEY_PLAYER_ITEM_DURABILITY_LOSS_PERCENT = "PlayerItemDurabilityLossPercent";
         public static final String KEY_PLAYER_ITEM_DROP_PERCENT = "PlayerItemDropPercent";
@@ -201,6 +202,10 @@ public class HardcoreModeConfig {
                                         (config, value) -> config.bloodMoonXpMultiplier = value,
                                         config -> config.bloodMoonXpMultiplier)
                         .add()
+                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_HUD_ENABLED, Codec.BOOLEAN),
+                                        (config, value) -> config.bloodMoonHudEnabled = value,
+                                        config -> config.bloodMoonHudEnabled)
+                        .add()
                         .append(new KeyedCodec<>(KEY_PLAYER_DEATH_SETTINGS_ENABLED, Codec.BOOLEAN),
                                         (config, value) -> config.playerDeathSettingsEnabled = value,
                                         config -> config.playerDeathSettingsEnabled)
@@ -253,6 +258,7 @@ public class HardcoreModeConfig {
         public boolean bloodMoonWorldbossEnabled = false;
         public float bloodMoonWorldbossHealthMultiplier = 2.0f;
         public float bloodMoonWorldbossDamageMultiplier = 2.0f;
+        public boolean bloodMoonHudEnabled = true;
         public boolean playerDeathSettingsEnabled = false;
         public int playerItemDurabilityLossPercent = 20;
         public int playerItemDropPercent = 20;

@@ -48,6 +48,7 @@ public class HardcoreSettingsPageEventData {
     public static final String KEY_BLOOD_MOON_WORLDBOSS_HEALTH = "@BloodMoonWorldbossHealthMultiplier";
     public static final String KEY_BLOOD_MOON_WORLDBOSS_DAMAGE = "@BloodMoonWorldbossDamageMultiplier";
     public static final String KEY_BLOOD_MOON_FORCE = "@BloodMoonForce";
+    public static final String KEY_BLOOD_MOON_HUD_ENABLED = "@BloodMoonHudEnabled";
     public static final String KEY_PLAYER_DEATH_SETTINGS_ENABLED = "@PlayerDeathSettingsEnabled";
     public static final String KEY_PLAYER_ITEM_DURABILITY_LOSS_PERCENT = "@PlayerItemDurabilityLossPercent";
     public static final String KEY_PLAYER_ITEM_DROP_PERCENT = "@PlayerItemDropPercent";
@@ -227,6 +228,10 @@ public class HardcoreSettingsPageEventData {
                     (data, value) -> data.bloodMoonForce = value,
                     data -> data.bloodMoonForce)
             .add()
+            .append(new KeyedCodec<>(KEY_BLOOD_MOON_HUD_ENABLED, Codec.BOOLEAN),
+                    (data, value) -> data.bloodMoonHudEnabled = value,
+                    data -> data.bloodMoonHudEnabled)
+            .add()
             .append(new KeyedCodec<>(KEY_PLAYER_DEATH_SETTINGS_ENABLED, Codec.BOOLEAN),
                     (data, value) -> data.playerDeathSettingsEnabled = value,
                     data -> data.playerDeathSettingsEnabled)
@@ -288,6 +293,7 @@ public class HardcoreSettingsPageEventData {
     private Float bloodMoonWorldbossHealthMultiplier;
     private Float bloodMoonWorldbossDamageMultiplier;
     private Boolean bloodMoonForce;
+    private Boolean bloodMoonHudEnabled;
     private Boolean playerDeathSettingsEnabled;
     private Float playerItemDurabilityLossPercent;
     private Float playerItemDropPercent;
@@ -466,6 +472,10 @@ public class HardcoreSettingsPageEventData {
 
     public Boolean getBloodMoonForce() {
         return bloodMoonForce;
+    }
+
+    public Boolean getBloodMoonHudEnabled() {
+        return bloodMoonHudEnabled;
     }
 
     public Boolean getPlayerDeathSettingsEnabled() {
