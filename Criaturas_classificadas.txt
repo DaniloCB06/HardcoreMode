@@ -200,7 +200,8 @@ mobs_miniboss = {
   "Zombie_Aberrant_Big"
 };
 
-mobs_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          = {
+mobs_worldboss = {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          = {
   "*_Titan",
   "Dragon_*"
+  "Shadow_Knight"
 };

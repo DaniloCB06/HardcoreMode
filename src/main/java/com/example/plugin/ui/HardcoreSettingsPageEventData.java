@@ -37,6 +37,7 @@ public class HardcoreSettingsPageEventData {
     public static final String KEY_BLOOD_MOON_HOSTILE_HEALTH = "@BloodMoonHostileHealthMultiplier";
     public static final String KEY_BLOOD_MOON_HOSTILE_DAMAGE = "@BloodMoonHostileDamageMultiplier";
     public static final String KEY_BLOOD_MOON_XP_MULTIPLIER = "@BloodMoonXpMultiplier";
+    public static final String KEY_BLOOD_MOON_XP_MULTIPLIER_ENABLED = "@BloodMoonXpMultiplierEnabled";
     public static final String KEY_BLOOD_MOON_HOSTILE_ENABLED = "@BloodMoonHostileEnabled";
     public static final String KEY_BLOOD_MOON_ELITE_ENABLED = "@BloodMoonEliteEnabled";
     public static final String KEY_BLOOD_MOON_ELITE_HEALTH = "@BloodMoonEliteHealthMultiplier";
@@ -53,6 +54,10 @@ public class HardcoreSettingsPageEventData {
     public static final String KEY_PLAYER_DEATH_SETTINGS_ENABLED = "@PlayerDeathSettingsEnabled";
     public static final String KEY_PLAYER_ITEM_DURABILITY_LOSS_PERCENT = "@PlayerItemDurabilityLossPercent";
     public static final String KEY_PLAYER_ITEM_DROP_PERCENT = "@PlayerItemDropPercent";
+    // Blood Moon Death Player Settings Keys
+    public static final String KEY_BLOOD_MOON_DEATH_SETTINGS_ENABLED = "@BloodMoonDeathSettingsEnabled";
+    public static final String KEY_BLOOD_MOON_ITEM_DURABILITY_LOSS_PERCENT = "@BloodMoonItemDurabilityLossPercent";
+    public static final String KEY_BLOOD_MOON_ITEM_DROP_PERCENT = "@BloodMoonItemDropPercent";
     public static final String KEY_GO_BACK = "@GoBack";
 
     public static final BuilderCodec<HardcoreSettingsPageEventData> CODEC = BuilderCodec
@@ -229,6 +234,10 @@ public class HardcoreSettingsPageEventData {
                     (data, value) -> data.bloodMoonXpMultiplier = value,
                     data -> data.bloodMoonXpMultiplier)
             .add()
+            .append(new KeyedCodec<>(KEY_BLOOD_MOON_XP_MULTIPLIER_ENABLED, Codec.BOOLEAN),
+                    (data, value) -> data.bloodMoonXpMultiplierEnabled = value,
+                    data -> data.bloodMoonXpMultiplierEnabled)
+            .add()
             .append(new KeyedCodec<>(KEY_BLOOD_MOON_FORCE, Codec.BOOLEAN),
                     (data, value) -> data.bloodMoonForce = value,
                     data -> data.bloodMoonForce)
@@ -248,6 +257,19 @@ public class HardcoreSettingsPageEventData {
             .append(new KeyedCodec<>(KEY_PLAYER_ITEM_DROP_PERCENT, Codec.FLOAT),
                     (data, value) -> data.playerItemDropPercent = value,
                     data -> data.playerItemDropPercent)
+            .add()
+            // Blood Moon Death Player Settings Codecs
+            .append(new KeyedCodec<>(KEY_BLOOD_MOON_DEATH_SETTINGS_ENABLED, Codec.BOOLEAN),
+                    (data, value) -> data.bloodMoonDeathSettingsEnabled = value,
+                    data -> data.bloodMoonDeathSettingsEnabled)
+            .add()
+            .append(new KeyedCodec<>(KEY_BLOOD_MOON_ITEM_DURABILITY_LOSS_PERCENT, Codec.FLOAT),
+                    (data, value) -> data.bloodMoonItemDurabilityLossPercent = value,
+                    data -> data.bloodMoonItemDurabilityLossPercent)
+            .add()
+            .append(new KeyedCodec<>(KEY_BLOOD_MOON_ITEM_DROP_PERCENT, Codec.FLOAT),
+                    (data, value) -> data.bloodMoonItemDropPercent = value,
+                    data -> data.bloodMoonItemDropPercent)
             .add()
             .append(new KeyedCodec<>(KEY_GO_BACK, Codec.BOOLEAN),
                     (data, value) -> data.goBack = value,
@@ -287,6 +309,7 @@ public class HardcoreSettingsPageEventData {
     private Float bloodMoonHostileHealthMultiplier;
     private Float bloodMoonHostileDamageMultiplier;
     private Float bloodMoonXpMultiplier;
+    private Boolean bloodMoonXpMultiplierEnabled;
     private Boolean bloodMoonHostileEnabled;
     private Boolean bloodMoonEliteEnabled;
     private Float bloodMoonEliteHealthMultiplier;
@@ -303,6 +326,10 @@ public class HardcoreSettingsPageEventData {
     private Boolean playerDeathSettingsEnabled;
     private Float playerItemDurabilityLossPercent;
     private Float playerItemDropPercent;
+    // Blood Moon Death Player Settings Fields
+    private Boolean bloodMoonDeathSettingsEnabled;
+    private Float bloodMoonItemDurabilityLossPercent;
+    private Float bloodMoonItemDropPercent;
     private Boolean goBack;
 
     public HardcoreSettingsPageEventData() {
@@ -436,6 +463,10 @@ public class HardcoreSettingsPageEventData {
         return bloodMoonXpMultiplier;
     }
 
+    public Boolean getBloodMoonXpMultiplierEnabled() {
+        return bloodMoonXpMultiplierEnabled;
+    }
+
     public Boolean getBloodMoonHostileEnabled() {
         return bloodMoonHostileEnabled;
     }
@@ -498,6 +529,19 @@ public class HardcoreSettingsPageEventData {
 
     public Float getPlayerItemDropPercent() {
         return playerItemDropPercent;
+    }
+
+    // Blood Moon Death Player Settings Getters
+    public Boolean getBloodMoonDeathSettingsEnabled() {
+        return bloodMoonDeathSettingsEnabled;
+    }
+
+    public Float getBloodMoonItemDurabilityLossPercent() {
+        return bloodMoonItemDurabilityLossPercent;
+    }
+
+    public Float getBloodMoonItemDropPercent() {
+        return bloodMoonItemDropPercent;
     }
 
     public Boolean getGoBack() {

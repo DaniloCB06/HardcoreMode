@@ -21,17 +21,25 @@ import java.util.function.Consumer;
 public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettingsPageEventData> {
         private static final String PAGE_PATH = "Pages/HardcoreSettingsSectionPage.ui";
         private static final String PAGE_PATH_ENEMY = "Pages/HardcoreSettingsSectionEnemyPage.ui";
+        private static final String PAGE_PATH_PLAYER = "Pages/HardcoreSettingsSectionPlayerPage.ui";
         private static final String ENTRY_TOGGLE_PATH = "Pages/HardcoreToggleRow.ui";
         private static final String ENTRY_CATEGORY_TOGGLE_PATH = "Pages/HardcoreCategoryToggleRow.ui";
         private static final String ENTRY_SLIDER_PATH = "Pages/HardcoreSliderRow.ui";
+        private static final String ENTRY_INFO_TEXT_PATH = "Pages/HardcoreInfoText.ui";
         private static final String ENTRY_TWO_COLUMN_PATH = "Pages/HardcoreTwoColumnRow.ui";
         private static final String ENTRY_SPACER_PATH = "Pages/HardcoreSpacerRow.ui";
         private static final String ENTRY_DURATION_PATH = "Pages/HardcoreBloodMoonDurationRow.ui";
         private static final String ENTRY_FORCE_PATH = "Pages/HardcoreBloodMoonForceRow.ui";
+        private static final String ENTRY_FORCE_RIGHT_PATH = "Pages/HardcoreBloodMoonForceRowRight.ui";
         private static final String ENTRY_HEADER_PATH = "Pages/HardcoreHeaderRow.ui";
         private static final String SETTINGS_LIST_ID = "#SettingsList";
-        private static final String BACK_BUTTON_PATH = "#BackContainer #BackButton";
-        private static final String BACK_VALUE_PATH = "#BackContainer #BackValue.Value";
+        private static final String BACK_BUTTON_PATH = "#BottomButtonsContainer #BackButton";
+        private static final String BACK_VALUE_PATH = "#BottomButtonsContainer #BackValue.Value";
+        private static final String FORCE_BLOOD_MOON_BUTTON_PATH = "#BottomButtonsContainer #ForceBloodMoonButton";
+        private static final String FORCE_BLOOD_MOON_VALUE_PATH = "#BottomButtonsContainer #ForceBloodMoonValue.Value";
+        // Enemy page uses different container name
+        private static final String ENEMY_BACK_BUTTON_PATH = "#BackContainer #BackButton";
+        private static final String ENEMY_BACK_VALUE_PATH = "#BackContainer #BackValue.Value";
 
         private static final String PAGE_TITLE_ID = "#PageTitle.Text";
         private static final String SECTION_TITLE_ID = "#SectionTitle.Text";
@@ -93,10 +101,23 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                         UICommandBuilder commands,
                         UIEventBuilder events,
                         Store<EntityStore> store) {
-                commands.append(section == SettingsSection.ENEMY ? PAGE_PATH_ENEMY : PAGE_PATH);
+                // Use specific page based on section
+                String pagePath = PAGE_PATH;
+                if (section == SettingsSection.ENEMY) {
+                        pagePath = PAGE_PATH_ENEMY;
+                } else if (section == SettingsSection.PLAYER) {
+                        pagePath = PAGE_PATH_PLAYER;
+                }
+                commands.append(pagePath);
+                
                 fillHeader(commands);
                 buildSettingsList(commands, events);
                 bindNavigation(events);
+                
+                // Hide Force Blood Moon button on non-Blood Moon pages (only when using PAGE_PATH which has the button)
+                if (section != SettingsSection.ENEMY && section != SettingsSection.BLOOD_MOON && section != SettingsSection.PLAYER) {
+                        commands.set(FORCE_BLOOD_MOON_BUTTON_PATH + ".Visible", false);
+                }
         }
 
         @Override
@@ -148,12 +169,17 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 Float bloodMoonWorldbossHealthMultiplier = data.getBloodMoonWorldbossHealthMultiplier();
                 Float bloodMoonWorldbossDamageMultiplier = data.getBloodMoonWorldbossDamageMultiplier();
                 Float bloodMoonXpMultiplier = data.getBloodMoonXpMultiplier();
+                Boolean bloodMoonXpMultiplierEnabled = data.getBloodMoonXpMultiplierEnabled();
                 Boolean bloodMoonForce = data.getBloodMoonForce();
                 Boolean bloodMoonHudEnabled = data.getBloodMoonHudEnabled();
                 Boolean bloodMoonDropsEnabled = data.getBloodMoonDropsEnabled();
                 Boolean playerDeathSettingsEnabled = data.getPlayerDeathSettingsEnabled();
                 Float playerItemDurabilityLossPercent = data.getPlayerItemDurabilityLossPercent();
                 Float playerItemDropPercent = data.getPlayerItemDropPercent();
+                // Blood Moon Death Settings
+                Boolean bloodMoonDeathSettingsEnabled = data.getBloodMoonDeathSettingsEnabled();
+                Float bloodMoonItemDurabilityLossPercent = data.getBloodMoonItemDurabilityLossPercent();
+                Float bloodMoonItemDropPercent = data.getBloodMoonItemDropPercent();
                 Boolean goBack = data.getGoBack();
 
                 if (Boolean.TRUE.equals(goBack)) {
@@ -202,12 +228,16 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 && bloodMoonWorldbossHealthMultiplier == null
                                 && bloodMoonWorldbossDamageMultiplier == null
                                 && bloodMoonXpMultiplier == null
+                                && bloodMoonXpMultiplierEnabled == null
                                 && bloodMoonForce == null
                                 && bloodMoonHudEnabled == null
                                 && bloodMoonDropsEnabled == null
                                 && playerDeathSettingsEnabled == null
                                 && playerItemDurabilityLossPercent == null
-                                && playerItemDropPercent == null) {
+                                && playerItemDropPercent == null
+                                && bloodMoonDeathSettingsEnabled == null
+                                && bloodMoonItemDurabilityLossPercent == null
+                                && bloodMoonItemDropPercent == null) {
                         return;
                 }
 
@@ -411,6 +441,10 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 STEP,
                                 value -> config.bloodMoonXpMultiplier = value);
                 changed |= applyEnabled(
+                                bloodMoonXpMultiplierEnabled,
+                                config.bloodMoonXpMultiplierEnabled,
+                                value -> config.bloodMoonXpMultiplierEnabled = value);
+                changed |= applyEnabled(
                                 playerDeathSettingsEnabled,
                                 config.playerDeathSettingsEnabled,
                                 value -> config.playerDeathSettingsEnabled = value);
@@ -428,6 +462,25 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 MAX_PERCENT,
                                 PERCENT_STEP,
                                 value -> config.playerItemDropPercent = value);
+                // Blood Moon Death Settings
+                changed |= applyEnabled(
+                                bloodMoonDeathSettingsEnabled,
+                                config.bloodMoonDeathSettingsEnabled,
+                                value -> config.bloodMoonDeathSettingsEnabled = value);
+                changed |= applyIntSetting(
+                                bloodMoonItemDurabilityLossPercent,
+                                config.bloodMoonItemDurabilityLossPercent,
+                                MIN_PERCENT,
+                                MAX_PERCENT,
+                                PERCENT_STEP,
+                                value -> config.bloodMoonItemDurabilityLossPercent = value);
+                changed |= applyIntSetting(
+                                bloodMoonItemDropPercent,
+                                config.bloodMoonItemDropPercent,
+                                MIN_PERCENT,
+                                MAX_PERCENT,
+                                PERCENT_STEP,
+                                value -> config.bloodMoonItemDropPercent = value);
 
                 if (bloodMoonHudEnabled != null && bloodMoonHudEnabled != config.bloodMoonHudEnabled) {
                         config.bloodMoonHudEnabled = bloodMoonHudEnabled;
@@ -493,10 +546,30 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
         }
 
         private void bindNavigation(UIEventBuilder events) {
+                // Different pages use different container paths
+                String backButtonPath = BACK_BUTTON_PATH;
+                String backValuePath = BACK_VALUE_PATH;
+                
+                if (section == SettingsSection.ENEMY) {
+                        backButtonPath = ENEMY_BACK_BUTTON_PATH;
+                        backValuePath = ENEMY_BACK_VALUE_PATH;
+                } else if (section == SettingsSection.PLAYER) {
+                        // Player page has simple structure without extra containers
+                        backButtonPath = BACK_BUTTON_PATH;
+                        backValuePath = BACK_VALUE_PATH;
+                }
+                
                 EventData backData = EventData.of(
                                 HardcoreSettingsPageEventData.KEY_GO_BACK,
-                                BACK_VALUE_PATH);
-                events.addEventBinding(CustomUIEventBindingType.Activating, BACK_BUTTON_PATH, backData, false);
+                                backValuePath);
+                events.addEventBinding(CustomUIEventBindingType.Activating, backButtonPath, backData, false);
+                
+                if (section == SettingsSection.BLOOD_MOON) {
+                        EventData forceData = EventData.of(
+                                        HardcoreSettingsPageEventData.KEY_BLOOD_MOON_FORCE,
+                                        FORCE_BLOOD_MOON_VALUE_PATH);
+                        events.addEventBinding(CustomUIEventBindingType.Activating, FORCE_BLOOD_MOON_BUTTON_PATH, forceData, false);
+                }
         }
 
         private int buildEnemySettings(
@@ -620,22 +693,6 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 "Blood Moon: " + (config.bloodMoonEnabled ? "ON" : "OFF"),
                                 config.bloodMoonEnabled,
                                 HardcoreSettingsPageEventData.KEY_BLOOD_MOON_ENABLED);
-                index = addToggleEntry(
-                                commands,
-                                events,
-                                SETTINGS_LIST_ID,
-                                index,
-                                "Show Blood Moon HUD: " + (config.bloodMoonHudEnabled ? "ON" : "OFF"),
-                                config.bloodMoonHudEnabled,
-                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_HUD_ENABLED);
-                index = addToggleEntry(
-                                commands,
-                                events,
-                                SETTINGS_LIST_ID,
-                                index,
-                                "Blood Moon Drops: " + (config.bloodMoonDropsEnabled ? "ON" : "OFF"),
-                                config.bloodMoonDropsEnabled,
-                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_DROPS_ENABLED);
                 index = addSliderEntry(
                                 commands,
                                 events,
@@ -715,17 +772,100 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 config.bloodMoonWorldbossDamageMultiplier,
                                 HardcoreSettingsPageEventData.KEY_BLOOD_MOON_WORLDBOSS_DAMAGE);
                 index++;
+                
+                // Grid layout: Left column (HUD + Drops), Right column (XP Multiplier)
+                String bottomGridEntry = SETTINGS_LIST_ID + "[" + index + "]";
+                commands.append(SETTINGS_LIST_ID, ENTRY_TWO_COLUMN_PATH);
+                
+                String bottomLeftList = bottomGridEntry + " #LeftColumn";
+                String bottomRightList = bottomGridEntry + " #RightColumn";
+                int bottomLeftIndex = 0;
+                int bottomRightIndex = 0;
+                
+                // Left column: Show Blood Moon HUD
+                bottomLeftIndex = addToggleEntry(
+                                commands,
+                                events,
+                                bottomLeftList,
+                                bottomLeftIndex,
+                                "Show Blood Moon HUD: " + (config.bloodMoonHudEnabled ? "ON" : "OFF"),
+                                config.bloodMoonHudEnabled,
+                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_HUD_ENABLED);
+                
+                // Left column: Blood Moon Drops
+                bottomLeftIndex = addToggleEntry(
+                                commands,
+                                events,
+                                bottomLeftList,
+                                bottomLeftIndex,
+                                "Blood Moon Drops: " + (config.bloodMoonDropsEnabled ? "ON" : "OFF"),
+                                config.bloodMoonDropsEnabled,
+                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_DROPS_ENABLED);
+                
+                // Right column: RPG XP Multiplier - only shown if RPGLeveling is available
                 if (plugin.isRpgLevelingAvailable()) {
-                        index = addSliderEntry(
+                        bottomRightIndex = addToggleEntry(
                                         commands,
                                         events,
-                                        SETTINGS_LIST_ID,
-                                        index,
-                                        "RPG XP Multiplier",
+                                        bottomRightList,
+                                        bottomRightIndex,
+                                        "RPG XP Multiplier: " + (config.bloodMoonXpMultiplierEnabled ? "ON" : "OFF"),
+                                        config.bloodMoonXpMultiplierEnabled,
+                                        HardcoreSettingsPageEventData.KEY_BLOOD_MOON_XP_MULTIPLIER_ENABLED);
+                        bottomRightIndex = addSliderEntry(
+                                        commands,
+                                        events,
+                                        bottomRightList,
+                                        bottomRightIndex,
+                                        "XP Multiplier",
                                         config.bloodMoonXpMultiplier,
                                         HardcoreSettingsPageEventData.KEY_BLOOD_MOON_XP_MULTIPLIER);
+                } else {
+                        bottomRightIndex = addInfoTextEntry(
+                                        commands,
+                                        bottomRightList,
+                                        bottomRightIndex,
+                                        "RPGLeveling mod not found");
                 }
-                return addForceBloodMoonEntry(commands, events, SETTINGS_LIST_ID, index);
+                index++;
+                
+                // Death Player Settings during Blood Moon (separate lines)
+                index = addCategoryToggleEntry(
+                                commands,
+                                events,
+                                SETTINGS_LIST_ID,
+                                index,
+                                "Death Player Settings: " + (config.bloodMoonDeathSettingsEnabled ? "ON" : "OFF"),
+                                config.bloodMoonDeathSettingsEnabled,
+                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_DEATH_SETTINGS_ENABLED);
+                
+                index = addSliderEntry(
+                                commands,
+                                events,
+                                SETTINGS_LIST_ID,
+                                index,
+                                "Item Durability",
+                                config.bloodMoonItemDurabilityLossPercent,
+                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_ITEM_DURABILITY_LOSS_PERCENT,
+                                MIN_PERCENT,
+                                MAX_PERCENT,
+                                PERCENT_STEP,
+                                this::formatPercent);
+                
+                index = addSliderEntry(
+                                commands,
+                                events,
+                                SETTINGS_LIST_ID,
+                                index,
+                                "Inventory Drop",
+                                config.bloodMoonItemDropPercent,
+                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_ITEM_DROP_PERCENT,
+                                MIN_PERCENT,
+                                MAX_PERCENT,
+                                PERCENT_STEP,
+                                this::formatPercent);
+                
+                return index;
         }
 
         private int buildPlayerSettings(
@@ -733,12 +873,15 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                         UIEventBuilder events,
                         HardcoreModeConfig config,
                         int index) {
+                // Build label with Blood Moon priority indicator
+                String deathSettingsLabel = getDeathSettingsLabel(config.playerDeathSettingsEnabled);
+                
                 index = addCategoryToggleEntry(
                                 commands,
                                 events,
                                 SETTINGS_LIST_ID,
                                 index,
-                                "Death Settings: " + (config.playerDeathSettingsEnabled ? "ON" : "OFF"),
+                                deathSettingsLabel,
                                 config.playerDeathSettingsEnabled,
                                 HardcoreSettingsPageEventData.KEY_PLAYER_DEATH_SETTINGS_ENABLED);
                 index = addSliderEntry(
@@ -765,6 +908,16 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 MAX_PERCENT,
                                 PERCENT_STEP,
                                 this::formatPercent);
+        }
+        
+        private String getDeathSettingsLabel(boolean enabled) {
+                String label = "Death Settings: " + (enabled ? "ON" : "OFF");
+                HardcoreModeConfig config = plugin.getConfigData();
+                // Show Blood Moon Priority if Blood Moon is active AND Blood Moon Death Settings is enabled
+                if (plugin.isBloodMoonActive() && config.bloodMoonDeathSettingsEnabled) {
+                        label += " (Blood Moon Priority)";
+                }
+                return label;
         }
 
         private void openMainMenu(Ref<EntityStore> ref, Store<EntityStore> store) {
@@ -808,6 +961,17 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 entry + " #Toggle.Value");
                 events.addEventBinding(CustomUIEventBindingType.ValueChanged, entry + " #Toggle", toggleData, false);
 
+                return index + 1;
+        }
+
+        private int addInfoTextEntry(
+                        UICommandBuilder commands,
+                        String listId,
+                        int index,
+                        String text) {
+                String entry = listId + "[" + index + "]";
+                commands.append(listId, ENTRY_INFO_TEXT_PATH);
+                commands.set(entry + " #InfoText.Text", text);
                 return index + 1;
         }
 
@@ -981,7 +1145,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                         String listId,
                         int index) {
                 String entry = listId + "[" + index + "]";
-                commands.append(listId, ENTRY_FORCE_PATH);
+                commands.append(listId, ENTRY_FORCE_RIGHT_PATH);
 
                 EventData forceData = EventData.of(
                                 HardcoreSettingsPageEventData.KEY_BLOOD_MOON_FORCE,

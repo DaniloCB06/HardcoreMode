@@ -82,12 +82,49 @@ public class HardcorePlayerDeathConfigSystem extends DeathSystems.OnDeathSystem 
             CommandBuffer<EntityStore> commandBuffer
     ) {
         HardcoreModeConfig config = plugin.getConfigData();
-        if (!config.playerDeathSettingsEnabled) {
+        
+        // Check if Blood Moon is active
+        boolean isBloodMoonActive = plugin.isBloodMoonActive();
+        
+        // Determine which settings to use
+        // Priority: Blood Moon Death Settings > Player Death Settings (during Blood Moon)
+        // Outside Blood Moon: Only Player Death Settings apply
+        int durabilityPercent;
+        int dropPercent;
+        boolean shouldApply = false;
+        
+        if (isBloodMoonActive) {
+            // During Blood Moon: Blood Moon settings have priority if enabled
+            if (config.bloodMoonDeathSettingsEnabled) {
+                // Use Blood Moon specific settings
+                durabilityPercent = clampPercent(config.bloodMoonItemDurabilityLossPercent);
+                dropPercent = clampPercent(config.bloodMoonItemDropPercent);
+                shouldApply = true;
+            } else if (config.playerDeathSettingsEnabled) {
+                // Blood Moon Death Settings OFF, but Player Death Settings ON
+                // Use Player Death Settings during Blood Moon
+                durabilityPercent = clampPercent(config.playerItemDurabilityLossPercent);
+                dropPercent = clampPercent(config.playerItemDropPercent);
+                shouldApply = true;
+            } else {
+                // Both disabled, don't apply custom settings
+                return;
+            }
+        } else {
+            // Outside Blood Moon: Only Player Death Settings apply
+            if (config.playerDeathSettingsEnabled) {
+                durabilityPercent = clampPercent(config.playerItemDurabilityLossPercent);
+                dropPercent = clampPercent(config.playerItemDropPercent);
+                shouldApply = true;
+            } else {
+                // Player Death Settings disabled, don't apply custom settings
+                return;
+            }
+        }
+        
+        if (!shouldApply) {
             return;
         }
-
-        int durabilityPercent = clampPercent(config.playerItemDurabilityLossPercent);
-        int dropPercent = clampPercent(config.playerItemDropPercent);
 
         component.setItemsDurabilityLossPercentage(durabilityPercent);
 

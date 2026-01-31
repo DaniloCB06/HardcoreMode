@@ -1,0 +1,12 @@
+$C = "../Common.ui";
+
+Group {
+  Anchor: (Width: 340, Height: 50);
+  LayoutMode: Left;
+  Padding: (Left: 6, Right: 6, Top: 8, Bottom: 6);
+
+  Label #InfoText {
+    FlexWeight: 1;
+    Style: (...$C.@DefaultLabelStyle, FontSize: 13, RenderBold: false, TextColor: #8b9099, VerticalAlignment: Center, HorizontalAlignment: Center);
+  }
+}

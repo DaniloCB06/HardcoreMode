@@ -33,14 +33,33 @@ public class HardcoreProgressBarSystem extends TickingSystem<EntityStore> {
             return;
         }
 
+        boolean bloodMoonActive = plugin.isBloodMoonActive();
+        boolean hudEnabled = plugin.getConfigData().bloodMoonHudEnabled;
+        
+        // Check for state changes every tick for immediate response
+        if (!bloodMoonActive && wasBloodMoonActive) {
+            // Blood Moon just ended - remove HUD immediately
+            removeHudFromAllPlayers(store);
+            lastProgress.clear();
+            wasBloodMoonActive = false;
+            tickCounter = 0;
+            return;
+        }
+        
+        if (bloodMoonActive && !hudEnabled && wasBloodMoonActive) {
+            // HUD was disabled - remove immediately
+            removeHudFromAllPlayers(store);
+            lastProgress.clear();
+            wasBloodMoonActive = false;
+            tickCounter = 0;
+            return;
+        }
+
         tickCounter++;
         if (tickCounter < UPDATE_INTERVAL_TICKS) {
             return;
         }
         tickCounter = 0;
-
-        boolean bloodMoonActive = plugin.isBloodMoonActive();
-        boolean hudEnabled = plugin.getConfigData().bloodMoonHudEnabled;
         
         if (bloodMoonActive && hudEnabled) {
             float progress = plugin.getBloodMoonProgress(store);
@@ -48,10 +67,6 @@ public class HardcoreProgressBarSystem extends TickingSystem<EntityStore> {
             
             updateAllPlayers(store, progress, hoursRemaining);
             wasBloodMoonActive = true;
-        } else if (wasBloodMoonActive || (bloodMoonActive && !hudEnabled)) {
-            removeHudFromAllPlayers(store);
-            lastProgress.clear();
-            wasBloodMoonActive = false;
         }
     }
 
@@ -78,9 +93,24 @@ public class HardcoreProgressBarSystem extends TickingSystem<EntityStore> {
                     continue;
                 }
 
-                // Check if update is needed (progress changed >5%)
+                // Check if update is needed
+                // Always update if near the end (>90%) or start (<10%) to ensure smooth progress
+                // Otherwise only update if progress changed >5%
                 Float lastProg = lastProgress.get(ref);
-                if (lastProg == null || Math.abs(lastProg - progress) > 0.05f) {
+                boolean shouldUpdate = lastProg == null;
+                
+                if (!shouldUpdate) {
+                    boolean nearEndOrStart = progress > 0.90f || progress < 0.10f;
+                    if (nearEndOrStart) {
+                        // Update more frequently near critical points
+                        shouldUpdate = Math.abs(lastProg - progress) > 0.01f;
+                    } else {
+                        // Normal threshold for middle range
+                        shouldUpdate = Math.abs(lastProg - progress) > 0.05f;
+                    }
+                }
+                
+                if (shouldUpdate) {
                     HardcoreProgressBarHud hud = new HardcoreProgressBarHud(
                         player.getPlayerRef(),
                         progress,

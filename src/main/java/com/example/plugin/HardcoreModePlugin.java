@@ -651,6 +651,17 @@ public class HardcoreModePlugin extends JavaPlugin {
             return;
         }
 
+        // Check if XP Multiplier is enabled
+        if (!config.get().bloodMoonXpMultiplierEnabled) {
+            if (rpgLevelingBloodMoonApplied && rpgLevelingBaseRateExp != null) {
+                setRpgRateExp(levelingConfig, rpgLevelingBaseRateExp);
+            }
+            rpgLevelingBloodMoonApplied = false;
+            rpgLevelingAppliedMultiplier = 1.0f;
+            rpgLevelingBaseRateExp = null;
+            return;
+        }
+
         float multiplier = config.get().bloodMoonXpMultiplier;
         if (!rpgLevelingBloodMoonApplied) {
             rpgLevelingBaseRateExp = getRpgRateExp(levelingConfig);
