@@ -37,6 +37,7 @@ $C.@Container {
       Group #BloodMoonDropsButtonRow {
         LayoutMode: Left;
         Padding: (Full: 2);
+        Anchor: (Bottom: 12);
         Background: (Color: #07101f); 
 
         Group #BloodMoonDropsCard {
@@ -58,6 +59,38 @@ $C.@Container {
           }
 
           $C.@CheckBox #BloodMoonDropsValue {
+            Anchor: (Width: 0, Height: 0);
+            Visible: false;
+            Value: true;
+          }
+        }
+      }
+
+      Group #MobCategoriesButtonRow {
+        LayoutMode: Left;
+        Padding: (Full: 2);
+        Anchor: (Bottom: 12);
+        Background: (Color: #07101f); 
+
+        Group #MobCategoriesCard {
+          LayoutMode: Left;
+          Padding: (Full: 10);
+          Background: (Color: #162336);
+          FlexWeight: 1;
+
+          $C.@SecondaryTextButton #MobCategoriesButton {
+            Anchor: (Width: 210, Height: 44);
+            Text: "Mob Categories";
+          }
+
+          Label #MobCategoriesDescription {
+            Anchor: (Left: 18);
+            FlexWeight: 1;
+            Style: (...$C.@DefaultLabelStyle, FontSize: 15, TextColor: #dce4ef, VerticalAlignment: Center);
+            Text: "View and manage creature category assignments";
+          }
+
+          $C.@CheckBox #MobCategoriesValue {
             Anchor: (Width: 0, Height: 0);
             Visible: false;
             Value: true;

@@ -106,6 +106,54 @@ $C.@Container {
       }
     }
 
+    Group #PaginationContainer {
+      LayoutMode: Left;
+      Padding: (Full: 8);
+      Anchor: (Bottom: 8);
+      Background: (Color: #0d1a2b);
+
+      $C.@SmallSecondaryTextButton #PrevButton {
+        Anchor: (Width: 120, Height: 28);
+        Text: "< Previos";
+      }
+
+      $C.@CheckBox #PrevValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      Group {
+        FlexWeight: 1;
+      }
+
+      Label #PageInfo {
+        Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #a8b5c9, HorizontalAlignment: Center, VerticalAlignment: Center);
+        Text: "Page 1 of 1";
+      }
+
+      Group {
+        FlexWeight: 1;
+      }
+
+      $C.@SmallSecondaryTextButton #NextButton {
+        Anchor: (Width: 100, Height: 28);
+        Text: "Next >";
+      }
+
+      $C.@CheckBox #NextValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+    }
+
+    Label #TotalEntriesText {
+      Anchor: (Bottom: 8);
+      Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #7a8596, HorizontalAlignment: Center, VerticalAlignment: Center);
+      Text: "Total: 0 drops";
+    }
+
     Group #Spacer {
       FlexWeight: 1;
     }

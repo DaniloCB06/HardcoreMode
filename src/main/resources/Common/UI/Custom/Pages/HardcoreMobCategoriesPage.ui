@@ -1,0 +1,252 @@
+$C = "../Common.ui";
+
+$C.@PageOverlay {}
+
+$C.@Container {
+  Anchor: (Width: 800, Height: 750);
+
+  #Title {
+    Group {
+      $C.@Title #PageTitle {
+        @Text = "Hardcore Mode";
+      }
+    }
+  }
+
+  #Content {
+    LayoutMode: Top;
+    Padding: (Left: 24, Right: 24, Top: 12, Bottom: 12);
+
+    Label #SectionTitle {
+      Style: (
+        FontSize: 22,
+        RenderBold: true,
+        TextColor: #d3d6db,
+        VerticalAlignment: Center,
+        HorizontalAlignment: Center
+      );
+      Anchor: (Bottom: 8);
+      Text: "Mob Categories";
+    }
+
+    Label #WarningText {
+      Style: (
+        FontSize: 12,
+        TextColor: #ff9944,
+        VerticalAlignment: Center,
+        HorizontalAlignment: Center
+      );
+      Anchor: (Bottom: 12);
+      Text: "To add or edit mobs or categories, edit 'HardcoreModeCategories.json' in 'com.example_HardcoreMode' folder";
+    }
+
+    Group #FiltersContainer {
+      LayoutMode: Left;
+      Padding: (Left: 8, Right: 8, Top: 6, Bottom: 6);
+      Background: (Color: #0d1a2b);
+      Anchor: (Bottom: 8);
+
+      Label #FilterByCategoryLabel {
+        Anchor: (Width: 90);
+        Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #a8b5c9, VerticalAlignment: Center);
+        Text: "Filter by:";
+      }
+
+      $C.@SmallSecondaryTextButton #FilterAllButton {
+        Anchor: (Width: 60, Height: 26, Left: 8);
+        Text: "All";
+      }
+
+      $C.@CheckBox #FilterAllValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      $C.@SmallSecondaryTextButton #FilterPassiveButton {
+        Anchor: (Width: 80, Height: 26, Left: 4);
+        Text: "Passive";
+      }
+
+      $C.@CheckBox #FilterPassiveValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      $C.@SmallSecondaryTextButton #FilterCritterButton {
+        Anchor: (Width: 75, Height: 26, Left: 4);
+        Text: "Critter";
+      }
+
+      $C.@CheckBox #FilterCritterValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      $C.@SmallSecondaryTextButton #FilterHostileButton {
+        Anchor: (Width: 75, Height: 26, Left: 4);
+        Text: "Hostile";
+      }
+
+      $C.@CheckBox #FilterHostileValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      $C.@SmallSecondaryTextButton #FilterEliteButton {
+        Anchor: (Width: 60, Height: 26, Left: 4);
+        Text: "Elite";
+      }
+
+      $C.@CheckBox #FilterEliteValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      $C.@SmallSecondaryTextButton #FilterMinibossButton {
+        Anchor: (Width: 90, Height: 26, Left: 4);
+        Text: "Miniboss";
+      }
+
+      $C.@CheckBox #FilterMinibossValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      $C.@SmallSecondaryTextButton #FilterWorldbossButton {
+        Anchor: (Width: 100, Height: 26, Left: 4);
+        Text: "Worldboss";
+      }
+
+      $C.@CheckBox #FilterWorldbossValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+    }
+
+    Group #TableContainer {
+      LayoutMode: Top;
+      Padding: (Top: 4);
+
+      Group #HeaderRow {
+        LayoutMode: Left;
+        Padding: (Left: 8, Right: 8, Top: 8, Bottom: 8);
+        Background: (Color: #162336);
+        Anchor: (Bottom: 2);
+
+        Label #HeaderMobId {
+          FlexWeight: 1;
+          Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #d3d6db, VerticalAlignment: Center);
+          Text: "Mob ID (Pattern)";
+        }
+
+        Label #HeaderCategory {
+          Anchor: (Width: 120);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #d3d6db, HorizontalAlignment: Center, VerticalAlignment: Center);
+          Text: "Category";
+        }
+      }
+
+      Group #ItemsList {
+        LayoutMode: Top;
+        Background: (Color: #0a1420);
+        Padding: (Full: 2);
+      }
+    }
+
+    Group #Spacer {
+      FlexWeight: 1;
+    }
+
+    Group #PaginationContainer {
+      LayoutMode: Left;
+      Padding: (Top: 12, Bottom: 8);
+
+      $C.@SmallSecondaryTextButton #PrevPageButton {
+        Anchor: (Width: 120, Height: 30);
+        Text: "< Previous";
+      }
+
+      $C.@CheckBox #PrevPageValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      Group {
+        FlexWeight: 1;
+      }
+
+      Label #PageInfoLabel {
+        Anchor: (Width: 200);
+        Style: (...$C.@DefaultLabelStyle, FontSize: 14, TextColor: #d3d6db, HorizontalAlignment: Center, VerticalAlignment: Center);
+        Text: "Page 1 of 1";
+      }
+
+      Group {
+        FlexWeight: 1;
+      }
+
+      $C.@SmallSecondaryTextButton #NextPageButton {
+        Anchor: (Width: 120, Height: 30);
+        Text: "Next >";
+      }
+
+      $C.@CheckBox #NextPageValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+    }
+
+    Label #ResultsCountLabel {
+      Style: (
+        FontSize: 13,
+        TextColor: #a8b5c9,
+        VerticalAlignment: Center,
+        HorizontalAlignment: Center
+      );
+      Anchor: (Bottom: 8);
+      Text: "Showing 0 entries";
+    }
+
+    Group #BottomButtonsContainer {
+      LayoutMode: Left;
+      Anchor: (Top: 4);
+
+      $C.@SmallSecondaryTextButton #BackButton {
+        Anchor: (Width: 110, Height: 32);
+        Text: "Back";
+      }
+
+      $C.@CheckBox #BackValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      Group {
+        FlexWeight: 1;
+      }
+
+      $C.@SmallSecondaryTextButton #ReloadButton {
+        Anchor: (Width: 160, Height: 32);
+        Text: "Reload Config";
+      }
+
+      $C.@CheckBox #ReloadValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+    }
+  }
+}
+
+$C.@BackButton {}

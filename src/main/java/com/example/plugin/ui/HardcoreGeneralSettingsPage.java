@@ -24,6 +24,10 @@ public class HardcoreGeneralSettingsPage extends InteractiveCustomUIPage<Hardcor
     private static final String BLOOD_MOON_DROPS_VALUE_PATH = "#BloodMoonDropsButtonRow #BloodMoonDropsValue.Value";
     private static final String BLOOD_MOON_DROPS_BUTTON_TEXT_ID = "#BloodMoonDropsButton.Text";
     private static final String BLOOD_MOON_DROPS_DESCRIPTION_ID = "#BloodMoonDropsDescription.Text";
+    private static final String MOB_CATEGORIES_BUTTON_PATH = "#MobCategoriesButtonRow #MobCategoriesButton";
+    private static final String MOB_CATEGORIES_VALUE_PATH = "#MobCategoriesButtonRow #MobCategoriesValue.Value";
+    private static final String MOB_CATEGORIES_BUTTON_TEXT_ID = "#MobCategoriesButton.Text";
+    private static final String MOB_CATEGORIES_DESCRIPTION_ID = "#MobCategoriesDescription.Text";
 
     private final HardcoreModePlugin plugin;
     private final PlayerRef playerRef;
@@ -60,6 +64,7 @@ public class HardcoreGeneralSettingsPage extends InteractiveCustomUIPage<Hardcor
 
         Boolean goBack = data.getGoBack();
         Boolean openBloodMoonDrops = data.getOpenBloodMoonDrops();
+        Boolean openMobCategories = data.getOpenMobCategories();
 
         if (Boolean.TRUE.equals(goBack)) {
             openMainMenu(ref, store);
@@ -71,6 +76,11 @@ public class HardcoreGeneralSettingsPage extends InteractiveCustomUIPage<Hardcor
             return;
         }
 
+        if (Boolean.TRUE.equals(openMobCategories)) {
+            openMobCategories(ref, store);
+            return;
+        }
+
         // Aqui você adicionará a lógica para lidar com as configurações gerais
     }
 
@@ -79,6 +89,8 @@ public class HardcoreGeneralSettingsPage extends InteractiveCustomUIPage<Hardcor
         commands.set(SECTION_TITLE_ID, "General Settings");
         commands.set(BLOOD_MOON_DROPS_BUTTON_TEXT_ID, "Blood Moon Drops");
         commands.set(BLOOD_MOON_DROPS_DESCRIPTION_ID, "Configure item drops during Blood Moon events");
+        commands.set(MOB_CATEGORIES_BUTTON_TEXT_ID, "Mob Categories");
+        commands.set(MOB_CATEGORIES_DESCRIPTION_ID, "View and manage creature category assignments");
     }
 
     private void buildSettingsList(UICommandBuilder commands, UIEventBuilder events) {
@@ -92,6 +104,12 @@ public class HardcoreGeneralSettingsPage extends InteractiveCustomUIPage<Hardcor
                 BLOOD_MOON_DROPS_VALUE_PATH
         );
         events.addEventBinding(CustomUIEventBindingType.Activating, BLOOD_MOON_DROPS_BUTTON_PATH, bloodMoonDropsData, false);
+
+        EventData mobCategoriesData = EventData.of(
+                HardcoreGeneralSettingsPageEventData.KEY_OPEN_MOB_CATEGORIES,
+                MOB_CATEGORIES_VALUE_PATH
+        );
+        events.addEventBinding(CustomUIEventBindingType.Activating, MOB_CATEGORIES_BUTTON_PATH, mobCategoriesData, false);
     }
 
     private void bindNavigation(UIEventBuilder events) {
@@ -132,5 +150,21 @@ public class HardcoreGeneralSettingsPage extends InteractiveCustomUIPage<Hardcor
         }
 
         player.getPageManager().openCustomPage(ref, store, new HardcoreBloodMoonDropsPage(plugin, playerRef));
+    }
+
+    private void openMobCategories(
+            Ref<EntityStore> ref,
+            Store<EntityStore> store
+    ) {
+        if (store == null || ref == null) {
+            return;
+        }
+
+        Player player = store.getComponent(ref, Player.getComponentType());
+        if (player == null) {
+            return;
+        }
+
+        player.getPageManager().openCustomPage(ref, store, new HardcoreMobCategoriesPage(plugin, playerRef));
     }
 }

@@ -12,6 +12,8 @@ public class HardcoreBloodMoonDropsPageEventData {
     public static final String KEY_DROP_ENABLED_PREFIX = "@DropEnabled_";
     public static final String KEY_REMOVE_DROP_PREFIX = "@RemoveDrop_";
     public static final String KEY_RELOAD_CONFIG = "@ReloadConfig";
+    public static final String KEY_PREV_PAGE = "@PrevPage";
+    public static final String KEY_NEXT_PAGE = "@NextPage";
 
     // Note: Dynamic event keys will be captured through individual KeyedCodec entries added at runtime
     // For now, we'll use a simpler approach with just the static keys
@@ -29,6 +31,8 @@ public class HardcoreBloodMoonDropsPageEventData {
 
     private Boolean goBack;
     private Boolean reloadConfig;
+    private Boolean prevPage;
+    private Boolean nextPage;
     private final Map<String, Boolean> dropChanges = new HashMap<>();
 
     public HardcoreBloodMoonDropsPageEventData() {
@@ -48,6 +52,22 @@ public class HardcoreBloodMoonDropsPageEventData {
 
     public void setReloadConfig(Boolean reloadConfig) {
         this.reloadConfig = reloadConfig;
+    }
+
+    public Boolean getPrevPage() {
+        return prevPage;
+    }
+
+    public void setPrevPage(Boolean prevPage) {
+        this.prevPage = prevPage;
+    }
+
+    public Boolean getNextPage() {
+        return nextPage;
+    }
+
+    public void setNextPage(Boolean nextPage) {
+        this.nextPage = nextPage;
     }
 
     public void addDropChange(String key, Boolean value) {

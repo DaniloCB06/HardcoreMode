@@ -7,6 +7,7 @@ import com.hypixel.hytale.codec.builder.BuilderCodec;
 public class HardcoreGeneralSettingsPageEventData {
     public static final String KEY_GO_BACK = "@GoBack";
     public static final String KEY_OPEN_BLOOD_MOON_DROPS = "@OpenBloodMoonDrops";
+    public static final String KEY_OPEN_MOB_CATEGORIES = "@OpenMobCategories";
 
     public static final BuilderCodec<HardcoreGeneralSettingsPageEventData> CODEC = BuilderCodec
             .builder(HardcoreGeneralSettingsPageEventData.class, HardcoreGeneralSettingsPageEventData::new)
@@ -18,10 +19,15 @@ public class HardcoreGeneralSettingsPageEventData {
                     (data, value) -> data.openBloodMoonDrops = value,
                     data -> data.openBloodMoonDrops)
             .add()
+            .append(new KeyedCodec<>(KEY_OPEN_MOB_CATEGORIES, Codec.BOOLEAN),
+                    (data, value) -> data.openMobCategories = value,
+                    data -> data.openMobCategories)
+            .add()
             .build();
 
     private Boolean goBack;
     private Boolean openBloodMoonDrops;
+    private Boolean openMobCategories;
 
     public HardcoreGeneralSettingsPageEventData() {
     }
@@ -32,5 +38,9 @@ public class HardcoreGeneralSettingsPageEventData {
 
     public Boolean getOpenBloodMoonDrops() {
         return openBloodMoonDrops;
+    }
+
+    public Boolean getOpenMobCategories() {
+        return openMobCategories;
     }
 }

@@ -28,19 +28,32 @@ public class HardcoreBloodMoonDropsPage extends InteractiveCustomUIPage<Hardcore
     private static final String PAGE_TITLE_ID = "#PageTitle.Text";
     private static final String SECTION_TITLE_ID = "#SectionTitle.Text";
     private static final String ITEMS_LIST_ID = "#ItemsList";
+    private static final String PAGE_INFO_ID = "#PageInfo.Text";
+    private static final String TOTAL_ENTRIES_ID = "#TotalEntriesText.Text";
+    private static final String PREV_BUTTON_PATH = "#PaginationContainer #PrevButton";
+    private static final String PREV_VALUE_PATH = "#PaginationContainer #PrevValue.Value";
+    private static final String NEXT_BUTTON_PATH = "#PaginationContainer #NextButton";
+    private static final String NEXT_VALUE_PATH = "#PaginationContainer #NextValue.Value";
     private static final String BACK_BUTTON_PATH = "#BottomButtonsContainer #BackButton";
     private static final String BACK_VALUE_PATH = "#BottomButtonsContainer #BackValue.Value";
     private static final String RELOAD_BUTTON_PATH = "#BottomButtonsContainer #ReloadButton";
     private static final String RELOAD_VALUE_PATH = "#BottomButtonsContainer #ReloadValue.Value";
+    private static final int ITEMS_PER_PAGE = 13;
 
     private final HardcoreModePlugin plugin;
     private final PlayerRef playerRef;
     private final List<DropRowData> dropsList = new ArrayList<>();
+    private int currentPage = 0;
 
     public HardcoreBloodMoonDropsPage(HardcoreModePlugin plugin, PlayerRef playerRef) {
+        this(plugin, playerRef, 0);
+    }
+
+    public HardcoreBloodMoonDropsPage(HardcoreModePlugin plugin, PlayerRef playerRef, int currentPage) {
         super(playerRef, CustomPageLifetime.CanDismiss, buildDynamicCodec(plugin));
         this.plugin = plugin;
         this.playerRef = playerRef;
+        this.currentPage = currentPage;
         loadDropsList();
     }
 
@@ -70,6 +83,14 @@ public class HardcoreBloodMoonDropsPage extends InteractiveCustomUIPage<Hardcore
                 .append(new KeyedCodec<>(HardcoreBloodMoonDropsPageEventData.KEY_RELOAD_CONFIG, Codec.BOOLEAN),
                         (data, value) -> data.setReloadConfig(value),
                         data -> data.getReloadConfig())
+                .add()
+                .append(new KeyedCodec<>(HardcoreBloodMoonDropsPageEventData.KEY_PREV_PAGE, Codec.BOOLEAN),
+                        (data, value) -> data.setPrevPage(value),
+                        data -> data.getPrevPage())
+                .add()
+                .append(new KeyedCodec<>(HardcoreBloodMoonDropsPageEventData.KEY_NEXT_PAGE, Codec.BOOLEAN),
+                        (data, value) -> data.setNextPage(value),
+                        data -> data.getNextPage())
                 .add();
 
         // Add dynamic keys for each drop
@@ -113,8 +134,35 @@ public class HardcoreBloodMoonDropsPage extends InteractiveCustomUIPage<Hardcore
     ) {
         commands.append(PAGE_PATH);
         fillHeader(commands);
+        updatePaginationInfo(commands);
         buildDropsList(commands, events);
         bindNavigation(events);
+        bindPaginationButtons(events);
+    }
+    
+    private int getTotalPages() {
+        return (int) Math.ceil((double) dropsList.size() / ITEMS_PER_PAGE);
+    }
+    
+    private void updatePaginationInfo(UICommandBuilder commands) {
+        int totalPages = getTotalPages();
+        int displayPage = currentPage + 1;
+        commands.set(PAGE_INFO_ID, "Page " + displayPage + " of " + totalPages);
+        commands.set(TOTAL_ENTRIES_ID, "Total: " + dropsList.size() + " drops");
+    }
+    
+    private void bindPaginationButtons(UIEventBuilder events) {
+        EventData prevData = EventData.of(
+                HardcoreBloodMoonDropsPageEventData.KEY_PREV_PAGE,
+                PREV_VALUE_PATH
+        );
+        events.addEventBinding(CustomUIEventBindingType.Activating, PREV_BUTTON_PATH, prevData, false);
+
+        EventData nextData = EventData.of(
+                HardcoreBloodMoonDropsPageEventData.KEY_NEXT_PAGE,
+                NEXT_VALUE_PATH
+        );
+        events.addEventBinding(CustomUIEventBindingType.Activating, NEXT_BUTTON_PATH, nextData, false);
     }
 
     @Override
@@ -129,6 +177,8 @@ public class HardcoreBloodMoonDropsPage extends InteractiveCustomUIPage<Hardcore
 
         Boolean goBack = data.getGoBack();
         Boolean reloadConfig = data.getReloadConfig();
+        Boolean prevPage = data.getPrevPage();
+        Boolean nextPage = data.getNextPage();
 
         if (Boolean.TRUE.equals(goBack)) {
             openGeneralSettings(ref, store);
@@ -137,7 +187,24 @@ public class HardcoreBloodMoonDropsPage extends InteractiveCustomUIPage<Hardcore
 
         if (Boolean.TRUE.equals(reloadConfig)) {
             plugin.getBloodMoonDropConfig().reload();
-            reopenPage(ref, store);
+            reopenPageWithCurrentPage(ref, store);
+            return;
+        }
+        
+        if (Boolean.TRUE.equals(prevPage)) {
+            if (currentPage > 0) {
+                currentPage--;
+                reopenPageWithCurrentPage(ref, store);
+            }
+            return;
+        }
+        
+        if (Boolean.TRUE.equals(nextPage)) {
+            int totalPages = getTotalPages();
+            if (currentPage < totalPages - 1) {
+                currentPage++;
+                reopenPageWithCurrentPage(ref, store);
+            }
             return;
         }
 
@@ -185,7 +252,7 @@ public class HardcoreBloodMoonDropsPage extends InteractiveCustomUIPage<Hardcore
             }
             
             if (needsRefresh) {
-                reopenPage(ref, store);
+                reopenPageWithCurrentPage(ref, store);
             }
         }
     }
@@ -196,9 +263,14 @@ public class HardcoreBloodMoonDropsPage extends InteractiveCustomUIPage<Hardcore
     }
 
     private void buildDropsList(UICommandBuilder commands, UIEventBuilder events) {
-        // Build UI rows for each drop
+        // Calculate pagination
+        int startIndex = currentPage * ITEMS_PER_PAGE;
+        int endIndex = Math.min(startIndex + ITEMS_PER_PAGE, dropsList.size());
+        
+        // Build UI rows for displayed drops only
         int rowIndex = 0;
-        for (DropRowData dropData : dropsList) {
+        for (int i = startIndex; i < endIndex; i++) {
+            DropRowData dropData = dropsList.get(i);
             String rowId = ITEMS_LIST_ID + "[" + rowIndex + "]";
             commands.append(ITEMS_LIST_ID, DROP_ROW_PATH);
 
@@ -283,6 +355,13 @@ public class HardcoreBloodMoonDropsPage extends InteractiveCustomUIPage<Hardcore
             Ref<EntityStore> ref,
             Store<EntityStore> store
     ) {
+        reopenPageWithCurrentPage(ref, store);
+    }
+    
+    private void reopenPageWithCurrentPage(
+            Ref<EntityStore> ref,
+            Store<EntityStore> store
+    ) {
         if (store == null || ref == null) {
             return;
         }
@@ -292,7 +371,7 @@ public class HardcoreBloodMoonDropsPage extends InteractiveCustomUIPage<Hardcore
             return;
         }
 
-        player.getPageManager().openCustomPage(ref, store, new HardcoreBloodMoonDropsPage(plugin, playerRef));
+        player.getPageManager().openCustomPage(ref, store, new HardcoreBloodMoonDropsPage(plugin, playerRef, currentPage));
     }
 
     private static class DropRowData {
