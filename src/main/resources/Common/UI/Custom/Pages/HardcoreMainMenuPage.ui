@@ -101,6 +101,7 @@ $C.@Container {
       Group #PlayerButtonRow {
         LayoutMode: Left;
         Padding: (Full: 2);
+        Anchor: (Bottom: 12);
         Background: (Color: #07101f);
 
         Group #PlayerCard {
@@ -122,6 +123,37 @@ $C.@Container {
           }
 
           $C.@CheckBox #PlayerValue {
+            Anchor: (Width: 0, Height: 0);
+            Visible: false;
+            Value: true;
+          }
+        }
+      }
+
+      Group #GeneralButtonRow {
+        LayoutMode: Left;
+        Padding: (Full: 2);
+        Background: (Color: #07101f);
+
+        Group #GeneralCard {
+          LayoutMode: Left;
+          Padding: (Full: 10);
+          Background: (Color: #162336);
+          FlexWeight: 1;
+
+          $C.@SecondaryTextButton #GeneralButton {
+            Anchor: (Width: 210, Height: 44);
+            Text: "General Settings";
+          }
+
+          Label #GeneralDescription {
+            Anchor: (Left: 18);
+            FlexWeight: 1;
+            Style: (...$C.@DefaultLabelStyle, FontSize: 15, TextColor: #dce4ef, VerticalAlignment: Center);
+            Text: "Configure general mod settings";
+          }
+
+          $C.@CheckBox #GeneralValue {
             Anchor: (Width: 0, Height: 0);
             Visible: false;
             Value: true;

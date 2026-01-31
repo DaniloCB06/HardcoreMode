@@ -53,6 +53,59 @@ public class BloodMoonDropConfig {
         return dropEntries.getOrDefault(category, List.of());
     }
 
+    public List<DropEntry> getAllDropEntries() {
+        List<DropEntry> allEntries = new ArrayList<>();
+        for (List<DropEntry> entries : dropEntries.values()) {
+            allEntries.addAll(entries);
+        }
+        return allEntries;
+    }
+
+    public void setDropEnabled(MobCategory category, String itemId, boolean enabled) {
+        List<DropEntry> entries = dropEntries.get(category);
+        if (entries == null) return;
+        
+        for (int i = 0; i < entries.size(); i++) {
+            DropEntry entry = entries.get(i);
+            if (entry.itemId.equals(itemId)) {
+                entries.set(i, new DropEntry(enabled, entry.itemId, entry.minQuantity, entry.maxQuantity, entry.dropChance));
+                saveToJson();
+                break;
+            }
+        }
+    }
+
+    public boolean addDropEntry(MobCategory category, String itemId, int minQuantity, int maxQuantity, float dropChance) {
+        // Validate input
+        if (category == null || itemId == null || itemId.trim().isEmpty()) {
+            return false;
+        }
+        
+        // Check if item already exists in this category
+        List<DropEntry> entries = dropEntries.get(category);
+        if (entries != null) {
+            for (DropEntry entry : entries) {
+                if (entry.itemId.equals(itemId)) {
+                    // Item already exists, don't add duplicate
+                    return false;
+                }
+            }
+        }
+        
+        dropEntries.computeIfAbsent(category, k -> new ArrayList<>())
+                   .add(new DropEntry(true, itemId, minQuantity, maxQuantity, dropChance));
+        saveToJson();
+        return true;
+    }
+
+    public void removeDropEntry(MobCategory category, String itemId) {
+        List<DropEntry> entries = dropEntries.get(category);
+        if (entries == null) return;
+        
+        entries.removeIf(entry -> entry.itemId.equals(itemId));
+        saveToJson();
+    }
+
     @Deprecated
     public DropEntry getDropEntry(MobCategory category) {
         List<DropEntry> entries = dropEntries.get(category);
@@ -147,6 +200,45 @@ public class BloodMoonDropConfig {
             }
             Files.writeString(jsonPath, getDefaultJsonContent(), StandardCharsets.UTF_8);
         } catch (IOException ignored) {
+        }
+    }
+
+    private void saveToJson() {
+        if (jsonPath == null) return;
+        
+        try {
+            StringBuilder json = new StringBuilder();
+            json.append("{\n");
+            json.append("  \"description\": \"Blood Moon drop configuration. Each category can have multiple items.\",\n");
+            json.append("  \"note\": \"minQuantity and maxQuantity define the quantity range. Drop amount is randomized between these values.\",\n");
+            json.append("  \"drops\": [\n");
+            
+            boolean first = true;
+            for (Map.Entry<MobCategory, List<DropEntry>> categoryEntry : dropEntries.entrySet()) {
+                MobCategory category = categoryEntry.getKey();
+                for (DropEntry drop : categoryEntry.getValue()) {
+                    if (!first) {
+                        json.append(",\n");
+                    }
+                    first = false;
+                    
+                    json.append("    {\n");
+                    json.append("      \"category\": \"").append(category.getFileKey()).append("\",\n");
+                    json.append("      \"enabled\": ").append(drop.enabled).append(",\n");
+                    json.append("      \"itemId\": \"").append(drop.itemId).append("\",\n");
+                    json.append("      \"minQuantity\": ").append(drop.minQuantity).append(",\n");
+                    json.append("      \"maxQuantity\": ").append(drop.maxQuantity).append(",\n");
+                    json.append("      \"dropChance\": ").append(drop.dropChance).append("\n");
+                    json.append("    }");
+                }
+            }
+            
+            json.append("\n  ]\n");
+            json.append("}\n");
+            
+            Files.writeString(jsonPath, json.toString(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            // Log error if needed
         }
     }
 

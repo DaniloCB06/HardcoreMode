@@ -15,6 +15,10 @@ public enum MobCategory {
     WORLDBOSS,
     NONE;
 
+    public String getFileKey() {
+        return this.name();
+    }
+
     public static MobCategory fromFileKey(String key) {
         if (key == null) {
             return NONE;

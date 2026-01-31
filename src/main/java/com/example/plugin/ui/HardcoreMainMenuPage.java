@@ -21,9 +21,11 @@ public class HardcoreMainMenuPage extends InteractiveCustomUIPage<HardcoreMainMe
     private static final String ENEMY_BUTTON_TEXT_ID = "#EnemyButton.Text";
     private static final String BLOOD_BUTTON_TEXT_ID = "#BloodMoonButton.Text";
     private static final String PLAYER_BUTTON_TEXT_ID = "#PlayerButton.Text";
+    private static final String GENERAL_BUTTON_TEXT_ID = "#GeneralButton.Text";
     private static final String ENEMY_DESCRIPTION_ID = "#EnemyDescription.Text";
     private static final String BLOOD_DESCRIPTION_ID = "#BloodMoonDescription.Text";
     private static final String PLAYER_DESCRIPTION_ID = "#PlayerDescription.Text";
+    private static final String GENERAL_DESCRIPTION_ID = "#GeneralDescription.Text";
 
     private static final String ENEMY_BUTTON_PATH = "#EnemyButtonRow #EnemyButton";
     private static final String ENEMY_VALUE_PATH = "#EnemyButtonRow #EnemyValue.Value";
@@ -31,6 +33,8 @@ public class HardcoreMainMenuPage extends InteractiveCustomUIPage<HardcoreMainMe
     private static final String BLOOD_VALUE_PATH = "#BloodMoonButtonRow #BloodMoonValue.Value";
     private static final String PLAYER_BUTTON_PATH = "#PlayerButtonRow #PlayerButton";
     private static final String PLAYER_VALUE_PATH = "#PlayerButtonRow #PlayerValue.Value";
+    private static final String GENERAL_BUTTON_PATH = "#GeneralButtonRow #GeneralButton";
+    private static final String GENERAL_VALUE_PATH = "#GeneralButtonRow #GeneralValue.Value";
 
     private final HardcoreModePlugin plugin;
     private final PlayerRef playerRef;
@@ -75,6 +79,11 @@ public class HardcoreMainMenuPage extends InteractiveCustomUIPage<HardcoreMainMe
 
         if (Boolean.TRUE.equals(data.getOpenPlayerSettings())) {
             openSection(ref, store, SettingsSection.PLAYER);
+            return;
+        }
+
+        if (Boolean.TRUE.equals(data.getOpenGeneralSettings())) {
+            openGeneralSettings(ref, store);
         }
     }
 
@@ -84,9 +93,11 @@ public class HardcoreMainMenuPage extends InteractiveCustomUIPage<HardcoreMainMe
         commands.set(ENEMY_BUTTON_TEXT_ID, "Enemy Settings");
         commands.set(BLOOD_BUTTON_TEXT_ID, "Blood Moon");
         commands.set(PLAYER_BUTTON_TEXT_ID, "Player Settings");
+        commands.set(GENERAL_BUTTON_TEXT_ID, "General Settings");
         commands.set(ENEMY_DESCRIPTION_ID, "Adjust health/damage and enablement by mob disposition");
         commands.set(BLOOD_DESCRIPTION_ID, "Interval, start time, duration and Blood Moon multipliers");
         commands.set(PLAYER_DESCRIPTION_ID, "Death penalties and item loss percentages");
+        commands.set(GENERAL_DESCRIPTION_ID, "Configure general mod settings");
     }
 
     private void bindButtons(UIEventBuilder events) {
@@ -107,6 +118,12 @@ public class HardcoreMainMenuPage extends InteractiveCustomUIPage<HardcoreMainMe
                 PLAYER_VALUE_PATH
         );
         events.addEventBinding(CustomUIEventBindingType.Activating, PLAYER_BUTTON_PATH, playerData, false);
+
+        EventData generalData = EventData.of(
+                HardcoreMainMenuPageEventData.KEY_OPEN_GENERAL,
+                GENERAL_VALUE_PATH
+        );
+        events.addEventBinding(CustomUIEventBindingType.Activating, GENERAL_BUTTON_PATH, generalData, false);
     }
 
     private void openSection(
@@ -124,5 +141,21 @@ public class HardcoreMainMenuPage extends InteractiveCustomUIPage<HardcoreMainMe
         }
 
         player.getPageManager().openCustomPage(ref, store, new HardcoreSettingsPage(plugin, playerRef, section));
+    }
+
+    private void openGeneralSettings(
+            Ref<EntityStore> ref,
+            Store<EntityStore> store
+    ) {
+        if (store == null || ref == null) {
+            return;
+        }
+
+        Player player = store.getComponent(ref, Player.getComponentType());
+        if (player == null) {
+            return;
+        }
+
+        player.getPageManager().openCustomPage(ref, store, new HardcoreGeneralSettingsPage(plugin, playerRef));
     }
 }

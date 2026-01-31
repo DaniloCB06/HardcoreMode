@@ -5,18 +5,18 @@
     {
       "category": "HOSTILE",
       "enabled": true,
-      "itemId": "Ingredient_Bar_Iron",
-      "minQuantity": 1,
-      "maxQuantity": 2,
-      "dropChance": 50.0
-    },
-    {
-      "category": "HOSTILE",
-      "enabled": true,
       "itemId": "Ingredient_Void_Essence",
       "minQuantity": 1,
       "maxQuantity": 1,
       "dropChance": 25.0
+    },
+    {
+      "category": "HOSTILE",
+      "enabled": true,
+      "itemId": "Ingredient_Bar_Iron",
+      "minQuantity": 1,
+      "maxQuantity": 3,
+      "dropChance": 50.0
     },
     {
       "category": "ELITE",

@@ -1,0 +1,146 @@
+$C = "../Common.ui";
+
+$C.@PageOverlay {}
+
+$C.@Container {
+  Anchor: (Width: 1100, Height: 850);
+
+  #Title {
+    Group {
+      $C.@Title #PageTitle {
+        @Text = "Hardcore Mode";
+      }
+    }
+  }
+
+  #Content {
+    LayoutMode: Top;
+    Padding: (Left: 36, Right: 36, Top: 16, Bottom: 16);
+
+    Label #SectionTitle {
+      Style: (
+        FontSize: 22,
+        RenderBold: true,
+        TextColor: #d3d6db,
+        VerticalAlignment: Center,
+        HorizontalAlignment: Center
+      );
+      Anchor: (Bottom: 12);
+      Text: "Blood Moon Drops";
+    }
+
+    Label #WarningText {
+      Style: (
+        FontSize: 13,
+        TextColor: #ff9944,
+        VerticalAlignment: Center,
+        HorizontalAlignment: Center
+      );
+      Anchor: (Bottom: 16);
+      Text: "To add new drops, edit 'HardcoreModeBloodMoonDrops.json' in 'com.example_HardcoreMode' folder";
+    }
+
+    Group #DropsList {
+      LayoutMode: Top;
+      Padding: (Top: 8);
+
+      Group #HeaderRow {
+        LayoutMode: Left;
+        Padding: (Left: 8, Right: 8, Top: 8, Bottom: 8);
+        Background: (Color: #162336);
+        Anchor: (Bottom: 4);
+
+        Label #HeaderEnabled {
+          Anchor: (Width: 60);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #d3d6db, HorizontalAlignment: Center, VerticalAlignment: Center);
+          Text: "Enabled";
+        }
+
+        Label #HeaderCategory {
+          Anchor: (Width: 120);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #d3d6db, HorizontalAlignment: Center, VerticalAlignment: Center);
+          Text: "Category";
+        }
+
+        Label #HeaderItem {
+          FlexWeight: 1;
+          Anchor: (Left: 10);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #d3d6db, VerticalAlignment: Center);
+          Text: "Item ID";
+        }
+
+        Label #HeaderMin {
+          Anchor: (Width: 70);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #d3d6db, HorizontalAlignment: Center, VerticalAlignment: Center);
+          Text: "Min";
+        }
+
+        Label #HeaderMax {
+          Anchor: (Width: 70);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #d3d6db, HorizontalAlignment: Center, VerticalAlignment: Center);
+          Text: "Max";
+        }
+
+        Label #HeaderChance {
+          Anchor: (Width: 90);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #d3d6db, HorizontalAlignment: Center, VerticalAlignment: Center);
+          Text: "Chance %";
+        }
+
+        Label #HeaderActions {
+          Anchor: (Width: 88);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #d3d6db, HorizontalAlignment: Center, VerticalAlignment: Center);
+          Text: "Actions";
+        }
+      }
+
+      Group #ScrollContainer {
+        LayoutMode: Top;
+        Background: (Color: #0a1420);
+        Padding: (Full: 2);
+        FlexWeight: 1;
+
+        Group #ItemsList {
+          LayoutMode: Top;
+        }
+      }
+    }
+
+    Group #Spacer {
+      FlexWeight: 1;
+    }
+
+    Group #BottomButtonsContainer {
+      LayoutMode: Left;
+      Anchor: (Bottom: 6);
+
+      $C.@SmallSecondaryTextButton #BackButton {
+        Anchor: (Width: 110, Height: 32);
+        Text: "Back";
+      }
+
+      $C.@CheckBox #BackValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      Group {
+        FlexWeight: 1;
+      }
+
+      $C.@SmallSecondaryTextButton #ReloadButton {
+        Anchor: (Width: 160, Height: 32);
+        Text: "Reload Config";
+      }
+
+      $C.@CheckBox #ReloadValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+    }
+  }
+}
+
+$C.@BackButton {}

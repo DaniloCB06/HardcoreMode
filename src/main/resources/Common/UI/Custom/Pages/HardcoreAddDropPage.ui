@@ -1,0 +1,246 @@
+$C = "../Common.ui";
+
+$C.@PageOverlay {}
+
+$C.@Container {
+  Anchor: (Width: 700, Height: 600);
+
+  #Title {
+    Group {
+      $C.@Title #PageTitle {
+        @Text = "Hardcore Mode";
+      }
+    }
+  }
+
+  #Content {
+    LayoutMode: Top;
+    Padding: (Left: 36, Right: 36, Top: 16, Bottom: 16);
+
+    Label #SectionTitle {
+      Style: (
+        FontSize: 22,
+        RenderBold: true,
+        TextColor: #d3d6db,
+        VerticalAlignment: Center,
+        HorizontalAlignment: Center
+      );
+      Anchor: (Bottom: 20);
+      Text: "Add Blood Moon Drop";
+    }
+
+    Group #FormContainer {
+      LayoutMode: Top;
+      Background: (Color: #0d1a2b);
+      Padding: (Full: 20);
+      Anchor: (Bottom: 16);
+
+      Group #CategoryRow {
+        LayoutMode: Left;
+        Anchor: (Bottom: 16);
+
+        Label #CategoryLabel {
+          Anchor: (Width: 150);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 16, RenderBold: true, TextColor: #d3d6db, VerticalAlignment: Center);
+          Text: "Category:";
+        }
+
+        Group #CategoryButtons {
+          LayoutMode: Left;
+          FlexWeight: 1;
+
+          $C.@SmallSecondaryTextButton #HostileButton {
+            Anchor: (Width: 90, Height: 32, Right: 4);
+            Text: "Hostile";
+          }
+
+          $C.@SmallSecondaryTextButton #EliteButton {
+            Anchor: (Width: 90, Height: 32, Right: 4);
+            Text: "Elite";
+          }
+
+          $C.@SmallSecondaryTextButton #MinibossButton {
+            Anchor: (Width: 90, Height: 32, Right: 4);
+            Text: "Miniboss";
+          }
+
+          $C.@SmallSecondaryTextButton #WorldbossButton {
+            Anchor: (Width: 90, Height: 32);
+            Text: "Worldboss";
+          }
+
+          $C.@CheckBox #HostileValue {
+            Anchor: (Width: 0, Height: 0);
+            Visible: false;
+            Value: true;
+          }
+
+          $C.@CheckBox #EliteValue {
+            Anchor: (Width: 0, Height: 0);
+            Visible: false;
+            Value: false;
+          }
+
+          $C.@CheckBox #MinibossValue {
+            Anchor: (Width: 0, Height: 0);
+            Visible: false;
+            Value: false;
+          }
+
+          $C.@CheckBox #WorldbossValue {
+            Anchor: (Width: 0, Height: 0);
+            Visible: false;
+            Value: false;
+          }
+        }
+      }
+
+      Label #SelectedCategory {
+        Anchor: (Bottom: 12, Left: 150);
+        Style: (...$C.@DefaultLabelStyle, FontSize: 14, TextColor: #7fb3ff, VerticalAlignment: Center);
+        Text: "Selected: Hostile";
+      }
+
+      Group #ItemIdRow {
+        LayoutMode: Left;
+        Anchor: (Bottom: 16);
+
+        Label #ItemIdLabel {
+          Anchor: (Width: 150);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 16, RenderBold: true, TextColor: #d3d6db, VerticalAlignment: Center);
+          Text: "Item ID:";
+        }
+
+        Label #ItemIdValue {
+          FlexWeight: 1;
+          Style: (...$C.@DefaultLabelStyle, FontSize: 14, TextColor: #ffcc00, VerticalAlignment: Center);
+          Text: "Ingredient_Bar_Iron (default)";
+        }
+
+        Label #ItemIdNote {
+          Anchor: (Width: 200, Left: 10);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #ff6666, VerticalAlignment: Center);
+          Text: "Edit JSON for other items";
+        }
+      }
+
+      Group #MinQuantityRow {
+        LayoutMode: Left;
+        Anchor: (Bottom: 16);
+
+        Label #MinQuantityLabel {
+          Anchor: (Width: 150);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 16, RenderBold: true, TextColor: #d3d6db, VerticalAlignment: Center);
+          Text: "Min Quantity:";
+        }
+
+        FloatSlider #MinQuantitySlider {
+          Anchor: (Height: 32);
+          FlexWeight: 1;
+          Min: 1;
+          Max: 20;
+          Step: 1;
+          Value: 1;
+          Style: $C.@DefaultSliderStyle;
+        }
+
+        Label #MinQuantityValue {
+          Anchor: (Width: 50, Left: 10);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 16, TextColor: #c5d0dd, VerticalAlignment: Center, HorizontalAlignment: Center);
+          Text: "1";
+        }
+      }
+
+      Group #MaxQuantityRow {
+        LayoutMode: Left;
+        Anchor: (Bottom: 16);
+
+        Label #MaxQuantityLabel {
+          Anchor: (Width: 150);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 16, RenderBold: true, TextColor: #d3d6db, VerticalAlignment: Center);
+          Text: "Max Quantity:";
+        }
+
+        FloatSlider #MaxQuantitySlider {
+          Anchor: (Height: 32);
+          FlexWeight: 1;
+          Min: 1;
+          Max: 20;
+          Step: 1;
+          Value: 1;
+          Style: $C.@DefaultSliderStyle;
+        }
+
+        Label #MaxQuantityValue {
+          Anchor: (Width: 50, Left: 10);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 16, TextColor: #c5d0dd, VerticalAlignment: Center, HorizontalAlignment: Center);
+          Text: "1";
+        }
+      }
+
+      Group #DropChanceRow {
+        LayoutMode: Left;
+        Anchor: (Bottom: 8);
+
+        Label #DropChanceLabel {
+          Anchor: (Width: 150);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 16, RenderBold: true, TextColor: #d3d6db, VerticalAlignment: Center);
+          Text: "Drop Chance (%):";
+        }
+
+        FloatSlider #DropChanceSlider {
+          Anchor: (Height: 32);
+          FlexWeight: 1;
+          Min: 0;
+          Max: 100;
+          Step: 1;
+          Value: 50;
+          Style: $C.@DefaultSliderStyle;
+        }
+
+        Label #DropChanceValue {
+          Anchor: (Width: 50, Left: 10);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 16, TextColor: #c5d0dd, VerticalAlignment: Center, HorizontalAlignment: Center);
+          Text: "50";
+        }
+      }
+    }
+
+    Group #Spacer {
+      FlexWeight: 1;
+    }
+
+    Group #BottomButtonsContainer {
+      LayoutMode: Left;
+      Anchor: (Bottom: 6);
+
+      $C.@SmallSecondaryTextButton #CancelButton {
+        Anchor: (Width: 110, Height: 32);
+        Text: "Cancel";
+      }
+
+      $C.@CheckBox #CancelValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      Group {
+        FlexWeight: 1;
+      }
+
+      $C.@SmallSecondaryTextButton #SaveButton {
+        Anchor: (Width: 110, Height: 32);
+        Text: "Save";
+      }
+
+      $C.@CheckBox #SaveValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+    }
+  }
+}
+
+$C.@BackButton {}

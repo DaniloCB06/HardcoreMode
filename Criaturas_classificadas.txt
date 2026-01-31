@@ -193,7 +193,6 @@ mobs_elite = {
 
 mobs_miniboss = {
   "Rex_Cave",
-  "Shadow_Knight",
   "Werewolf",
   "Yeti",
   "Zombie_Aberrant",

@@ -187,9 +187,9 @@
     {"category": "MINIBOSS", "pattern": "Rex_Cave"},
     {"category": "MINIBOSS", "pattern": "Zombie_Aberrant"},
     {"category": "MINIBOSS", "pattern": "Zombie_Aberrant_Big"},
-    {"category": "MINIBOSS", "pattern": "Shadow_Knight"},
     {"category": "MINIBOSS", "pattern": "Werewolf"},
     {"category": "WORLDBOSS", "pattern": "*_Titan"},
-    {"category": "WORLDBOSS", "pattern": "Dragon_*"}
+    {"category": "WORLDBOSS", "pattern": "Dragon_*"},
+    {"category": "MINIBOSS", "pattern": "Shadow_Knight"}
   ]
 }

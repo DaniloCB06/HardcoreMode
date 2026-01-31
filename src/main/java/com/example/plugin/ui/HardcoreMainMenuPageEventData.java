@@ -8,6 +8,7 @@ public class HardcoreMainMenuPageEventData {
     public static final String KEY_OPEN_ENEMY = "@OpenEnemySettings";
     public static final String KEY_OPEN_BLOOD_MOON = "@OpenBloodMoonSettings";
     public static final String KEY_OPEN_PLAYER = "@OpenPlayerSettings";
+    public static final String KEY_OPEN_GENERAL = "@OpenGeneralSettings";
 
     public static final BuilderCodec<HardcoreMainMenuPageEventData> CODEC = BuilderCodec
             .builder(HardcoreMainMenuPageEventData.class, HardcoreMainMenuPageEventData::new)
@@ -23,11 +24,16 @@ public class HardcoreMainMenuPageEventData {
                     (data, value) -> data.openPlayerSettings = value,
                     data -> data.openPlayerSettings)
             .add()
+            .append(new KeyedCodec<>(KEY_OPEN_GENERAL, Codec.BOOLEAN),
+                    (data, value) -> data.openGeneralSettings = value,
+                    data -> data.openGeneralSettings)
+            .add()
             .build();
 
     private Boolean openEnemySettings;
     private Boolean openBloodMoonSettings;
     private Boolean openPlayerSettings;
+    private Boolean openGeneralSettings;
 
     public HardcoreMainMenuPageEventData() {
     }
@@ -42,5 +48,9 @@ public class HardcoreMainMenuPageEventData {
 
     public Boolean getOpenPlayerSettings() {
         return openPlayerSettings;
+    }
+
+    public Boolean getOpenGeneralSettings() {
+        return openGeneralSettings;
     }
 }
