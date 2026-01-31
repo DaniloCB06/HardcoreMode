@@ -17,7 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MobCategoryResolver {
-    private static final String CLASSIFICATION_FILE = "Criaturas_classificadas.txt";
+    private static final String CLASSIFICATION_FILE = "Category_Mobs.txt";
     private static final String JSON_CLASSIFICATION_FILE = "HardcoreModeCategories.json";
     private static final Pattern SECTION_PATTERN = Pattern.compile(
             "mobs_(\\w+)\\s*=\\s*\\{([^}]*)\\}",

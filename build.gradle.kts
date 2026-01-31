@@ -25,5 +25,5 @@ tasks.test {
 
 // Bundle the creature classification file so it is available on the classpath at runtime.
 tasks.processResources {
-    from("Criaturas_classificadas.txt")
+    from("Category_Mobs.txt")
 }
