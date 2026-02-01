@@ -66,6 +66,11 @@ public class HardcoreModePlugin extends JavaPlugin {
     
     private Long bloodMoonStartHourOfEpoch;
     private Long bloodMoonEndHourOfEpoch;
+    
+    // O mundo principal usado para calcular o estado da Blood Moon
+    // Uma vez definido, apenas o tempo deste mundo é usado para evitar
+    // dessincronização entre mundos com tempos diferentes
+    private volatile Store<EntityStore> primaryBloodMoonStore;
 
     private boolean rpgLevelingChecked;
     private boolean rpgLevelingAvailable;
@@ -162,18 +167,22 @@ public class HardcoreModePlugin extends JavaPlugin {
     public void refreshBloodMoonStateIfNeeded(Store<EntityStore> store, boolean applyToMobs) {
         if (store == null) return;
 
-        WorldTimeResource time = store.getResource(WorldTimeResource.getResourceType());
+        // Usar o mundo principal para cálculos de tempo, se disponível
+        Store<EntityStore> timeStore = primaryBloodMoonStore != null ? primaryBloodMoonStore : store;
+        
+        WorldTimeResource time = timeStore.getResource(WorldTimeResource.getResourceType());
         if (time == null) return;
 
         long currentHourOfEpoch = getCurrentHourOfEpoch(time);
 
         Long last;
         synchronized (lastHourByStore) {
-            last = lastHourByStore.get(store);
+            // Usar o timeStore como chave para garantir consistência
+            last = lastHourByStore.get(timeStore);
             if (last != null && last == currentHourOfEpoch) {
                 return;
             }
-            lastHourByStore.put(store, currentHourOfEpoch);
+            lastHourByStore.put(timeStore, currentHourOfEpoch);
         }
 
         refreshBloodMoonState(store, applyToMobs);
@@ -331,7 +340,10 @@ public class HardcoreModePlugin extends JavaPlugin {
             return 0.0f;
         }
         
-        WorldTimeResource time = store.getResource(WorldTimeResource.getResourceType());
+        // Usar o mundo principal para cálculos de tempo
+        Store<EntityStore> timeStore = primaryBloodMoonStore != null ? primaryBloodMoonStore : store;
+        
+        WorldTimeResource time = timeStore.getResource(WorldTimeResource.getResourceType());
         if (time == null) return 0.0f;
         
         long currentHourOfEpoch = getCurrentHourOfEpoch(time);
@@ -353,7 +365,10 @@ public class HardcoreModePlugin extends JavaPlugin {
             return 0;
         }
         
-        WorldTimeResource time = store.getResource(WorldTimeResource.getResourceType());
+        // Usar o mundo principal para cálculos de tempo
+        Store<EntityStore> timeStore = primaryBloodMoonStore != null ? primaryBloodMoonStore : store;
+        
+        WorldTimeResource time = timeStore.getResource(WorldTimeResource.getResourceType());
         if (time == null) return 0;
         
         long currentHourOfEpoch = getCurrentHourOfEpoch(time);
@@ -363,7 +378,15 @@ public class HardcoreModePlugin extends JavaPlugin {
     }
 
     public void refreshBloodMoonState(Store<EntityStore> store, boolean applyToMobs) {
-        boolean active = computeBloodMoonActive(store);
+        // Se ainda não temos um mundo principal, este será o principal
+        if (primaryBloodMoonStore == null && store != null) {
+            primaryBloodMoonStore = store;
+        }
+        
+        // Usar o mundo principal para cálculos de tempo, se disponível
+        Store<EntityStore> timeStore = primaryBloodMoonStore != null ? primaryBloodMoonStore : store;
+        
+        boolean active = computeBloodMoonActive(timeStore);
         boolean changed = active != bloodMoonActive;
 
         if (changed) {
@@ -391,8 +414,16 @@ public class HardcoreModePlugin extends JavaPlugin {
         int durationHours = data.bloodMoonDurationHours;
         if (!isValidBloodMoonDuration(durationHours)) return;
 
-        WorldTimeResource time = store.getResource(WorldTimeResource.getResourceType());
+        // Usar o mundo principal se disponível, senão usar o store fornecido
+        Store<EntityStore> timeStore = primaryBloodMoonStore != null ? primaryBloodMoonStore : store;
+        
+        WorldTimeResource time = timeStore.getResource(WorldTimeResource.getResourceType());
         if (time == null) return;
+
+        // Se não temos mundo principal, este será o principal
+        if (primaryBloodMoonStore == null) {
+            primaryBloodMoonStore = store;
+        }
 
         long currentHourOfEpoch = getCurrentHourOfEpoch(time);
         forcedBloodMoonEndHourOfEpoch = currentHourOfEpoch + durationHours;
@@ -408,40 +439,62 @@ public class HardcoreModePlugin extends JavaPlugin {
     }
 
     public void applyToExistingMobs(Store<EntityStore> store, Ref<EntityStore> playerRef) {
-        if (store == null || playerRef == null || !playerRef.isValid()) {
+        if (store == null) {
+            return;
+        }
+        
+        if (playerRef == null || !playerRef.isValid()) {
+            // Sem jogadores online, nada a fazer
             return;
         }
 
         cachedPlayerRef = playerRef;
         cachedPlayerStore = store;
 
-        Query<EntityStore> query = Query.any();
-        store.forEachChunk(query, (chunk, commandBuffer) -> {
-            applyToChunk(store, chunk, playerRef);
-            return true;
-        });
+        try {
+            Query<EntityStore> query = Query.any();
+            store.forEachChunk(query, (chunk, commandBuffer) -> {
+                try {
+                    applyToChunk(store, chunk, playerRef);
+                } catch (Exception e) {
+                    // Ignore chunk errors and continue
+                }
+                return true;
+            });
+        } catch (Exception e) {
+            // Ignore errors when applying stats
+        }
     }
 
     private void applyToChunk(Store<EntityStore> store, ArchetypeChunk<EntityStore> chunk, Ref<EntityStore> playerRef) {
         if (playerRef == null || !playerRef.isValid()) return;
+        if (chunk == null) return;
 
         ComponentType<EntityStore, Player> playerType = Player.getComponentType();
         ComponentType<EntityStore, NPCEntity> npcType = NPCEntity.getComponentType();
         ComponentType<EntityStore, EntityStatMap> statType = EntityStatMap.getComponentType();
         if (statType == null) return;
 
-        int size = chunk.size();
-        for (int i = 0; i < size; i++) {
-            if (playerType != null && chunk.getComponent(i, playerType) != null) {
-                continue;
+        try {
+            int size = chunk.size();
+            for (int i = 0; i < size; i++) {
+                try {
+                    if (playerType != null && chunk.getComponent(i, playerType) != null) {
+                        continue;
+                    }
+
+                    EntityStatMap statMap = chunk.getComponent(i, statType);
+                    if (statMap == null) continue;
+
+                    NPCEntity npcEntity = npcType == null ? null : chunk.getComponent(i, npcType);
+                    MobCategory category = resolveMobCategory(npcEntity);
+                    applyHealthModifier(statMap, category);
+                } catch (Exception e) {
+                    // Ignore individual entity errors
+                }
             }
-
-            EntityStatMap statMap = chunk.getComponent(i, statType);
-            if (statMap == null) continue;
-
-            NPCEntity npcEntity = npcType == null ? null : chunk.getComponent(i, npcType);
-            MobCategory category = resolveMobCategory(npcEntity);
-            applyHealthModifier(statMap, category);
+        } catch (Exception e) {
+            // Ignore chunk processing errors
         }
     }
 

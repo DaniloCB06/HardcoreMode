@@ -6,9 +6,17 @@ import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.server.core.modules.time.WorldTimeResource;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.WeakHashMap;
+
 public class HardcoreBloodMoonSystem extends TickingSystem<EntityStore> {
     private final HardcoreModePlugin plugin;
-    private long lastProcessedHourOfEpoch = Long.MIN_VALUE;
+    
+    // Rastrear a última hora processada POR STORE/MUNDO
+    // Isso evita que mundos com tempos diferentes interfiram uns nos outros
+    private final Map<Store<EntityStore>, Long> lastHourByStore = 
+            Collections.synchronizedMap(new WeakHashMap<>());
 
     public HardcoreBloodMoonSystem(HardcoreModePlugin plugin) {
         this.plugin = plugin;
@@ -28,10 +36,15 @@ public class HardcoreBloodMoonSystem extends TickingSystem<EntityStore> {
         long epochDay = time.getGameDateTime().toLocalDate().toEpochDay();
         long currentHourOfEpoch = (epochDay * 24L) + (long) time.getCurrentHour();
 
-        if (currentHourOfEpoch == lastProcessedHourOfEpoch) {
-            return;
+        // Verificar se já processamos esta hora PARA ESTE STORE específico
+        Long lastHour;
+        synchronized (lastHourByStore) {
+            lastHour = lastHourByStore.get(store);
+            if (lastHour != null && lastHour == currentHourOfEpoch) {
+                return;
+            }
+            lastHourByStore.put(store, currentHourOfEpoch);
         }
-        lastProcessedHourOfEpoch = currentHourOfEpoch;
 
         plugin.setActiveStore(store);
         plugin.refreshBloodMoonState(store, true);
