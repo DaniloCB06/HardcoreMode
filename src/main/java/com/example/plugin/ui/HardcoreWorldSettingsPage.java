@@ -19,7 +19,6 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class HardcoreWorldSettingsPage extends InteractiveCustomUIPage<HardcoreWorldSettingsPageEventData> {
     private static final String PAGE_PATH = "Pages/HardcoreWorldSettingsPage.ui";
@@ -33,16 +32,30 @@ public class HardcoreWorldSettingsPage extends InteractiveCustomUIPage<HardcoreW
     private static final String BACK_VALUE_PATH = "#BottomButtonsContainer #BackValue.Value";
     private static final String REFRESH_BUTTON_PATH = "#BottomButtonsContainer #RefreshButton";
     private static final String REFRESH_VALUE_PATH = "#BottomButtonsContainer #RefreshValue.Value";
+    
+    // Pagination constants
+    private static final int ITEMS_PER_PAGE = 6;
+    private static final String PREV_PAGE_BUTTON_PATH = "#PaginationContainer #PrevPageContainer #PrevPageButton";
+    private static final String PREV_PAGE_VALUE_PATH = "#PaginationContainer #PrevPageContainer #PrevPageValue.Value";
+    private static final String NEXT_PAGE_BUTTON_PATH = "#PaginationContainer #NextPageContainer #NextPageButton";
+    private static final String NEXT_PAGE_VALUE_PATH = "#PaginationContainer #NextPageContainer #NextPageValue.Value";
+    private static final String PAGE_INFO_ID = "#PaginationContainer #PageInfoContainer #PageInfoLabel.Text";
 
     private final HardcoreModePlugin plugin;
     private final PlayerRef playerRef;
     private List<String> worldNames;
+    private int currentPage = 0;
 
     public HardcoreWorldSettingsPage(HardcoreModePlugin plugin, PlayerRef playerRef) {
+        this(plugin, playerRef, 0);
+    }
+
+    public HardcoreWorldSettingsPage(HardcoreModePlugin plugin, PlayerRef playerRef, int page) {
         super(playerRef, CustomPageLifetime.CanDismiss, HardcoreWorldSettingsPageEventData.CODEC);
         this.plugin = plugin;
         this.playerRef = playerRef;
         this.worldNames = new ArrayList<>();
+        this.currentPage = page;
     }
 
     @Override
@@ -54,7 +67,9 @@ public class HardcoreWorldSettingsPage extends InteractiveCustomUIPage<HardcoreW
     ) {
         commands.append(PAGE_PATH);
         fillHeader(commands);
+        loadAllWorldNames();
         buildWorldList(commands, events);
+        bindPaginationButtons(commands, events);
         bindNavigation(events);
     }
 
@@ -74,7 +89,21 @@ public class HardcoreWorldSettingsPage extends InteractiveCustomUIPage<HardcoreW
         }
 
         if (Boolean.TRUE.equals(data.getRefresh())) {
-            reopenPage(ref, store);
+            reopenPage(ref, store, 0);
+            return;
+        }
+
+        // Handle pagination
+        if (Boolean.TRUE.equals(data.getPrevPage())) {
+            int newPage = Math.max(0, currentPage - 1);
+            reopenPage(ref, store, newPage);
+            return;
+        }
+
+        if (Boolean.TRUE.equals(data.getNextPage())) {
+            int totalPages = getTotalPages(worldNames.size());
+            int newPage = Math.min(totalPages - 1, currentPage + 1);
+            reopenPage(ref, store, newPage);
             return;
         }
 
@@ -102,9 +131,13 @@ public class HardcoreWorldSettingsPage extends InteractiveCustomUIPage<HardcoreW
             if (changed) {
                 plugin.getConfig().save();
                 // Reabrir a página para refletir as mudanças
-                reopenPage(ref, store);
+                reopenPage(ref, store, currentPage);
             }
         }
+    }
+
+    private int getTotalPages(int totalItems) {
+        return Math.max(1, (int) Math.ceil((double) totalItems / ITEMS_PER_PAGE));
     }
 
     private void fillHeader(UICommandBuilder commands) {
@@ -113,37 +146,59 @@ public class HardcoreWorldSettingsPage extends InteractiveCustomUIPage<HardcoreW
         commands.set(SECTION_DESCRIPTION_ID, "Enable or disable HardcoreMode effects for each world");
     }
 
-    private void buildWorldList(UICommandBuilder commands, UIEventBuilder events) {
+    private void loadAllWorldNames() {
         worldNames.clear();
         
         // Obter lista de mundos do Universe
         Universe universe = Universe.get();
         if (universe == null) {
-            addNoWorldsMessage(commands);
             return;
         }
         
         // Obter todos os mundos (Map<String, World>)
         Map<String, World> worlds = universe.getWorlds();
         if (worlds == null || worlds.isEmpty()) {
+            return;
+        }
+        
+        for (Map.Entry<String, World> entry : worlds.entrySet()) {
+            String worldName = entry.getKey();
+            World world = entry.getValue();
+            if (world != null && worldName != null && !worldName.isEmpty()) {
+                worldNames.add(worldName);
+            }
+        }
+    }
+
+    private void buildWorldList(UICommandBuilder commands, UIEventBuilder events) {
+        if (worldNames.isEmpty()) {
             addNoWorldsMessage(commands);
             return;
         }
         
         HardcoreModeConfig config = plugin.getConfigData();
-        int index = 0;
+        int totalItems = worldNames.size();
+        int totalPages = getTotalPages(totalItems);
         
-        for (Map.Entry<String, World> entry : worlds.entrySet()) {
-            String worldName = entry.getKey();
-            World world = entry.getValue();
-            if (world == null || worldName == null || worldName.isEmpty()) continue;
-            
-            worldNames.add(worldName);
-            addWorldRow(commands, events, index, worldName, config.isWorldEnabled(worldName));
-            index++;
+        // Garantir que a página atual é válida
+        if (currentPage >= totalPages) {
+            currentPage = totalPages - 1;
+        }
+        if (currentPage < 0) {
+            currentPage = 0;
         }
         
-        if (index == 0) {
+        int startIndex = currentPage * ITEMS_PER_PAGE;
+        int endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalItems);
+        
+        int displayIndex = 0;
+        for (int i = startIndex; i < endIndex; i++) {
+            String worldName = worldNames.get(i);
+            addWorldRow(commands, events, displayIndex, i, worldName, config.isWorldEnabled(worldName));
+            displayIndex++;
+        }
+        
+        if (displayIndex == 0) {
             addNoWorldsMessage(commands);
         }
     }
@@ -151,11 +206,12 @@ public class HardcoreWorldSettingsPage extends InteractiveCustomUIPage<HardcoreW
     private void addWorldRow(
             UICommandBuilder commands,
             UIEventBuilder events,
-            int index,
+            int displayIndex,
+            int globalIndex,
             String worldName,
             boolean enabled
     ) {
-        String entry = WORLD_LIST_ID + "[" + index + "]";
+        String entry = WORLD_LIST_ID + "[" + displayIndex + "]";
         commands.append(WORLD_LIST_ID, WORLD_ROW_PATH);
         
         // Definir nome do mundo
@@ -168,12 +224,12 @@ public class HardcoreWorldSettingsPage extends InteractiveCustomUIPage<HardcoreW
         // Definir valor do toggle
         commands.set(entry + " #WorldToggle.Value", enabled);
         
-        // Bind do evento de toggle
+        // Bind do evento de toggle (usa o índice global para identificar corretamente o mundo)
         String togglePath = entry + " #WorldToggle";
         String valuePath = entry + " #WorldToggle.Value";
         
         EventData toggleData = EventData.of(
-                HardcoreWorldSettingsPageEventData.KEY_WORLD_TOGGLE_PREFIX + index,
+                HardcoreWorldSettingsPageEventData.KEY_WORLD_TOGGLE_PREFIX + globalIndex,
                 valuePath
         );
         events.addEventBinding(CustomUIEventBindingType.ValueChanged, togglePath, toggleData, false);
@@ -186,6 +242,38 @@ public class HardcoreWorldSettingsPage extends InteractiveCustomUIPage<HardcoreW
         commands.set(entry + " #WorldName.Text", "No worlds found");
         commands.set(entry + " #WorldStatus.Text", "Try clicking 'Refresh Worlds' after loading a world");
         commands.set(entry + " #WorldToggle.Visible", false);
+    }
+
+    private void bindPaginationButtons(UICommandBuilder commands, UIEventBuilder events) {
+        int totalItems = worldNames.size();
+        int totalPages = getTotalPages(totalItems);
+        
+        // Atualizar texto da página
+        commands.set(PAGE_INFO_ID, "Page " + (currentPage + 1) + " of " + totalPages);
+        
+        // Desabilitar botão "Previous" se estiver na primeira página
+        if (currentPage <= 0) {
+            commands.set(PREV_PAGE_BUTTON_PATH + ".Visible", false);
+        } else {
+            commands.set(PREV_PAGE_BUTTON_PATH + ".Visible", true);
+            EventData prevData = EventData.of(
+                    HardcoreWorldSettingsPageEventData.KEY_PREV_PAGE,
+                    PREV_PAGE_VALUE_PATH
+            );
+            events.addEventBinding(CustomUIEventBindingType.Activating, PREV_PAGE_BUTTON_PATH, prevData, false);
+        }
+        
+        // Desabilitar botão "Next" se estiver na última página
+        if (currentPage >= totalPages - 1) {
+            commands.set(NEXT_PAGE_BUTTON_PATH + ".Visible", false);
+        } else {
+            commands.set(NEXT_PAGE_BUTTON_PATH + ".Visible", true);
+            EventData nextData = EventData.of(
+                    HardcoreWorldSettingsPageEventData.KEY_NEXT_PAGE,
+                    NEXT_PAGE_VALUE_PATH
+            );
+            events.addEventBinding(CustomUIEventBindingType.Activating, NEXT_PAGE_BUTTON_PATH, nextData, false);
+        }
     }
 
     private void bindNavigation(UIEventBuilder events) {
@@ -220,7 +308,8 @@ public class HardcoreWorldSettingsPage extends InteractiveCustomUIPage<HardcoreW
 
     private void reopenPage(
             Ref<EntityStore> ref,
-            Store<EntityStore> store
+            Store<EntityStore> store,
+            int page
     ) {
         if (store == null || ref == null) {
             return;
@@ -231,6 +320,6 @@ public class HardcoreWorldSettingsPage extends InteractiveCustomUIPage<HardcoreW
             return;
         }
 
-        player.getPageManager().openCustomPage(ref, store, new HardcoreWorldSettingsPage(plugin, playerRef));
+        player.getPageManager().openCustomPage(ref, store, new HardcoreWorldSettingsPage(plugin, playerRef, page));
     }
 }

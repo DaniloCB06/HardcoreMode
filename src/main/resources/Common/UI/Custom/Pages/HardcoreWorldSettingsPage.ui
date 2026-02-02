@@ -58,6 +58,60 @@ $C.@Container {
       }
     }
 
+    Group #PaginationContainer {
+      LayoutMode: Left;
+      Padding: (Top: 12, Bottom: 8);
+
+      Group #PrevPageContainer {
+        Anchor: (Width: 120, Height: 30);
+
+        $C.@SmallSecondaryTextButton #PrevPageButton {
+          Anchor: (Width: 120, Height: 30);
+          Text: "< Previous";
+        }
+
+        $C.@CheckBox #PrevPageValue {
+          Anchor: (Width: 0, Height: 0);
+          Visible: false;
+          Value: true;
+        }
+      }
+
+      Group #PageInfoContainer {
+        FlexWeight: 1;
+        LayoutMode: Left;
+
+        Group {
+          FlexWeight: 1;
+        }
+
+        Label #PageInfoLabel {
+          Anchor: (Width: 200);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 14, TextColor: #d3d6db, HorizontalAlignment: Center, VerticalAlignment: Center);
+          Text: "Page 1 of 1";
+        }
+
+        Group {
+          FlexWeight: 1;
+        }
+      }
+
+      Group #NextPageContainer {
+        Anchor: (Width: 120, Height: 30);
+
+        $C.@SmallSecondaryTextButton #NextPageButton {
+          Anchor: (Width: 120, Height: 30);
+          Text: "Next >";
+        }
+
+        $C.@CheckBox #NextPageValue {
+          Anchor: (Width: 0, Height: 0);
+          Visible: false;
+          Value: true;
+        }
+      }
+    }
+
     Group #Spacer {
       Anchor: (Height: 10);
     }

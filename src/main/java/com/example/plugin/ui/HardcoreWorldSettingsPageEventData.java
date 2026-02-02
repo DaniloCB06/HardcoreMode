@@ -10,6 +10,8 @@ import java.util.Map;
 public class HardcoreWorldSettingsPageEventData {
     public static final String KEY_GO_BACK = "@GoBack";
     public static final String KEY_REFRESH = "@Refresh";
+    public static final String KEY_PREV_PAGE = "@PrevPage";
+    public static final String KEY_NEXT_PAGE = "@NextPage";
     public static final String KEY_WORLD_TOGGLE_PREFIX = "@WorldToggle_";
 
     // Suporte para até 20 mundos
@@ -25,6 +27,14 @@ public class HardcoreWorldSettingsPageEventData {
                 .append(new KeyedCodec<>(KEY_REFRESH, Codec.BOOLEAN),
                         (data, value) -> data.refresh = value,
                         data -> data.refresh)
+                .add()
+                .append(new KeyedCodec<>(KEY_PREV_PAGE, Codec.BOOLEAN),
+                        (data, value) -> data.prevPage = value,
+                        data -> data.prevPage)
+                .add()
+                .append(new KeyedCodec<>(KEY_NEXT_PAGE, Codec.BOOLEAN),
+                        (data, value) -> data.nextPage = value,
+                        data -> data.nextPage)
                 .add();
         
         // Adicionar suporte para toggles de mundos (0-19)
@@ -42,6 +52,8 @@ public class HardcoreWorldSettingsPageEventData {
 
     private Boolean goBack;
     private Boolean refresh;
+    private Boolean prevPage;
+    private Boolean nextPage;
     private final Map<Integer, Boolean> worldToggles = new HashMap<>();
 
     public HardcoreWorldSettingsPageEventData() {
@@ -53,6 +65,14 @@ public class HardcoreWorldSettingsPageEventData {
 
     public Boolean getRefresh() {
         return refresh;
+    }
+
+    public Boolean getPrevPage() {
+        return prevPage;
+    }
+
+    public Boolean getNextPage() {
+        return nextPage;
     }
 
     public Map<Integer, Boolean> getWorldToggles() {

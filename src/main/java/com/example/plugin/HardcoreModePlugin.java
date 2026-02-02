@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class HardcoreModePlugin extends JavaPlugin {
@@ -77,6 +78,9 @@ public class HardcoreModePlugin extends JavaPlugin {
     private Double rpgLevelingBaseRateExp;
     private float rpgLevelingAppliedMultiplier = 1.0f;
     private boolean rpgLevelingBloodMoonApplied;
+    
+    // Rastreia quais mundos têm Blood Moon ativa com XP multiplier habilitado
+    private final Map<String, Float> worldsWithXpMultiplier = new ConcurrentHashMap<>();
 
     public HardcoreModePlugin(JavaPluginInit init) {
         super(init);
@@ -482,6 +486,11 @@ public class HardcoreModePlugin extends JavaPlugin {
             if (worldConfig != null && worldConfig.isBloodMoonActive()) {
                 worldConfig.setBloodMoonActive(false);
                 worldConfig.clearBloodMoonState();
+                // Remove do mapa de XP multipliers e recalcula
+                if (resolvedWorldName != null) {
+                    worldsWithXpMultiplier.remove(resolvedWorldName);
+                    applyGlobalXpMultiplier(resolvedWorldName);
+                }
             }
             return;
         }
@@ -492,6 +501,9 @@ public class HardcoreModePlugin extends JavaPlugin {
             if (worldConfig != null && worldConfig.isBloodMoonActive()) {
                 worldConfig.setBloodMoonActive(false);
                 worldConfig.clearBloodMoonState();
+                // Remove do mapa de XP multipliers e recalcula
+                worldsWithXpMultiplier.remove(resolvedWorldName);
+                applyGlobalXpMultiplier(resolvedWorldName);
             }
             return;
         }
@@ -517,7 +529,7 @@ public class HardcoreModePlugin extends JavaPlugin {
         
         // Sync RPG leveling apenas se houver mudança
         if (changed) {
-            syncRpgLevelingMultiplier(active, worldConfig);
+            syncRpgLevelingMultiplier(resolvedWorldName, active, worldConfig);
             announceBloodMoon(active, store);
             if (applyToMobs) {
                 applyToExistingMobs(store);
@@ -851,47 +863,87 @@ public class HardcoreModePlugin extends JavaPlugin {
         }
     }
 
-    private void syncRpgLevelingMultiplier(boolean active, WorldHardcoreConfig worldConfig) {
+    private void syncRpgLevelingMultiplier(String worldName, boolean active, WorldHardcoreConfig worldConfig) {
+        // Atualiza o mapa de mundos com XP multiplier
+        if (worldName == null) {
+            worldName = "unknown";
+        }
+        
+        // Só adiciona ao mapa se:
+        // 1. Blood Moon está ativa
+        // 2. XP Multiplier está habilitado para este mundo
+        // 3. HardcoreMode está habilitado para este mundo
+        boolean isWorldEnabled = config.get().isWorldEnabled(worldName);
+        
+        if (active && worldConfig.bloodMoonXpMultiplierEnabled && isWorldEnabled) {
+            // Adiciona ou atualiza este mundo no mapa
+            worldsWithXpMultiplier.put(worldName, worldConfig.bloodMoonXpMultiplier);
+        } else {
+            // Remove este mundo do mapa (Blood Moon terminou, XP disabled, ou mundo desabilitado)
+            worldsWithXpMultiplier.remove(worldName);
+        }
+        
+        // Aplica o multiplicador de XP baseado no estado de TODOS os mundos habilitados
+        applyGlobalXpMultiplier(worldName);
+    }
+    
+    /**
+     * Aplica o multiplicador de XP global.
+     * IMPORTANTE: O RPGLeveling tem uma única configuração global de rateExp que afeta TODOS os mundos.
+     * 
+     * O multiplicador só é aplicado quando:
+     * - O mundo tem HardcoreMode habilitado
+     * - O mundo tem Blood Moon ativa
+     * - O mundo tem XP Multiplier habilitado
+     * 
+     * LIMITAÇÃO TÉCNICA: Mesmo que apenas um mundo tenha Blood Moon, o multiplicador
+     * de XP afetará TODOS os jogadores em TODOS os mundos. Isso é uma limitação
+     * do RPGLeveling que não suporta configurações por mundo.
+     */
+    private void applyGlobalXpMultiplier(String changedWorldName) {
         Object levelingConfig = getRpgLevelingConfig();
         if (levelingConfig == null) {
             rpgLevelingBloodMoonApplied = false;
             rpgLevelingAppliedMultiplier = 1.0f;
             rpgLevelingBaseRateExp = null;
+            worldsWithXpMultiplier.clear();
             return;
         }
-
-        if (!active) {
-            if (rpgLevelingBloodMoonApplied && rpgLevelingBaseRateExp != null) {
-                setRpgRateExp(levelingConfig, rpgLevelingBaseRateExp);
+        
+        // Verifica se o mundo que mudou tem Blood Moon com XP multiplier
+        Float worldMultiplier = worldsWithXpMultiplier.get(changedWorldName);
+        
+        // Se o mundo não tem Blood Moon com XP multiplier ativo
+        if (worldMultiplier == null) {
+            // Verifica se ainda há outros mundos com Blood Moon ativa
+            if (worldsWithXpMultiplier.isEmpty()) {
+                // Nenhum mundo tem Blood Moon - restaura o valor original
+                if (rpgLevelingBloodMoonApplied && rpgLevelingBaseRateExp != null) {
+                    setRpgRateExp(levelingConfig, rpgLevelingBaseRateExp);
+                }
+                rpgLevelingBloodMoonApplied = false;
+                rpgLevelingAppliedMultiplier = 1.0f;
+                rpgLevelingBaseRateExp = null;
             }
-            rpgLevelingBloodMoonApplied = false;
-            rpgLevelingAppliedMultiplier = 1.0f;
-            rpgLevelingBaseRateExp = null;
+            // Se ainda há outros mundos com Blood Moon, mantém o multiplicador atual
             return;
         }
-
-        // Check if XP Multiplier is enabled
-        if (!worldConfig.bloodMoonXpMultiplierEnabled) {
-            if (rpgLevelingBloodMoonApplied && rpgLevelingBaseRateExp != null) {
-                setRpgRateExp(levelingConfig, rpgLevelingBaseRateExp);
-            }
-            rpgLevelingBloodMoonApplied = false;
-            rpgLevelingAppliedMultiplier = 1.0f;
-            rpgLevelingBaseRateExp = null;
-            return;
-        }
-
-        float multiplier = worldConfig.bloodMoonXpMultiplier;
+        
+        // Salva o valor base original se ainda não tiver salvo
         if (!rpgLevelingBloodMoonApplied) {
             rpgLevelingBaseRateExp = getRpgRateExp(levelingConfig);
         }
-
+        
         if (rpgLevelingBaseRateExp == null) return;
-
+        
+        float multiplier = worldMultiplier;
+        
+        // Se o multiplicador não mudou, não precisa aplicar novamente
         if (rpgLevelingBloodMoonApplied && Math.abs(rpgLevelingAppliedMultiplier - multiplier) <= 0.0001f) {
             return;
         }
-
+        
+        // Aplica o multiplicador do mundo que teve a mudança
         double target = rpgLevelingBaseRateExp * Math.max(0.0f, multiplier);
         if (setRpgRateExp(levelingConfig, target)) {
             rpgLevelingAppliedMultiplier = multiplier;
