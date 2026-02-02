@@ -123,9 +123,40 @@ public class HardcoreModePlugin extends JavaPlugin {
     public WorldHardcoreConfig getWorldConfig(Store<EntityStore> store) {
         String worldName = getWorldName(store);
         if (worldName == null) {
-            return new WorldHardcoreConfig(); // Config padrão se não encontrar o mundo
+            // Fallback: tentar usar o mundo em cache se disponível
+            if (cachedPlayerStore != null) {
+                String cachedWorldName = getWorldName(cachedPlayerStore);
+                if (cachedWorldName != null) {
+                    return worldConfigManager.getWorldConfig(cachedWorldName);
+                }
+            }
+            // Último recurso: retornar config do primeiro mundo disponível
+            Universe universe = Universe.get();
+            if (universe != null) {
+                Map<String, World> worlds = universe.getWorlds();
+                if (worlds != null && !worlds.isEmpty()) {
+                    String firstWorldName = worlds.keySet().iterator().next();
+                    return worldConfigManager.getWorldConfig(firstWorldName);
+                }
+            }
+            return new WorldHardcoreConfig(); // Config padrão se nada funcionar
         }
         return worldConfigManager.getWorldConfig(worldName);
+    }
+    
+    /**
+     * Obtém o nome do primeiro mundo disponível no Universe.
+     * Útil como fallback quando não é possível determinar o mundo específico.
+     * @return O nome do primeiro mundo, ou null se não houver mundos
+     */
+    public String getFirstAvailableWorldName() {
+        Universe universe = Universe.get();
+        if (universe == null) return null;
+        
+        Map<String, World> worlds = universe.getWorlds();
+        if (worlds == null || worlds.isEmpty()) return null;
+        
+        return worlds.keySet().iterator().next();
     }
 
     public MobCategory resolveMobCategory(String creatureId) {
@@ -945,6 +976,12 @@ public class HardcoreModePlugin extends JavaPlugin {
     public String getWorldName(Store<EntityStore> store) {
         if (store == null) return null;
         
+        // Verificar cache primeiro
+        String cached = worldNameCache.get(store);
+        if (cached != null) {
+            return cached;
+        }
+        
         Universe universe = Universe.get();
         if (universe == null) return null;
         
@@ -962,11 +999,21 @@ public class HardcoreModePlugin extends JavaPlugin {
                 // Comparar usando o store interno - tentar múltiplas formas de comparação
                 Store<EntityStore> worldStore = worldEntityStore.getStore();
                 if (worldStore == store) {
+                    worldNameCache.put(store, entry.getKey());
                     return entry.getKey();
                 }
                 // Também tentar equals caso a referência direta não funcione
                 if (worldStore != null && worldStore.equals(store)) {
+                    worldNameCache.put(store, entry.getKey());
                     return entry.getKey();
+                }
+                // Tentar comparar hash codes como última alternativa
+                if (worldStore != null && worldStore.hashCode() == store.hashCode()) {
+                    // Verificação adicional para evitar falsos positivos
+                    if (worldStore.getClass().equals(store.getClass())) {
+                        worldNameCache.put(store, entry.getKey());
+                        return entry.getKey();
+                    }
                 }
             } catch (Exception e) {
                 // Ignore access errors

@@ -1,7 +1,7 @@
 package com.example.plugin.systems;
 
 import com.example.plugin.HardcoreModePlugin;
-import com.example.plugin.config.HardcoreModeConfig;
+import com.example.plugin.config.WorldHardcoreConfig;
 import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
@@ -81,10 +81,14 @@ public class HardcorePlayerDeathConfigSystem extends DeathSystems.OnDeathSystem 
             Store<EntityStore> store,
             CommandBuffer<EntityStore> commandBuffer
     ) {
-        HardcoreModeConfig config = plugin.getConfigData();
+        // Use world-specific config instead of global config
+        WorldHardcoreConfig config = plugin.getWorldConfig(store);
+        if (config == null) {
+            return;
+        }
         
-        // Check if Blood Moon is active
-        boolean isBloodMoonActive = plugin.isBloodMoonActive();
+        // Check if Blood Moon is active for this world
+        boolean isBloodMoonActive = plugin.isBloodMoonActive(store);
         
         // Determine which settings to use
         // Priority: Blood Moon Death Settings > Player Death Settings (during Blood Moon)

@@ -110,7 +110,11 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 this.currentStore = store;
                 this.currentWorldName = plugin.getWorldName(store);
                 if (this.currentWorldName == null) {
-                        this.currentWorldName = "Unknown";
+                        // Fallback: usar o primeiro mundo disponível
+                        this.currentWorldName = plugin.getFirstAvailableWorldName();
+                        if (this.currentWorldName == null) {
+                                this.currentWorldName = "Unknown";
+                        }
                 }
                 
                 // Use specific page based on section
@@ -145,6 +149,12 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                         String newWorldName = plugin.getWorldName(store);
                         if (newWorldName != null) {
                                 this.currentWorldName = newWorldName;
+                        } else {
+                                // Fallback: usar o primeiro mundo disponível
+                                String fallbackName = plugin.getFirstAvailableWorldName();
+                                if (fallbackName != null) {
+                                        this.currentWorldName = fallbackName;
+                                }
                         }
                 }
 
@@ -931,8 +941,13 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                         UIEventBuilder events,
                         WorldHardcoreConfig config,
                         int index) {
+                // Check if Blood Moon is active and Blood Moon Death Settings is enabled
+                boolean bloodMoonPriority = currentStore != null 
+                        && plugin.isBloodMoonActive(currentStore) 
+                        && config.bloodMoonDeathSettingsEnabled;
+                
                 // Build label with Blood Moon priority indicator
-                String deathSettingsLabel = getDeathSettingsLabel(config.playerDeathSettingsEnabled);
+                String deathSettingsLabel = getDeathSettingsLabel(config.playerDeathSettingsEnabled, config);
                 
                 index = addCategoryToggleEntry(
                                 commands,
@@ -942,13 +957,30 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 deathSettingsLabel,
                                 config.playerDeathSettingsEnabled,
                                 HardcoreSettingsPageEventData.KEY_PLAYER_DEATH_SETTINGS_ENABLED);
+                
+                // When Blood Moon is active with Death Settings enabled, show Blood Moon values (locked)
+                int durabilityValue = bloodMoonPriority 
+                        ? config.bloodMoonItemDurabilityLossPercent 
+                        : config.playerItemDurabilityLossPercent;
+                int dropValue = bloodMoonPriority 
+                        ? config.bloodMoonItemDropPercent 
+                        : config.playerItemDropPercent;
+                
+                // Add slider entries - they show Blood Moon values when Blood Moon is active
+                String durabilityLabel = bloodMoonPriority 
+                        ? "Item Durability Loss (Blood Moon)" 
+                        : "Item Durability Loss";
+                String dropLabel = bloodMoonPriority 
+                        ? "Inventory Drop Loss (Blood Moon)" 
+                        : "Inventory Drop Loss";
+                
                 index = addSliderEntry(
                                 commands,
                                 events,
                                 SETTINGS_LIST_ID,
                                 index,
-                                "Item Durability Loss",
-                                config.playerItemDurabilityLossPercent,
+                                durabilityLabel,
+                                durabilityValue,
                                 HardcoreSettingsPageEventData.KEY_PLAYER_ITEM_DURABILITY_LOSS_PERCENT,
                                 MIN_PERCENT,
                                 MAX_PERCENT,
@@ -959,8 +991,8 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 events,
                                 SETTINGS_LIST_ID,
                                 index,
-                                "Inventory Drop Loss",
-                                config.playerItemDropPercent,
+                                dropLabel,
+                                dropValue,
                                 HardcoreSettingsPageEventData.KEY_PLAYER_ITEM_DROP_PERCENT,
                                 MIN_PERCENT,
                                 MAX_PERCENT,
@@ -968,11 +1000,10 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 this::formatPercent);
         }
         
-        private String getDeathSettingsLabel(boolean enabled) {
+        private String getDeathSettingsLabel(boolean enabled, WorldHardcoreConfig worldConfig) {
                 String label = "Death Settings: " + (enabled ? "ON" : "OFF");
-                HardcoreModeConfig config = plugin.getConfigData();
                 // Show Blood Moon Priority if Blood Moon is active AND Blood Moon Death Settings is enabled
-                if (plugin.isBloodMoonActive() && config.bloodMoonDeathSettingsEnabled) {
+                if (currentStore != null && plugin.isBloodMoonActive(currentStore) && worldConfig != null && worldConfig.bloodMoonDeathSettingsEnabled) {
                         label += " (Blood Moon Priority)";
                 }
                 return label;
