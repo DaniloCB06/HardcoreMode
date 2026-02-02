@@ -28,6 +28,9 @@ public class HardcoreBloodMoonSystem extends TickingSystem<EntityStore> {
             return;
         }
 
+        // Blood Moon funciona independentemente do Enemy Settings estar ativado
+        // Removida verificação: plugin.isWorldEnabledForStore(store)
+
         WorldTimeResource time = store.getResource(WorldTimeResource.getResourceType());
         if (time == null) {
             return;

@@ -67,6 +67,11 @@ public class HardcoreMobStatRefreshSystem extends RefChangeSystem<EntityStore, E
             return;
         }
 
+        // Verificar se o HardcoreMode está habilitado para este mundo
+        if (!plugin.isWorldEnabledForStore(store)) {
+            return;
+        }
+
         ComponentType<EntityStore, Player> playerType = Player.getComponentType();
         if (playerType != null && store.getComponent(ref, playerType) != null) {
             return;

@@ -61,12 +61,17 @@ public class HardcoreBloodMoonDropSystem extends DeathSystems.OnDeathSystem {
             Store<EntityStore> store,
             CommandBuffer<EntityStore> commandBuffer
     ) {
-        if (!plugin.isBloodMoonActive()) {
+        if (!plugin.isBloodMoonActive(store)) {
             return;
         }
 
-        HardcoreModeConfig config = plugin.getConfigData();
-        if (config == null || !config.bloodMoonDropsEnabled) {
+        // Verificar se o HardcoreMode está habilitado para este mundo
+        if (!plugin.isWorldEnabledForStore(store)) {
+            return;
+        }
+
+        com.example.plugin.config.WorldHardcoreConfig worldConfig = plugin.getWorldConfig(store);
+        if (worldConfig == null || !worldConfig.bloodMoonDropsEnabled) {
             return;
         }
 
@@ -82,7 +87,7 @@ public class HardcoreBloodMoonDropSystem extends DeathSystems.OnDeathSystem {
 
         MobCategory category = plugin.resolveMobCategory(npcEntity);
 
-        if (!plugin.isBloodMoonAffected(category)) {
+        if (!plugin.isBloodMoonAffected(worldConfig, category)) {
             return;
         }
 
@@ -95,7 +100,9 @@ public class HardcoreBloodMoonDropSystem extends DeathSystems.OnDeathSystem {
             }
         }
 
-        processLegacyDrop(ref, commandBuffer, category, config);
+        // Legacy drops usam config global
+        HardcoreModeConfig globalConfig = plugin.getConfigData();
+        processLegacyDrop(ref, commandBuffer, category, globalConfig);
     }
 
     private void processJsonDrops(

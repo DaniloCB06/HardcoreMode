@@ -3,6 +3,8 @@ package com.example.plugin;
 import com.example.plugin.commands.HardcoreGuiCommand;
 import com.example.plugin.config.BloodMoonDropConfig;
 import com.example.plugin.config.HardcoreModeConfig;
+import com.example.plugin.config.WorldConfigManager;
+import com.example.plugin.config.WorldHardcoreConfig;
 import com.example.plugin.systems.HardcoreBloodMoonDropSystem;
 import com.example.plugin.systems.HardcoreBloodMoonSystem;
 import com.example.plugin.systems.HardcoreMobDamageSystem;
@@ -26,12 +28,15 @@ import com.hypixel.hytale.server.core.modules.time.WorldTimeResource;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.Universe;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.Config;
 import com.hypixel.hytale.server.core.util.EventTitleUtil;
 import com.hypixel.hytale.server.npc.entities.NPCEntity;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -47,6 +52,7 @@ public class HardcoreModePlugin extends JavaPlugin {
     private final Config<HardcoreModeConfig> config;
     private final BloodMoonDropConfig bloodMoonDropConfig;
     private final MobCategoryResolver mobCategoryResolver;
+    private final WorldConfigManager worldConfigManager;
     private final HardcoreMobSetupSystem mobSetupSystem;
     private final HardcoreMobDamageSystem mobDamageSystem;
     private final HardcoreBloodMoonSystem bloodMoonSystem;
@@ -57,20 +63,10 @@ public class HardcoreModePlugin extends JavaPlugin {
 
     private volatile Ref<EntityStore> cachedPlayerRef;
     private volatile Store<EntityStore> cachedPlayerStore;
-
-    private final Map<Store<EntityStore>, Long> lastHourByStore =
+    
+    // Cache de nome do mundo por store para performance
+    private final Map<Store<EntityStore>, String> worldNameCache = 
             Collections.synchronizedMap(new WeakHashMap<>());
-
-    private boolean bloodMoonActive;
-    private Long forcedBloodMoonEndHourOfEpoch;
-    
-    private Long bloodMoonStartHourOfEpoch;
-    private Long bloodMoonEndHourOfEpoch;
-    
-    // O mundo principal usado para calcular o estado da Blood Moon
-    // Uma vez definido, apenas o tempo deste mundo é usado para evitar
-    // dessincronização entre mundos com tempos diferentes
-    private volatile Store<EntityStore> primaryBloodMoonStore;
 
     private boolean rpgLevelingChecked;
     private boolean rpgLevelingAvailable;
@@ -87,6 +83,7 @@ public class HardcoreModePlugin extends JavaPlugin {
         this.config = withConfig("HardcoreMode", HardcoreModeConfig.CODEC);
         this.bloodMoonDropConfig = new BloodMoonDropConfig(getDataDirectory());
         this.mobCategoryResolver = new MobCategoryResolver(getDataDirectory());
+        this.worldConfigManager = new WorldConfigManager(getDataDirectory());
         this.mobSetupSystem = new HardcoreMobSetupSystem(this);
         this.mobDamageSystem = new HardcoreMobDamageSystem(this);
         this.bloodMoonSystem = new HardcoreBloodMoonSystem(this);
@@ -107,6 +104,28 @@ public class HardcoreModePlugin extends JavaPlugin {
 
     public Config<HardcoreModeConfig> getConfig() {
         return config;
+    }
+    
+    public WorldConfigManager getWorldConfigManager() {
+        return worldConfigManager;
+    }
+    
+    /**
+     * Obtém a configuração do HardcoreMode para um mundo específico.
+     */
+    public WorldHardcoreConfig getWorldConfig(String worldName) {
+        return worldConfigManager.getWorldConfig(worldName);
+    }
+    
+    /**
+     * Obtém a configuração do HardcoreMode para o mundo de um Store.
+     */
+    public WorldHardcoreConfig getWorldConfig(Store<EntityStore> store) {
+        String worldName = getWorldName(store);
+        if (worldName == null) {
+            return new WorldHardcoreConfig(); // Config padrão se não encontrar o mundo
+        }
+        return worldConfigManager.getWorldConfig(worldName);
     }
 
     public MobCategory resolveMobCategory(String creatureId) {
@@ -167,33 +186,31 @@ public class HardcoreModePlugin extends JavaPlugin {
     public void refreshBloodMoonStateIfNeeded(Store<EntityStore> store, boolean applyToMobs) {
         if (store == null) return;
 
-        // Usar o mundo principal para cálculos de tempo, se disponível
-        Store<EntityStore> timeStore = primaryBloodMoonStore != null ? primaryBloodMoonStore : store;
+        // Obter configuração do mundo
+        WorldHardcoreConfig worldConfig = getWorldConfig(store);
+        if (worldConfig == null) return;
+        // Blood Moon funciona independentemente do Enemy Settings (worldConfig.enabled)
         
-        WorldTimeResource time = timeStore.getResource(WorldTimeResource.getResourceType());
+        WorldTimeResource time = store.getResource(WorldTimeResource.getResourceType());
         if (time == null) return;
 
         long currentHourOfEpoch = getCurrentHourOfEpoch(time);
 
-        Long last;
-        synchronized (lastHourByStore) {
-            // Usar o timeStore como chave para garantir consistência
-            last = lastHourByStore.get(timeStore);
-            if (last != null && last == currentHourOfEpoch) {
-                return;
-            }
-            lastHourByStore.put(timeStore, currentHourOfEpoch);
+        // Verificar se já processamos esta hora para este mundo
+        if (worldConfig.getLastProcessedHourOfEpoch() == currentHourOfEpoch) {
+            return;
         }
+        worldConfig.setLastProcessedHourOfEpoch(currentHourOfEpoch);
 
         refreshBloodMoonState(store, applyToMobs);
     }
 
-    public void applyHealthModifier(EntityStatMap statMap, MobCategory category) {
+    public void applyHealthModifier(Store<EntityStore> store, EntityStatMap statMap, MobCategory category) {
         int healthStat = DefaultEntityStatTypes.getHealth();
         String key = HardcoreMobSetupSystem.HEALTH_MODIFIER_KEY;
-        float multiplier = getHealthMultiplier(category);
+        float multiplier = getHealthMultiplier(store, category);
 
-        if (!isMobEnabled(category) || multiplier <= 1.0f) {
+        if (!isMobEnabled(store, category) || multiplier <= 1.0f) {
             statMap.removeModifier(healthStat, key);
             statMap.maximizeStatValue(healthStat);
             return;
@@ -207,152 +224,189 @@ public class HardcoreModePlugin extends JavaPlugin {
         statMap.putModifier(healthStat, key, modifier);
         statMap.maximizeStatValue(healthStat);
     }
+    
+    // Método legacy para compatibilidade
+    public void applyHealthModifier(EntityStatMap statMap, MobCategory category) {
+        applyHealthModifier(cachedPlayerStore, statMap, category);
+    }
 
+    public float getHealthMultiplier(Store<EntityStore> store, MobCategory category) {
+        WorldHardcoreConfig worldConfig = getWorldConfig(store);
+        float base = resolveCategoryMultiplier(worldConfig, category, true);
+        if (isBloodMoonActive(store) && isBloodMoonAffected(worldConfig, category)) {
+            switch (category) {
+                case ELITE:
+                    return resolveMultiplier(worldConfig.bloodMoonEliteHealthMultiplier, base);
+                case MINIBOSS:
+                    return resolveMultiplier(worldConfig.bloodMoonMinibossHealthMultiplier, base);
+                case WORLDBOSS:
+                    return resolveMultiplier(worldConfig.bloodMoonWorldbossHealthMultiplier, base);
+                case HOSTILE:
+                default:
+                    return resolveMultiplier(worldConfig.bloodMoonHostileHealthMultiplier, base);
+            }
+        }
+        return base;
+    }
+    
+    // Método legacy para compatibilidade
     public float getHealthMultiplier(MobCategory category) {
-        HardcoreModeConfig data = config.get();
-        float base = resolveCategoryMultiplier(category, true);
-        if (isBloodMoonActive() && isBloodMoonAffected(category)) {
+        return getHealthMultiplier(cachedPlayerStore, category);
+    }
+
+    public float getDamageMultiplier(Store<EntityStore> store, MobCategory category) {
+        WorldHardcoreConfig worldConfig = getWorldConfig(store);
+        float base = resolveCategoryMultiplier(worldConfig, category, false);
+        if (isBloodMoonActive(store) && isBloodMoonAffected(worldConfig, category)) {
             switch (category) {
                 case ELITE:
-                    return resolveMultiplier(data.bloodMoonEliteHealthMultiplier, base);
+                    return resolveMultiplier(worldConfig.bloodMoonEliteDamageMultiplier, base);
                 case MINIBOSS:
-                    return resolveMultiplier(data.bloodMoonMinibossHealthMultiplier, base);
+                    return resolveMultiplier(worldConfig.bloodMoonMinibossDamageMultiplier, base);
                 case WORLDBOSS:
-                    return resolveMultiplier(data.bloodMoonWorldbossHealthMultiplier, base);
+                    return resolveMultiplier(worldConfig.bloodMoonWorldbossDamageMultiplier, base);
                 case HOSTILE:
                 default:
-                    return resolveMultiplier(data.bloodMoonHostileHealthMultiplier, base);
+                    return resolveMultiplier(worldConfig.bloodMoonHostileDamageMultiplier, base);
             }
         }
         return base;
     }
-
+    
+    // Método legacy para compatibilidade
     public float getDamageMultiplier(MobCategory category) {
-        HardcoreModeConfig data = config.get();
-        float base = resolveCategoryMultiplier(category, false);
-        if (isBloodMoonActive() && isBloodMoonAffected(category)) {
-            switch (category) {
-                case ELITE:
-                    return resolveMultiplier(data.bloodMoonEliteDamageMultiplier, base);
-                case MINIBOSS:
-                    return resolveMultiplier(data.bloodMoonMinibossDamageMultiplier, base);
-                case WORLDBOSS:
-                    return resolveMultiplier(data.bloodMoonWorldbossDamageMultiplier, base);
-                case HOSTILE:
-                default:
-                    return resolveMultiplier(data.bloodMoonHostileDamageMultiplier, base);
-            }
-        }
-        return base;
+        return getDamageMultiplier(cachedPlayerStore, category);
     }
 
-    private float resolveCategoryMultiplier(MobCategory category, boolean health) {
-        HardcoreModeConfig data = config.get();
+    private float resolveCategoryMultiplier(WorldHardcoreConfig worldConfig, MobCategory category, boolean health) {
         switch (category) {
             case PASSIVE:
-                return resolveMultiplier(health ? data.passiveHealthMultiplier : data.passiveDamageMultiplier,
-                        health ? data.healthMultiplier : data.damageMultiplier);
+                return resolveMultiplier(health ? worldConfig.passiveHealthMultiplier : worldConfig.passiveDamageMultiplier,
+                        health ? worldConfig.healthMultiplier : worldConfig.damageMultiplier);
             case CRITTER:
-                return resolveMultiplier(health ? data.critterHealthMultiplier : data.critterDamageMultiplier,
-                        health ? data.healthMultiplier : data.damageMultiplier);
+                return resolveMultiplier(health ? worldConfig.critterHealthMultiplier : worldConfig.critterDamageMultiplier,
+                        health ? worldConfig.healthMultiplier : worldConfig.damageMultiplier);
             case HOSTILE:
-                return resolveMultiplier(health ? data.hostileHealthMultiplier : data.hostileDamageMultiplier,
-                        health ? data.healthMultiplier : data.damageMultiplier);
+                return resolveMultiplier(health ? worldConfig.hostileHealthMultiplier : worldConfig.hostileDamageMultiplier,
+                        health ? worldConfig.healthMultiplier : worldConfig.damageMultiplier);
             case ELITE:
-                return resolveMultiplier(health ? data.eliteHealthMultiplier : data.eliteDamageMultiplier,
-                        health ? data.healthMultiplier : data.damageMultiplier);
+                return resolveMultiplier(health ? worldConfig.eliteHealthMultiplier : worldConfig.eliteDamageMultiplier,
+                        health ? worldConfig.healthMultiplier : worldConfig.damageMultiplier);
             case MINIBOSS:
-                return resolveMultiplier(health ? data.minibossHealthMultiplier : data.minibossDamageMultiplier,
-                        health ? data.healthMultiplier : data.damageMultiplier);
+                return resolveMultiplier(health ? worldConfig.minibossHealthMultiplier : worldConfig.minibossDamageMultiplier,
+                        health ? worldConfig.healthMultiplier : worldConfig.damageMultiplier);
             case WORLDBOSS:
-                return resolveMultiplier(health ? data.worldbossHealthMultiplier : data.worldbossDamageMultiplier,
-                        health ? data.healthMultiplier : data.damageMultiplier);
+                return resolveMultiplier(health ? worldConfig.worldbossHealthMultiplier : worldConfig.worldbossDamageMultiplier,
+                        health ? worldConfig.healthMultiplier : worldConfig.damageMultiplier);
             case NONE:
             default:
-                return resolveMultiplier(health ? data.healthMultiplier : data.damageMultiplier,
-                        health ? data.healthMultiplier : data.damageMultiplier);
+                return resolveMultiplier(health ? worldConfig.healthMultiplier : worldConfig.damageMultiplier,
+                        health ? worldConfig.healthMultiplier : worldConfig.damageMultiplier);
         }
     }
 
+    public boolean isBloodMoonAffected(WorldHardcoreConfig worldConfig, MobCategory category) {
+        if (worldConfig == null) return false;
+
+        switch (category) {
+            case HOSTILE:
+                return worldConfig.bloodMoonHostileEnabled;
+            case ELITE:
+                return worldConfig.bloodMoonEliteEnabled;
+            case MINIBOSS:
+                return worldConfig.bloodMoonMinibossEnabled;
+            case WORLDBOSS:
+                return worldConfig.bloodMoonWorldbossEnabled;
+            default:
+                return false;
+        }
+    }
+    
+    // Método legacy
     public boolean isBloodMoonAffected(MobCategory category) {
-        HardcoreModeConfig data = config.get();
-        if (data == null) return false;
-
-        switch (category) {
-            case HOSTILE:
-                return data.bloodMoonHostileEnabled;
-            case ELITE:
-                return data.bloodMoonEliteEnabled;
-            case MINIBOSS:
-                return data.bloodMoonMinibossEnabled;
-            case WORLDBOSS:
-                return data.bloodMoonWorldbossEnabled;
-            default:
-                return false;
-        }
+        return isBloodMoonAffected(getWorldConfig(cachedPlayerStore), category);
     }
 
-    public boolean isCategoryEnabled(MobCategory category) {
-        HardcoreModeConfig data = config.get();
+    public boolean isCategoryEnabled(WorldHardcoreConfig worldConfig, MobCategory category) {
         switch (category) {
             case PASSIVE:
-                return data.passiveEnabled;
+                return worldConfig.passiveEnabled;
             case CRITTER:
-                return data.critterEnabled;
+                return worldConfig.critterEnabled;
             case HOSTILE:
-                return data.hostileEnabled;
+                return worldConfig.hostileEnabled;
             case ELITE:
-                return data.eliteEnabled;
+                return worldConfig.eliteEnabled;
             case MINIBOSS:
-                return data.minibossEnabled;
+                return worldConfig.minibossEnabled;
             case WORLDBOSS:
-                return data.worldbossEnabled;
+                return worldConfig.worldbossEnabled;
             case NONE:
             default:
                 return false;
         }
     }
-
-    public boolean isMobEnabled(MobCategory category) {
-        if (isBloodMoonActive() && isBloodMoonAffected(category)) {
-            HardcoreModeConfig data = config.get();
-            switch (category) {
-                case ELITE:
-                    return data.bloodMoonEliteEnabled;
-                case MINIBOSS:
-                    return data.bloodMoonMinibossEnabled;
-                case WORLDBOSS:
-                    return data.bloodMoonWorldbossEnabled;
-                case HOSTILE:
-                default:
-                    return data.bloodMoonHostileEnabled;
-            }
-        }
-        return isCategoryEnabled(category);
+    
+    // Método legacy
+    public boolean isCategoryEnabled(MobCategory category) {
+        return isCategoryEnabled(getWorldConfig(cachedPlayerStore), category);
     }
 
+    public boolean isMobEnabled(Store<EntityStore> store, MobCategory category) {
+        WorldHardcoreConfig worldConfig = getWorldConfig(store);
+        if (isBloodMoonActive(store) && isBloodMoonAffected(worldConfig, category)) {
+            switch (category) {
+                case ELITE:
+                    return worldConfig.bloodMoonEliteEnabled;
+                case MINIBOSS:
+                    return worldConfig.bloodMoonMinibossEnabled;
+                case WORLDBOSS:
+                    return worldConfig.bloodMoonWorldbossEnabled;
+                case HOSTILE:
+                default:
+                    return worldConfig.bloodMoonHostileEnabled;
+            }
+        }
+        return isCategoryEnabled(worldConfig, category);
+    }
+    
+    // Método legacy
+    public boolean isMobEnabled(MobCategory category) {
+        return isMobEnabled(cachedPlayerStore, category);
+    }
+
+    public boolean isBloodMoonActive(Store<EntityStore> store) {
+        WorldHardcoreConfig worldConfig = getWorldConfig(store);
+        return worldConfig != null && worldConfig.isBloodMoonActive();
+    }
+    
+    // Método legacy - retorna true se qualquer mundo tem Blood Moon ativa
     public boolean isBloodMoonActive() {
-        return bloodMoonActive;
+        return isBloodMoonActive(cachedPlayerStore);
     }
     
     public float getBloodMoonProgress(Store<EntityStore> store) {
-        if (!bloodMoonActive || bloodMoonStartHourOfEpoch == null || bloodMoonEndHourOfEpoch == null) {
+        WorldHardcoreConfig worldConfig = getWorldConfig(store);
+        if (worldConfig == null || !worldConfig.isBloodMoonActive()) {
             return 0.0f;
         }
         
-        // Usar o mundo principal para cálculos de tempo
-        Store<EntityStore> timeStore = primaryBloodMoonStore != null ? primaryBloodMoonStore : store;
+        Long startHour = worldConfig.getBloodMoonStartHourOfEpoch();
+        Long endHour = worldConfig.getBloodMoonEndHourOfEpoch();
+        if (startHour == null || endHour == null) {
+            return 0.0f;
+        }
         
-        WorldTimeResource time = timeStore.getResource(WorldTimeResource.getResourceType());
+        WorldTimeResource time = store.getResource(WorldTimeResource.getResourceType());
         if (time == null) return 0.0f;
         
         long currentHourOfEpoch = getCurrentHourOfEpoch(time);
-        long totalDuration = bloodMoonEndHourOfEpoch - bloodMoonStartHourOfEpoch;
+        long totalDuration = endHour - startHour;
         
         if (totalDuration <= 0) return 0.0f;
         
-        long elapsed = currentHourOfEpoch - bloodMoonStartHourOfEpoch;
-        long remaining = bloodMoonEndHourOfEpoch - currentHourOfEpoch;
+        long elapsed = currentHourOfEpoch - startHour;
+        long remaining = endHour - currentHourOfEpoch;
         
         if (remaining <= 0) return 0.0f;
         if (elapsed < 0) return 1.0f;
@@ -361,45 +415,78 @@ public class HardcoreModePlugin extends JavaPlugin {
     }
     
     public int getBloodMoonHoursRemaining(Store<EntityStore> store) {
-        if (!bloodMoonActive || bloodMoonEndHourOfEpoch == null) {
+        WorldHardcoreConfig worldConfig = getWorldConfig(store);
+        if (worldConfig == null || !worldConfig.isBloodMoonActive()) {
             return 0;
         }
         
-        // Usar o mundo principal para cálculos de tempo
-        Store<EntityStore> timeStore = primaryBloodMoonStore != null ? primaryBloodMoonStore : store;
+        Long endHour = worldConfig.getBloodMoonEndHourOfEpoch();
+        if (endHour == null) {
+            return 0;
+        }
         
-        WorldTimeResource time = timeStore.getResource(WorldTimeResource.getResourceType());
+        WorldTimeResource time = store.getResource(WorldTimeResource.getResourceType());
         if (time == null) return 0;
         
         long currentHourOfEpoch = getCurrentHourOfEpoch(time);
-        long remaining = bloodMoonEndHourOfEpoch - currentHourOfEpoch;
+        long remaining = endHour - currentHourOfEpoch;
         
         return Math.max(0, (int) remaining);
     }
 
     public void refreshBloodMoonState(Store<EntityStore> store, boolean applyToMobs) {
-        // Se ainda não temos um mundo principal, este será o principal
-        if (primaryBloodMoonStore == null && store != null) {
-            primaryBloodMoonStore = store;
+        String worldName = getWorldName(store);
+        refreshBloodMoonState(store, worldName, applyToMobs);
+    }
+    
+    public void refreshBloodMoonState(Store<EntityStore> store, String worldName, boolean applyToMobs) {
+        if (store == null) return;
+        
+        // Verificar se o mundo está habilitado para HardcoreMode
+        String resolvedWorldName = worldName != null ? worldName : getWorldName(store);
+        
+        // Blood Moon não é permitida no Forgotten Temple
+        if ("Forgotten Temple".equals(resolvedWorldName)) {
+            WorldHardcoreConfig worldConfig = worldName != null ? getWorldConfig(worldName) : getWorldConfig(store);
+            if (worldConfig != null && worldConfig.isBloodMoonActive()) {
+                worldConfig.setBloodMoonActive(false);
+                worldConfig.clearBloodMoonState();
+            }
+            return;
         }
         
-        // Usar o mundo principal para cálculos de tempo, se disponível
-        Store<EntityStore> timeStore = primaryBloodMoonStore != null ? primaryBloodMoonStore : store;
+        if (resolvedWorldName != null && !config.get().isWorldEnabled(resolvedWorldName)) {
+            // Mundo desabilitado - garantir que Blood Moon está desativada
+            WorldHardcoreConfig worldConfig = worldName != null ? getWorldConfig(worldName) : getWorldConfig(store);
+            if (worldConfig != null && worldConfig.isBloodMoonActive()) {
+                worldConfig.setBloodMoonActive(false);
+                worldConfig.clearBloodMoonState();
+            }
+            return;
+        }
         
-        boolean active = computeBloodMoonActive(timeStore);
-        boolean changed = active != bloodMoonActive;
+        WorldHardcoreConfig worldConfig;
+        if (worldName != null) {
+            worldConfig = getWorldConfig(worldName);
+        } else {
+            worldConfig = getWorldConfig(store);
+        }
+        if (worldConfig == null) return;
+        
+        boolean active = computeBloodMoonActive(store, worldConfig);
+        boolean changed = active != worldConfig.isBloodMoonActive();
 
         if (changed) {
             if (!active) {
-                bloodMoonStartHourOfEpoch = null;
-                bloodMoonEndHourOfEpoch = null;
+                worldConfig.clearBloodMoonState();
             }
         }
 
-        bloodMoonActive = active;
-        syncRpgLevelingMultiplier(active);
-
+        worldConfig.setBloodMoonActive(active);
+        
+        // Sync RPG leveling apenas se houver mudança
         if (changed) {
+            syncRpgLevelingMultiplier(active, worldConfig);
             announceBloodMoon(active, store);
             if (applyToMobs) {
                 applyToExistingMobs(store);
@@ -408,31 +495,53 @@ public class HardcoreModePlugin extends JavaPlugin {
     }
 
     public void forceBloodMoonNow(Store<EntityStore> store) {
+        String worldName = getWorldName(store);
+        forceBloodMoonNow(store, worldName);
+    }
+    
+    public void forceBloodMoonNow(Store<EntityStore> store, String worldName) {
         if (store == null) return;
 
-        HardcoreModeConfig data = config.get();
-        int durationHours = data.bloodMoonDurationHours;
-        if (!isValidBloodMoonDuration(durationHours)) return;
-
-        // Usar o mundo principal se disponível, senão usar o store fornecido
-        Store<EntityStore> timeStore = primaryBloodMoonStore != null ? primaryBloodMoonStore : store;
+        // Verificar se o mundo está habilitado para HardcoreMode
+        String resolvedWorldName = worldName != null ? worldName : getWorldName(store);
         
-        WorldTimeResource time = timeStore.getResource(WorldTimeResource.getResourceType());
-        if (time == null) return;
-
-        // Se não temos mundo principal, este será o principal
-        if (primaryBloodMoonStore == null) {
-            primaryBloodMoonStore = store;
+        // Blood Moon não é permitida no Forgotten Temple
+        if ("Forgotten Temple".equals(resolvedWorldName)) {
+            return;
+        }
+        
+        if (resolvedWorldName != null && !config.get().isWorldEnabled(resolvedWorldName)) {
+            // Mundo desabilitado - não permitir forçar Blood Moon
+            return;
         }
 
-        long currentHourOfEpoch = getCurrentHourOfEpoch(time);
-        forcedBloodMoonEndHourOfEpoch = currentHourOfEpoch + durationHours;
+        WorldHardcoreConfig worldConfig;
+        if (worldName != null) {
+            worldConfig = getWorldConfig(worldName);
+        } else {
+            worldConfig = getWorldConfig(store);
+        }
+        if (worldConfig == null) return;
+        
+        int durationHours = worldConfig.bloodMoonDurationHours;
+        if (!isValidBloodMoonDuration(durationHours)) return;
+        
+        WorldTimeResource time = store.getResource(WorldTimeResource.getResourceType());
+        if (time == null) return;
 
-        refreshBloodMoonState(store, true);
+        long currentHourOfEpoch = getCurrentHourOfEpoch(time);
+        worldConfig.setForcedBloodMoonEndHourOfEpoch(currentHourOfEpoch + durationHours);
+
+        refreshBloodMoonState(store, worldName, true);
     }
 
     public void applyToExistingMobs(Store<EntityStore> store) {
         if (store == null) return;
+        
+        // Verificar se o HardcoreMode está habilitado para este mundo
+        if (!isWorldEnabledForStore(store)) {
+            return;
+        }
 
         Ref<EntityStore> playerRef = getAnyPlayerRef(store);
         applyToExistingMobs(store, playerRef);
@@ -440,6 +549,11 @@ public class HardcoreModePlugin extends JavaPlugin {
 
     public void applyToExistingMobs(Store<EntityStore> store, Ref<EntityStore> playerRef) {
         if (store == null) {
+            return;
+        }
+        
+        // Verificar se o HardcoreMode está habilitado para este mundo
+        if (!isWorldEnabledForStore(store)) {
             return;
         }
         
@@ -488,7 +602,7 @@ public class HardcoreModePlugin extends JavaPlugin {
 
                     NPCEntity npcEntity = npcType == null ? null : chunk.getComponent(i, npcType);
                     MobCategory category = resolveMobCategory(npcEntity);
-                    applyHealthModifier(statMap, category);
+                    applyHealthModifier(store, statMap, category);
                 } catch (Exception e) {
                     // Ignore individual entity errors
                 }
@@ -533,10 +647,9 @@ public class HardcoreModePlugin extends JavaPlugin {
         return categoryValue > 0.0f ? categoryValue : legacyValue;
     }
 
-    private boolean computeBloodMoonActive(Store<EntityStore> store) {
-        if (store == null) return false;
+    private boolean computeBloodMoonActive(Store<EntityStore> store, WorldHardcoreConfig worldConfig) {
+        if (store == null || worldConfig == null) return false;
 
-        HardcoreModeConfig data = config.get();
         WorldTimeResource time = store.getResource(WorldTimeResource.getResourceType());
         if (time == null) return false;
 
@@ -544,28 +657,28 @@ public class HardcoreModePlugin extends JavaPlugin {
         int currentHour = time.getCurrentHour();
         long currentHourOfEpoch = (epochDay * 24L) + currentHour;
 
-        Long forcedEnd = forcedBloodMoonEndHourOfEpoch;
+        Long forcedEnd = worldConfig.getForcedBloodMoonEndHourOfEpoch();
         if (forcedEnd != null) {
             if (currentHourOfEpoch < forcedEnd) {
-                if (bloodMoonStartHourOfEpoch == null) {
-                    bloodMoonStartHourOfEpoch = currentHourOfEpoch;
+                if (worldConfig.getBloodMoonStartHourOfEpoch() == null) {
+                    worldConfig.setBloodMoonStartHourOfEpoch(currentHourOfEpoch);
                 }
-                bloodMoonEndHourOfEpoch = forcedEnd;
+                worldConfig.setBloodMoonEndHourOfEpoch(forcedEnd);
                 return true;
             }
 
-            forcedBloodMoonEndHourOfEpoch = null;
+            worldConfig.setForcedBloodMoonEndHourOfEpoch(null);
         }
 
-        if (!data.bloodMoonEnabled) return false;
+        if (!worldConfig.bloodMoonEnabled) return false;
 
-        int intervalDays = data.bloodMoonIntervalDays;
+        int intervalDays = worldConfig.bloodMoonIntervalDays;
         if (intervalDays <= 0) return false;
 
-        int durationHours = data.bloodMoonDurationHours;
+        int durationHours = worldConfig.bloodMoonDurationHours;
         if (!isValidBloodMoonDuration(durationHours)) return false;
 
-        int startHour = data.bloodMoonStartHour;
+        int startHour = worldConfig.bloodMoonStartHour;
         if (startHour < 0) startHour = 0;
         else if (startHour > 23) startHour = 23;
 
@@ -582,11 +695,11 @@ public class HardcoreModePlugin extends JavaPlugin {
         
         if (active) {
             if (activeCurrent) {
-                bloodMoonStartHourOfEpoch = startEpochCurrent;
-                bloodMoonEndHourOfEpoch = endEpochCurrent;
+                worldConfig.setBloodMoonStartHourOfEpoch(startEpochCurrent);
+                worldConfig.setBloodMoonEndHourOfEpoch(endEpochCurrent);
             } else if (activePrev) {
-                bloodMoonStartHourOfEpoch = startEpochPrev;
-                bloodMoonEndHourOfEpoch = endEpochPrev;
+                worldConfig.setBloodMoonStartHourOfEpoch(startEpochPrev);
+                worldConfig.setBloodMoonEndHourOfEpoch(endEpochPrev);
             }
         }
 
@@ -594,25 +707,35 @@ public class HardcoreModePlugin extends JavaPlugin {
     }
 
     private void announceBloodMoon(boolean started, Store<EntityStore> store) {
-        String chatText = started ? "Blood Moon has begun." : "Blood Moon has ended.";
+        String worldName = getWorldName(store);
+        String worldInfo = worldName != null ? " in " + worldName : "";
+        String chatText = started ? "Blood Moon has begun" + worldInfo + "." : "Blood Moon has ended" + worldInfo + ".";
+        
+        // Anunciar apenas para jogadores no mesmo mundo via chat
         Universe universe = Universe.get();
         if (universe != null) {
             universe.sendMessage(buildRedTinyMessage(chatText));
         }
 
+        // Title apenas para jogadores no mundo específico
         Message title = Message.raw("Blood Moon");
         Message subtitle = Message.raw(started ? "has begun" : "has ended");
-        EventTitleUtil.showEventTitleToUniverse(
+        
+        // Usar showEventTitleToWorld para enviar título apenas para jogadores neste mundo
+        if (store != null) {
+            EventTitleUtil.showEventTitleToWorld(
                 title,
                 subtitle,
-                true,
+                true,  // darken
                 EventTitleUtil.DEFAULT_ZONE,
                 EventTitleUtil.DEFAULT_DURATION,
                 EventTitleUtil.DEFAULT_FADE_DURATION,
-                EventTitleUtil.DEFAULT_FADE_DURATION
-        );
+                EventTitleUtil.DEFAULT_FADE_DURATION,
+                store
+            );
+        }
     }
-
+    
     private boolean isValidBloodMoonDuration(int hours) {
         return hours == 1 || hours == 3 || hours == 6 || hours == 9 || hours == 12;
     }
@@ -628,6 +751,18 @@ public class HardcoreModePlugin extends JavaPlugin {
         } catch (ReflectiveOperationException | RuntimeException ignored) {
         }
         return Message.raw(text);
+    }
+    
+    /**
+     * Envia uma mensagem de erro para um jogador específico.
+     */
+    public void sendErrorMessage(PlayerRef playerRef, String text) {
+        if (playerRef == null) return;
+        try {
+            playerRef.sendMessage(buildRedTinyMessage(text));
+        } catch (Exception ignored) {
+            // Fallback se sendMessage não funcionar
+        }
     }
 
     private long getCurrentHourOfEpoch(WorldTimeResource time) {
@@ -685,7 +820,7 @@ public class HardcoreModePlugin extends JavaPlugin {
         }
     }
 
-    private void syncRpgLevelingMultiplier(boolean active) {
+    private void syncRpgLevelingMultiplier(boolean active, WorldHardcoreConfig worldConfig) {
         Object levelingConfig = getRpgLevelingConfig();
         if (levelingConfig == null) {
             rpgLevelingBloodMoonApplied = false;
@@ -705,7 +840,7 @@ public class HardcoreModePlugin extends JavaPlugin {
         }
 
         // Check if XP Multiplier is enabled
-        if (!config.get().bloodMoonXpMultiplierEnabled) {
+        if (!worldConfig.bloodMoonXpMultiplierEnabled) {
             if (rpgLevelingBloodMoonApplied && rpgLevelingBaseRateExp != null) {
                 setRpgRateExp(levelingConfig, rpgLevelingBaseRateExp);
             }
@@ -715,7 +850,7 @@ public class HardcoreModePlugin extends JavaPlugin {
             return;
         }
 
-        float multiplier = config.get().bloodMoonXpMultiplier;
+        float multiplier = worldConfig.bloodMoonXpMultiplier;
         if (!rpgLevelingBloodMoonApplied) {
             rpgLevelingBaseRateExp = getRpgRateExp(levelingConfig);
         }
@@ -799,5 +934,62 @@ public class HardcoreModePlugin extends JavaPlugin {
         if (store != null) {
             activeStoreRef.set(store);
         }
+    }
+    
+    /**
+     * Obtém o nome do mundo a partir de um Store<EntityStore>.
+     * Itera pelos mundos do Universe para encontrar o correspondente.
+     * @param store O store do mundo
+     * @return O nome do mundo, ou null se não encontrado
+     */
+    public String getWorldName(Store<EntityStore> store) {
+        if (store == null) return null;
+        
+        Universe universe = Universe.get();
+        if (universe == null) return null;
+        
+        Map<String, World> worlds = universe.getWorlds();
+        if (worlds == null) return null;
+        
+        for (Map.Entry<String, World> entry : worlds.entrySet()) {
+            World world = entry.getValue();
+            if (world == null) continue;
+            
+            try {
+                EntityStore worldEntityStore = world.getEntityStore();
+                if (worldEntityStore == null) continue;
+                
+                // Comparar usando o store interno - tentar múltiplas formas de comparação
+                Store<EntityStore> worldStore = worldEntityStore.getStore();
+                if (worldStore == store) {
+                    return entry.getKey();
+                }
+                // Também tentar equals caso a referência direta não funcione
+                if (worldStore != null && worldStore.equals(store)) {
+                    return entry.getKey();
+                }
+            } catch (Exception e) {
+                // Ignore access errors
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Verifica se o HardcoreMode está habilitado para o mundo do Store fornecido.
+     * @param store O store do mundo
+     * @return true se o mundo está habilitado para HardcoreMode
+     */
+    public boolean isWorldEnabledForStore(Store<EntityStore> store) {
+        if (store == null) return false;
+        
+        String worldName = getWorldName(store);
+        if (worldName == null) {
+            // Se não conseguir identificar o mundo, assume que está habilitado
+            return true;
+        }
+        
+        return config.get().isWorldEnabled(worldName);
     }
 }

@@ -3,6 +3,7 @@ package com.example.plugin.ui;
 import com.example.plugin.HardcoreModePlugin;
 import com.example.plugin.MobCategory;
 import com.example.plugin.config.HardcoreModeConfig;
+import com.example.plugin.config.WorldHardcoreConfig;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
@@ -83,6 +84,10 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
         private final HardcoreModePlugin plugin;
         private final SettingsSection section;
         private final PlayerRef playerRef;
+        
+        // Para configurações por mundo
+        private String currentWorldName;
+        private Store<EntityStore> currentStore;
 
         public HardcoreSettingsPage(HardcoreModePlugin plugin, PlayerRef playerRef) {
                 this(plugin, playerRef, SettingsSection.ALL);
@@ -101,6 +106,13 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                         UICommandBuilder commands,
                         UIEventBuilder events,
                         Store<EntityStore> store) {
+                // Armazenar o store e obter o nome do mundo
+                this.currentStore = store;
+                this.currentWorldName = plugin.getWorldName(store);
+                if (this.currentWorldName == null) {
+                        this.currentWorldName = "Unknown";
+                }
+                
                 // Use specific page based on section
                 String pagePath = PAGE_PATH;
                 if (section == SettingsSection.ENEMY) {
@@ -125,6 +137,15 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                         HardcoreSettingsPageEventData data) {
                 if (data == null) {
                         return;
+                }
+
+                // Atualizar o store atual caso tenha mudado
+                if (store != null && store != currentStore) {
+                        this.currentStore = store;
+                        String newWorldName = plugin.getWorldName(store);
+                        if (newWorldName != null) {
+                                this.currentWorldName = newWorldName;
+                        }
                 }
 
                 Boolean enabled = data.getEnabled();
@@ -241,7 +262,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                         return;
                 }
 
-                HardcoreModeConfig config = plugin.getConfigData();
+                WorldHardcoreConfig config = plugin.getWorldConfig(currentWorldName);
                 boolean changed = false;
                 boolean refresh = false;
 
@@ -493,7 +514,14 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 }
 
                 if (Boolean.TRUE.equals(bloodMoonForce)) {
-                        plugin.forceBloodMoonNow(store);
+                        // Verificar se o mundo está habilitado para HardcoreMode
+                        if (currentWorldName != null && !plugin.getConfigData().isWorldEnabled(currentWorldName)) {
+                                // Mundo desabilitado - enviar mensagem de erro
+                                plugin.sendErrorMessage(playerRef, "Cannot force Blood Moon: HardcoreMode is disabled for world '" + currentWorldName + "'");
+                        } else if (currentStore != null) {
+                                // Mundo habilitado - forçar Blood Moon
+                                plugin.forceBloodMoonNow(currentStore, currentWorldName);
+                        }
                 }
 
                 if (!changed && !refresh) {
@@ -501,9 +529,12 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 }
 
                 if (changed) {
-                        plugin.getConfig().save();
-                        plugin.refreshBloodMoonState(store, false);
-                        plugin.applyToExistingMobs(store);
+                        // Salvar a configuração do mundo
+                        plugin.getWorldConfigManager().saveWorldConfig(currentWorldName);
+                        if (currentStore != null) {
+                                plugin.refreshBloodMoonState(currentStore, currentWorldName, false);
+                                plugin.applyToExistingMobs(currentStore);
+                        }
                 }
 
                 UICommandBuilder updateCommands = new UICommandBuilder();
@@ -516,11 +547,13 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
 
         private void fillHeader(UICommandBuilder commands) {
                 commands.set(PAGE_TITLE_ID, "Hardcore Mode");
-                commands.set(SECTION_TITLE_ID, section.getDisplayName());
+                // Mostrar o nome do mundo no título da seção
+                String worldInfo = " (World: " + currentWorldName + ")";
+                commands.set(SECTION_TITLE_ID, section.getDisplayName() + worldInfo);
         }
 
         private void buildSettingsList(UICommandBuilder commands, UIEventBuilder events) {
-                HardcoreModeConfig config = plugin.getConfigData();
+                WorldHardcoreConfig config = plugin.getWorldConfig(currentWorldName);
                 commands.clear(SETTINGS_LIST_ID);
 
                 int index = 0;
@@ -575,20 +608,45 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
         private int buildEnemySettings(
                         UICommandBuilder commands,
                         UIEventBuilder events,
-                        HardcoreModeConfig config,
+                        WorldHardcoreConfig config,
                         int index) {
-                float passiveHealth = plugin.getHealthMultiplier(MobCategory.PASSIVE);
-                float passiveDamage = plugin.getDamageMultiplier(MobCategory.PASSIVE);
-                float critterHealth = plugin.getHealthMultiplier(MobCategory.CRITTER);
-                float critterDamage = plugin.getDamageMultiplier(MobCategory.CRITTER);
-                float hostileHealth = plugin.getHealthMultiplier(MobCategory.HOSTILE);
-                float hostileDamage = plugin.getDamageMultiplier(MobCategory.HOSTILE);
-                float eliteHealth = plugin.getHealthMultiplier(MobCategory.ELITE);
-                float eliteDamage = plugin.getDamageMultiplier(MobCategory.ELITE);
-                float minibossHealth = plugin.getHealthMultiplier(MobCategory.MINIBOSS);
-                float minibossDamage = plugin.getDamageMultiplier(MobCategory.MINIBOSS);
-                float worldbossHealth = plugin.getHealthMultiplier(MobCategory.WORLDBOSS);
-                float worldbossDamage = plugin.getDamageMultiplier(MobCategory.WORLDBOSS);
+                // Obter multiplicadores do mundo correto
+                float passiveHealth = currentStore != null 
+                        ? plugin.getHealthMultiplier(currentStore, MobCategory.PASSIVE) 
+                        : config.passiveHealthMultiplier;
+                float passiveDamage = currentStore != null 
+                        ? plugin.getDamageMultiplier(currentStore, MobCategory.PASSIVE) 
+                        : config.passiveDamageMultiplier;
+                float critterHealth = currentStore != null 
+                        ? plugin.getHealthMultiplier(currentStore, MobCategory.CRITTER) 
+                        : config.critterHealthMultiplier;
+                float critterDamage = currentStore != null 
+                        ? plugin.getDamageMultiplier(currentStore, MobCategory.CRITTER) 
+                        : config.critterDamageMultiplier;
+                float hostileHealth = currentStore != null 
+                        ? plugin.getHealthMultiplier(currentStore, MobCategory.HOSTILE) 
+                        : config.hostileHealthMultiplier;
+                float hostileDamage = currentStore != null 
+                        ? plugin.getDamageMultiplier(currentStore, MobCategory.HOSTILE) 
+                        : config.hostileDamageMultiplier;
+                float eliteHealth = currentStore != null 
+                        ? plugin.getHealthMultiplier(currentStore, MobCategory.ELITE) 
+                        : config.eliteHealthMultiplier;
+                float eliteDamage = currentStore != null 
+                        ? plugin.getDamageMultiplier(currentStore, MobCategory.ELITE) 
+                        : config.eliteDamageMultiplier;
+                float minibossHealth = currentStore != null 
+                        ? plugin.getHealthMultiplier(currentStore, MobCategory.MINIBOSS) 
+                        : config.minibossHealthMultiplier;
+                float minibossDamage = currentStore != null 
+                        ? plugin.getDamageMultiplier(currentStore, MobCategory.MINIBOSS) 
+                        : config.minibossDamageMultiplier;
+                float worldbossHealth = currentStore != null 
+                        ? plugin.getHealthMultiplier(currentStore, MobCategory.WORLDBOSS) 
+                        : config.worldbossHealthMultiplier;
+                float worldbossDamage = currentStore != null 
+                        ? plugin.getDamageMultiplier(currentStore, MobCategory.WORLDBOSS) 
+                        : config.worldbossDamageMultiplier;
 
                 index = addToggleEntry(
                                 commands,
@@ -683,7 +741,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
         private int buildBloodMoonSettings(
                         UICommandBuilder commands,
                         UIEventBuilder events,
-                        HardcoreModeConfig config,
+                        WorldHardcoreConfig config,
                         int index) {
                 index = addCategoryToggleEntry(
                                 commands,
@@ -871,7 +929,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
         private int buildPlayerSettings(
                         UICommandBuilder commands,
                         UIEventBuilder events,
-                        HardcoreModeConfig config,
+                        WorldHardcoreConfig config,
                         int index) {
                 // Build label with Blood Moon priority indicator
                 String deathSettingsLabel = getDeathSettingsLabel(config.playerDeathSettingsEnabled);
@@ -1214,7 +1272,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                         Boolean sixHour,
                         Boolean nineHour,
                         Boolean twelveHour,
-                        HardcoreModeConfig config) {
+                        WorldHardcoreConfig config) {
                 int next = config.bloodMoonDurationHours;
                 boolean changed = false;
                 boolean refresh = false;
@@ -1292,7 +1350,9 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
 
         private String getCategoryLabel(String prefix, boolean enabled, MobCategory category) {
                 String label = prefix + ": " + (enabled ? "ON" : "OFF");
-                if (plugin.isBloodMoonActive() && plugin.isBloodMoonAffected(category)) {
+                // Usar currentStore para verificar Blood Moon do mundo atual
+                WorldHardcoreConfig worldConfig = plugin.getWorldConfig(currentWorldName);
+                if (currentStore != null && plugin.isBloodMoonActive(currentStore) && worldConfig != null && plugin.isBloodMoonAffected(worldConfig, category)) {
                         label += " (Blood Moon Priority)";
                 }
                 return label;

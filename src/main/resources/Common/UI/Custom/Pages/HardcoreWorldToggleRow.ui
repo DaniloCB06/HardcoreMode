@@ -1,0 +1,45 @@
+$C = "../Common.ui";
+
+Group {
+  LayoutMode: Left;
+  Padding: (Full: 4);
+  Anchor: (Bottom: 8);
+  Background: (Color: #162336);
+
+  Group #WorldInfo {
+    LayoutMode: Top;
+    Padding: (Left: 12, Right: 12, Top: 8, Bottom: 8);
+    FlexWeight: 1;
+
+    Label #WorldName {
+      Style: (
+        ...$C.@DefaultLabelStyle,
+        FontSize: 16,
+        RenderBold: true,
+        TextColor: #dce4ef,
+        VerticalAlignment: Center
+      );
+      Text: "World Name";
+    }
+
+    Label #WorldStatus {
+      Style: (
+        ...$C.@DefaultLabelStyle,
+        FontSize: 12,
+        TextColor: #8a9bae,
+        VerticalAlignment: Center
+      );
+      Anchor: (Top: 2);
+      Text: "Status: Unknown";
+    }
+  }
+
+  Group #ToggleContainer {
+    Padding: (Right: 12);
+    
+    $C.@CheckBox #WorldToggle {
+      Anchor: (Width: 32, Height: 32);
+      Value: true;
+    }
+  }
+}

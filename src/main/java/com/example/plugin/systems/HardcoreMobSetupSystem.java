@@ -31,6 +31,11 @@ public class HardcoreMobSetupSystem extends HolderSystem<EntityStore> {
 
         plugin.refreshBloodMoonStateIfNeeded(store, true);
 
+        // Verificar se o HardcoreMode está habilitado para este mundo
+        if (!plugin.isWorldEnabledForStore(store)) {
+            return;
+        }
+
         ComponentType<EntityStore, Player> playerType = Player.getComponentType();
         if (playerType != null && holder.getComponent(playerType) != null) {
             // Player entrou -> aplica nos mobs existentes (se tiver player, bom momento)
@@ -51,7 +56,7 @@ public class HardcoreMobSetupSystem extends HolderSystem<EntityStore> {
         ComponentType<EntityStore, NPCEntity> npcType = NPCEntity.getComponentType();
         NPCEntity npcEntity = npcType == null ? null : holder.getComponent(npcType);
 
-        plugin.applyHealthModifier(statMap, plugin.resolveMobCategory(npcEntity));
+        plugin.applyHealthModifier(store, statMap, plugin.resolveMobCategory(npcEntity));
     }
 
     @Override

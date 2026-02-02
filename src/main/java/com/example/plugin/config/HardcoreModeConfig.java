@@ -395,6 +395,117 @@ public class HardcoreModeConfig {
         public int bloodMoonItemDurabilityLossPercent = 50;
         public int bloodMoonItemDropPercent = 50;
 
+        // World Settings - mundos DESABILITADOS (armazenados como string separada por vírgulas)
+        // Por padrão, todos os mundos estão HABILITADOS
+        // Armazenamos apenas os mundos que foram explicitamente desabilitados
+        private transient java.util.Set<String> disabledWorldsCache = null;
+
         public HardcoreModeConfig() {
+        }
+
+        /**
+         * Verifica se um mundo está habilitado para os efeitos do HardcoreMode.
+         * Por padrão, todos os mundos estão habilitados.
+         * Apenas mundos explicitamente desabilitados retornam false.
+         */
+        public boolean isWorldEnabled(String worldName) {
+            if (worldName == null || worldName.isEmpty()) {
+                return false;
+            }
+            loadDisabledWorldsIfNeeded();
+            // Mundo está habilitado se NÃO está na lista de desabilitados
+            return !disabledWorldsCache.contains(worldName.toLowerCase());
+        }
+
+        /**
+         * Define se um mundo está habilitado ou desabilitado.
+         */
+        public void setWorldEnabled(String worldName, boolean enabled) {
+            if (worldName == null || worldName.isEmpty()) {
+                return;
+            }
+            loadDisabledWorldsIfNeeded();
+            
+            String lowerName = worldName.toLowerCase();
+            
+            if (enabled) {
+                // Remover da lista de desabilitados para habilitar
+                disabledWorldsCache.remove(lowerName);
+            } else {
+                // Adicionar à lista de desabilitados para desabilitar
+                disabledWorldsCache.add(lowerName);
+            }
+            
+            saveWorldSettings();
+        }
+
+        /**
+         * Obtém a lista de mundos desabilitados.
+         */
+        public java.util.Set<String> getDisabledWorlds() {
+            loadDisabledWorldsIfNeeded();
+            return new java.util.HashSet<>(disabledWorldsCache);
+        }
+
+        /**
+         * Define todos os mundos como habilitados (limpa a lista de desabilitados).
+         */
+        public void enableAllWorlds() {
+            loadDisabledWorldsIfNeeded();
+            disabledWorldsCache.clear();
+            saveWorldSettings();
+        }
+
+        private void loadDisabledWorldsIfNeeded() {
+            if (disabledWorldsCache == null) {
+                disabledWorldsCache = new java.util.HashSet<>();
+                loadWorldSettings();
+            }
+        }
+
+        private void loadWorldSettings() {
+            try {
+                java.nio.file.Path configDir = java.nio.file.Paths.get("config");
+                java.nio.file.Path worldsFile = configDir.resolve("HardcoreModeDisabledWorlds.txt");
+                
+                if (java.nio.file.Files.exists(worldsFile)) {
+                    String content = java.nio.file.Files.readString(worldsFile).trim();
+                    parseDisabledWorlds(content);
+                }
+                // Se o arquivo não existe, disabledWorldsCache fica vazio (todos habilitados)
+            } catch (Exception e) {
+                // Em caso de erro, manter vazio (todos habilitados)
+            }
+        }
+
+        private void parseDisabledWorlds(String content) {
+            disabledWorldsCache.clear();
+            if (content == null || content.isEmpty()) {
+                return;
+            }
+            
+            String[] parts = content.split(",");
+            for (String part : parts) {
+                String trimmed = part.trim().toLowerCase();
+                if (!trimmed.isEmpty()) {
+                    disabledWorldsCache.add(trimmed);
+                }
+            }
+        }
+
+        private void saveWorldSettings() {
+            try {
+                java.nio.file.Path configDir = java.nio.file.Paths.get("config");
+                java.nio.file.Files.createDirectories(configDir);
+                java.nio.file.Path worldsFile = configDir.resolve("HardcoreModeDisabledWorlds.txt");
+                
+                if (disabledWorldsCache.isEmpty()) {
+                    // Se não há mundos desabilitados, podemos deletar o arquivo ou deixar vazio
+                    java.nio.file.Files.writeString(worldsFile, "");
+                } else {
+                    java.nio.file.Files.writeString(worldsFile, String.join(",", disabledWorldsCache));
+                }
+            } catch (Exception ignored) {
+            }
         }
 }

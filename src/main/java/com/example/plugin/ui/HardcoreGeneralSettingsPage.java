@@ -28,6 +28,10 @@ public class HardcoreGeneralSettingsPage extends InteractiveCustomUIPage<Hardcor
     private static final String MOB_CATEGORIES_VALUE_PATH = "#MobCategoriesButtonRow #MobCategoriesValue.Value";
     private static final String MOB_CATEGORIES_BUTTON_TEXT_ID = "#MobCategoriesButton.Text";
     private static final String MOB_CATEGORIES_DESCRIPTION_ID = "#MobCategoriesDescription.Text";
+    private static final String WORLD_SETTINGS_BUTTON_PATH = "#WorldSettingsButtonRow #WorldSettingsButton";
+    private static final String WORLD_SETTINGS_VALUE_PATH = "#WorldSettingsButtonRow #WorldSettingsValue.Value";
+    private static final String WORLD_SETTINGS_BUTTON_TEXT_ID = "#WorldSettingsButton.Text";
+    private static final String WORLD_SETTINGS_DESCRIPTION_ID = "#WorldSettingsDescription.Text";
 
     private final HardcoreModePlugin plugin;
     private final PlayerRef playerRef;
@@ -65,6 +69,7 @@ public class HardcoreGeneralSettingsPage extends InteractiveCustomUIPage<Hardcor
         Boolean goBack = data.getGoBack();
         Boolean openBloodMoonDrops = data.getOpenBloodMoonDrops();
         Boolean openMobCategories = data.getOpenMobCategories();
+        Boolean openWorldSettings = data.getOpenWorldSettings();
 
         if (Boolean.TRUE.equals(goBack)) {
             openMainMenu(ref, store);
@@ -81,6 +86,11 @@ public class HardcoreGeneralSettingsPage extends InteractiveCustomUIPage<Hardcor
             return;
         }
 
+        if (Boolean.TRUE.equals(openWorldSettings)) {
+            openWorldSettings(ref, store);
+            return;
+        }
+
         // Aqui você adicionará a lógica para lidar com as configurações gerais
     }
 
@@ -91,6 +101,8 @@ public class HardcoreGeneralSettingsPage extends InteractiveCustomUIPage<Hardcor
         commands.set(BLOOD_MOON_DROPS_DESCRIPTION_ID, "Configure item drops during Blood Moon events");
         commands.set(MOB_CATEGORIES_BUTTON_TEXT_ID, "Mob Categories");
         commands.set(MOB_CATEGORIES_DESCRIPTION_ID, "View and manage creature category assignments");
+        commands.set(WORLD_SETTINGS_BUTTON_TEXT_ID, "World Settings");
+        commands.set(WORLD_SETTINGS_DESCRIPTION_ID, "Enable or disable HardcoreMode for specific worlds");
     }
 
     private void buildSettingsList(UICommandBuilder commands, UIEventBuilder events) {
@@ -110,6 +122,12 @@ public class HardcoreGeneralSettingsPage extends InteractiveCustomUIPage<Hardcor
                 MOB_CATEGORIES_VALUE_PATH
         );
         events.addEventBinding(CustomUIEventBindingType.Activating, MOB_CATEGORIES_BUTTON_PATH, mobCategoriesData, false);
+
+        EventData worldSettingsData = EventData.of(
+                HardcoreGeneralSettingsPageEventData.KEY_OPEN_WORLD_SETTINGS,
+                WORLD_SETTINGS_VALUE_PATH
+        );
+        events.addEventBinding(CustomUIEventBindingType.Activating, WORLD_SETTINGS_BUTTON_PATH, worldSettingsData, false);
     }
 
     private void bindNavigation(UIEventBuilder events) {
@@ -166,5 +184,21 @@ public class HardcoreGeneralSettingsPage extends InteractiveCustomUIPage<Hardcor
         }
 
         player.getPageManager().openCustomPage(ref, store, new HardcoreMobCategoriesPage(plugin, playerRef));
+    }
+
+    private void openWorldSettings(
+            Ref<EntityStore> ref,
+            Store<EntityStore> store
+    ) {
+        if (store == null || ref == null) {
+            return;
+        }
+
+        Player player = store.getComponent(ref, Player.getComponentType());
+        if (player == null) {
+            return;
+        }
+
+        player.getPageManager().openCustomPage(ref, store, new HardcoreWorldSettingsPage(plugin, playerRef));
     }
 }

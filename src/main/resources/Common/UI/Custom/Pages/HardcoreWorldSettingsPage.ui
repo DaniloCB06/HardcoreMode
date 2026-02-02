@@ -1,0 +1,98 @@
+$C = "../Common.ui";
+
+$C.@PageOverlay {}
+
+$C.@Container {
+  Anchor: (Width: 900, Height: 700);
+
+  #Title {
+    Group {
+      $C.@Title #PageTitle {
+        @Text = "Hardcore Mode";
+      }
+    }
+  }
+
+  #Content {
+    LayoutMode: Top;
+    Padding: (Left: 36, Right: 36, Top: 16, Bottom: 16);
+
+    Label #SectionTitle {
+      Style: (
+        FontSize: 22,
+        RenderBold: true,
+        TextColor: #d3d6db,
+        VerticalAlignment: Center,
+        HorizontalAlignment: Center
+      );
+      Anchor: (Bottom: 16);
+      Text: "World Settings";
+    }
+
+    Label #SectionDescription {
+      Style: (
+        FontSize: 14,
+        TextColor: #8a9bae,
+        VerticalAlignment: Center,
+        HorizontalAlignment: Center
+      );
+      Anchor: (Bottom: 20);
+      Text: "Enable or disable HardcoreMode effects for each world";
+    }
+
+    Group #WorldListContainer {
+      LayoutMode: Top;
+      Padding: (Top: 8, Bottom: 8);
+      Background: (Color: #0a1520);
+      FlexWeight: 1;
+
+      Group #ScrollContainer {
+        LayoutMode: Top;
+        Background: (Color: #0a1420);
+        Padding: (Full: 2);
+        FlexWeight: 1;
+
+        Group #WorldList {
+          LayoutMode: Top;
+        }
+      }
+    }
+
+    Group #Spacer {
+      Anchor: (Height: 10);
+    }
+
+    Group #BottomButtonsContainer {
+      LayoutMode: Left;
+      Anchor: (Bottom: 6);
+
+      $C.@SmallSecondaryTextButton #BackButton {
+        Anchor: (Width: 110, Height: 32);
+        Text: "Back";
+      }
+
+      $C.@CheckBox #BackValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      Group {
+        FlexWeight: 1;
+      }
+
+      $C.@SmallSecondaryTextButton #RefreshButton {
+        Anchor: (Width: 130, Height: 32);
+        Text: "Refresh Worlds";
+      }
+
+      $C.@CheckBox #RefreshValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+    }
+  }
+}
+
+$C.@BackButton {}

@@ -97,6 +97,38 @@ $C.@Container {
           }
         }
       }
+
+      Group #WorldSettingsButtonRow {
+        LayoutMode: Left;
+        Padding: (Full: 2);
+        Anchor: (Bottom: 12);
+        Background: (Color: #07101f); 
+
+        Group #WorldSettingsCard {
+          LayoutMode: Left;
+          Padding: (Full: 10);
+          Background: (Color: #162336);
+          FlexWeight: 1;
+
+          $C.@SecondaryTextButton #WorldSettingsButton {
+            Anchor: (Width: 210, Height: 44);
+            Text: "World Settings";
+          }
+
+          Label #WorldSettingsDescription {
+            Anchor: (Left: 18);
+            FlexWeight: 1;
+            Style: (...$C.@DefaultLabelStyle, FontSize: 15, TextColor: #dce4ef, VerticalAlignment: Center);
+            Text: "Enable or disable HardcoreMode for specific worlds";
+          }
+
+          $C.@CheckBox #WorldSettingsValue {
+            Anchor: (Width: 0, Height: 0);
+            Visible: false;
+            Value: true;
+          }
+        }
+      }
     }
 
     Group #SettingsList {

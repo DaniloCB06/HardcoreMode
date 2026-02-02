@@ -44,6 +44,11 @@ public class HardcoreMobDamageSystem extends DamageEventSystem {
     ) {
         plugin.refreshBloodMoonStateIfNeeded(store, true);
 
+        // Verificar se o HardcoreMode está habilitado para este mundo
+        if (!plugin.isWorldEnabledForStore(store)) {
+            return;
+        }
+
         Damage.Source source = damage.getSource();
         if (!(source instanceof Damage.EntitySource)) {
             return;
@@ -69,11 +74,11 @@ public class HardcoreMobDamageSystem extends DamageEventSystem {
         NPCEntity npcEntity = npcType == null ? null : store.getComponent(sourceRef, npcType);
 
         MobCategory category = plugin.resolveMobCategory(npcEntity);
-        if (!plugin.isMobEnabled(category)) {
+        if (!plugin.isMobEnabled(store, category)) {
             return;
         }
 
-        float multiplier = plugin.getDamageMultiplier(category);
+        float multiplier = plugin.getDamageMultiplier(store, category);
         if (multiplier <= 1.0f) {
             return;
         }
