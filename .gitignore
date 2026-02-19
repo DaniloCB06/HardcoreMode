@@ -7,6 +7,9 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 .kotlin
+HytaleServer.jar
+libs/HytaleServer.jar
+MODS/
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
