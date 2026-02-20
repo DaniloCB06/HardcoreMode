@@ -15,4 +15,15 @@ Group {
     Anchor: (Width: 120);
     Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #a8b5c9, HorizontalAlignment: Center, VerticalAlignment: Center);
   }
+
+  $C.@SmallSecondaryTextButton #RemoveButton {
+    Anchor: (Width: 100, Height: 24, Left: 8);
+    Text: "Remove";
+  }
+
+  $C.@CheckBox #RemoveValue {
+    Anchor: (Width: 0, Height: 0);
+    Visible: false;
+    Value: true;
+  }
 }

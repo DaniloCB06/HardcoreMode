@@ -17,16 +17,39 @@ $C.@Container {
     LayoutMode: Top;
     Padding: (Left: 36, Right: 36, Top: 16, Bottom: 16);
 
-    Label #SectionTitle {
-      Style: (
-        FontSize: 22,
-        RenderBold: true,
-        TextColor: #d3d6db,
-        VerticalAlignment: Center,
-        HorizontalAlignment: Center
-      );
+    Group #SectionTitleRow {
+      LayoutMode: Left;
       Anchor: (Bottom: 16);
-      Text: "Section";
+
+      Group {
+        FlexWeight: 1;
+      }
+
+      Label #SectionTitle {
+        Style: (
+          FontSize: 22,
+          RenderBold: true,
+          TextColor: #d3d6db,
+          VerticalAlignment: Center,
+          HorizontalAlignment: Center
+        );
+        Text: "Section";
+      }
+
+      Label #SectionTitleWorld {
+        Style: (
+          FontSize: 22,
+          RenderBold: true,
+          TextColor: #ff9944,
+          VerticalAlignment: Center,
+          HorizontalAlignment: Center
+        );
+        Text: " (World: Example)";
+      }
+
+      Group {
+        FlexWeight: 1;
+      }
     }
 
     Group #SettingsList {

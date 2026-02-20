@@ -36,6 +36,8 @@ public class HardcoreBloodMoonDropsPage extends InteractiveCustomUIPage<Hardcore
     private static final String NEXT_VALUE_PATH = "#PaginationContainer #NextValue.Value";
     private static final String BACK_BUTTON_PATH = "#BottomButtonsContainer #BackButton";
     private static final String BACK_VALUE_PATH = "#BottomButtonsContainer #BackValue.Value";
+    private static final String ADD_BUTTON_PATH = "#BottomButtonsContainer #AddButton";
+    private static final String ADD_VALUE_PATH = "#BottomButtonsContainer #AddValue.Value";
     private static final String RELOAD_BUTTON_PATH = "#BottomButtonsContainer #ReloadButton";
     private static final String RELOAD_VALUE_PATH = "#BottomButtonsContainer #ReloadValue.Value";
     private static final int ITEMS_PER_PAGE = 13;
@@ -83,6 +85,10 @@ public class HardcoreBloodMoonDropsPage extends InteractiveCustomUIPage<Hardcore
                 .append(new KeyedCodec<>(HardcoreBloodMoonDropsPageEventData.KEY_RELOAD_CONFIG, Codec.BOOLEAN),
                         (data, value) -> data.setReloadConfig(value),
                         data -> data.getReloadConfig())
+                .add()
+                .append(new KeyedCodec<>(HardcoreBloodMoonDropsPageEventData.KEY_ADD_DROP, Codec.BOOLEAN),
+                        (data, value) -> data.setAddDrop(value),
+                        data -> data.getAddDrop())
                 .add()
                 .append(new KeyedCodec<>(HardcoreBloodMoonDropsPageEventData.KEY_PREV_PAGE, Codec.BOOLEAN),
                         (data, value) -> data.setPrevPage(value),
@@ -143,9 +149,23 @@ public class HardcoreBloodMoonDropsPage extends InteractiveCustomUIPage<Hardcore
     private int getTotalPages() {
         return (int) Math.ceil((double) dropsList.size() / ITEMS_PER_PAGE);
     }
+
+    private int getTotalPagesSafe() {
+        return Math.max(1, getTotalPages());
+    }
+
+    private void clampCurrentPage() {
+        int totalPages = getTotalPagesSafe();
+        if (currentPage < 0) {
+            currentPage = 0;
+        } else if (currentPage >= totalPages) {
+            currentPage = totalPages - 1;
+        }
+    }
     
     private void updatePaginationInfo(UICommandBuilder commands) {
-        int totalPages = getTotalPages();
+        clampCurrentPage();
+        int totalPages = getTotalPagesSafe();
         int displayPage = currentPage + 1;
         commands.set(PAGE_INFO_ID, "Page " + displayPage + " of " + totalPages);
         commands.set(TOTAL_ENTRIES_ID, "Total: " + dropsList.size() + " drops");
@@ -177,6 +197,7 @@ public class HardcoreBloodMoonDropsPage extends InteractiveCustomUIPage<Hardcore
 
         Boolean goBack = data.getGoBack();
         Boolean reloadConfig = data.getReloadConfig();
+        Boolean addDrop = data.getAddDrop();
         Boolean prevPage = data.getPrevPage();
         Boolean nextPage = data.getNextPage();
 
@@ -190,6 +211,11 @@ public class HardcoreBloodMoonDropsPage extends InteractiveCustomUIPage<Hardcore
             reopenPageWithCurrentPage(ref, store);
             return;
         }
+
+        if (Boolean.TRUE.equals(addDrop)) {
+            openAddDropPage(ref, store);
+            return;
+        }
         
         if (Boolean.TRUE.equals(prevPage)) {
             if (currentPage > 0) {
@@ -200,7 +226,7 @@ public class HardcoreBloodMoonDropsPage extends InteractiveCustomUIPage<Hardcore
         }
         
         if (Boolean.TRUE.equals(nextPage)) {
-            int totalPages = getTotalPages();
+            int totalPages = getTotalPagesSafe();
             if (currentPage < totalPages - 1) {
                 currentPage++;
                 reopenPageWithCurrentPage(ref, store);
@@ -212,12 +238,26 @@ public class HardcoreBloodMoonDropsPage extends InteractiveCustomUIPage<Hardcore
         java.util.Map<String, Boolean> changes = data.getAllDropChanges();
         if (changes != null && !changes.isEmpty()) {
             BloodMoonDropConfig dropConfig = plugin.getBloodMoonDropConfig();
-            boolean needsRefresh = false;
             
             for (java.util.Map.Entry<String, Boolean> change : changes.entrySet()) {
                 String key = change.getKey();
                 Boolean value = change.getValue();
                 
+                if (key.startsWith(HardcoreBloodMoonDropsPageEventData.KEY_REMOVE_DROP_PREFIX) && Boolean.TRUE.equals(value)) {
+                    String identifier = key.substring(HardcoreBloodMoonDropsPageEventData.KEY_REMOVE_DROP_PREFIX.length());
+                    String[] parts = identifier.split("_", 2);
+                    if (parts.length == 2) {
+                        try {
+                            MobCategory category = MobCategory.valueOf(parts[0]);
+                            String itemId = parts[1];
+                            openRemoveDropConfirmation(ref, store, category, itemId);
+                            return;
+                        } catch (IllegalArgumentException e) {
+                            return;
+                        }
+                    }
+                }
+
                 // Handle enabled checkbox changes
                 if (key.startsWith(HardcoreBloodMoonDropsPageEventData.KEY_DROP_ENABLED_PREFIX)) {
                     String identifier = key.substring(HardcoreBloodMoonDropsPageEventData.KEY_DROP_ENABLED_PREFIX.length());
@@ -233,27 +273,8 @@ public class HardcoreBloodMoonDropsPage extends InteractiveCustomUIPage<Hardcore
                         }
                     }
                 }
-                // Handle remove button clicks
-                else if (key.startsWith(HardcoreBloodMoonDropsPageEventData.KEY_REMOVE_DROP_PREFIX) && Boolean.TRUE.equals(value)) {
-                    String identifier = key.substring(HardcoreBloodMoonDropsPageEventData.KEY_REMOVE_DROP_PREFIX.length());
-                    String[] parts = identifier.split("_", 2);
-                    
-                    if (parts.length == 2) {
-                        try {
-                            MobCategory category = MobCategory.valueOf(parts[0]);
-                            String itemId = parts[1];
-                            dropConfig.removeDropEntry(category, itemId);
-                            needsRefresh = true;
-                        } catch (IllegalArgumentException e) {
-                            // Invalid category, ignore
-                        }
-                    }
-                }
             }
             
-            if (needsRefresh) {
-                reopenPageWithCurrentPage(ref, store);
-            }
         }
     }
 
@@ -263,6 +284,7 @@ public class HardcoreBloodMoonDropsPage extends InteractiveCustomUIPage<Hardcore
     }
 
     private void buildDropsList(UICommandBuilder commands, UIEventBuilder events) {
+        clampCurrentPage();
         // Calculate pagination
         int startIndex = currentPage * ITEMS_PER_PAGE;
         int endIndex = Math.min(startIndex + ITEMS_PER_PAGE, dropsList.size());
@@ -328,11 +350,64 @@ public class HardcoreBloodMoonDropsPage extends InteractiveCustomUIPage<Hardcore
         );
         events.addEventBinding(CustomUIEventBindingType.Activating, BACK_BUTTON_PATH, backData, false);
 
+        EventData addData = EventData.of(
+                HardcoreBloodMoonDropsPageEventData.KEY_ADD_DROP,
+                ADD_VALUE_PATH
+        );
+        events.addEventBinding(CustomUIEventBindingType.Activating, ADD_BUTTON_PATH, addData, false);
+
         EventData reloadData = EventData.of(
                 HardcoreBloodMoonDropsPageEventData.KEY_RELOAD_CONFIG,
                 RELOAD_VALUE_PATH
         );
         events.addEventBinding(CustomUIEventBindingType.Activating, RELOAD_BUTTON_PATH, reloadData, false);
+    }
+
+    private void openAddDropPage(
+            Ref<EntityStore> ref,
+            Store<EntityStore> store
+    ) {
+        if (store == null || ref == null) {
+            return;
+        }
+
+        Player player = store.getComponent(ref, Player.getComponentType());
+        if (player == null) {
+            return;
+        }
+
+        player.getPageManager().openCustomPage(ref, store, new HardcoreAddDropPage(plugin, playerRef, currentPage));
+    }
+
+    private void openRemoveDropConfirmation(
+            Ref<EntityStore> ref,
+            Store<EntityStore> store,
+            MobCategory category,
+            String itemId
+    ) {
+        if (store == null || ref == null) {
+            return;
+        }
+
+        Player player = store.getComponent(ref, Player.getComponentType());
+        if (player == null) {
+            return;
+        }
+
+        BloodMoonDropConfig.DropEntry entry = null;
+        List<BloodMoonDropConfig.DropEntry> entries = plugin.getBloodMoonDropConfig().getDropEntries(category);
+        for (BloodMoonDropConfig.DropEntry candidate : entries) {
+            if (candidate.itemId.equals(itemId)) {
+                entry = candidate;
+                break;
+            }
+        }
+
+        player.getPageManager().openCustomPage(
+                ref,
+                store,
+                new HardcoreRemoveDropPage(plugin, playerRef, category, itemId, entry, currentPage)
+        );
     }
 
     private void openGeneralSettings(

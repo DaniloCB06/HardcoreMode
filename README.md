@@ -1,4 +1,4 @@
-# HardcoreMode
+﻿# HardcoreMode
 
 ## Overview
 
@@ -20,7 +20,19 @@
 
 ***
 
-## ⚠️ Important Notice (>= 3.1.0)
+## Update 3.2.0 (Summary)
+
+*   **Per-world Blood Moon visuals**: red ambience + red moon (and sun) only appear in worlds where Blood Moon is active, with proper cleanup when switching worlds
+*   **Ambient music**: Trork camp music plays during Blood Moon (when available) `(not working for now...)`
+*   **Per-world defaults**: new worlds start with HardcoreMode disabled and now inherit the global `HardcoreMode.json` values as a template `(If the file isn’t showing up, enable HardcoreMode in one of your existing worlds and the file will be created. Then just configure it however you prefer and restart the server/world.)`
+*   **GUI Blood Moon Drops / Mob Categories**: added Add/Remove pages with confirmation and fixed editing fields (quantity/chance as text with +/-)
+*   **Layout and UX**: spacing/size adjustments on category pages and world name highlight in section titles
+*   **HUD**: removed the old progress bar
+
+***
+
+
+## âš ï¸ Important Notice (>= 3.1.0)
 
 If you already used the mod and want to update to versions **\>= 3.1.0**, you must **delete the folder**:
 
@@ -35,8 +47,6 @@ Sorry for the inconvenience, but this change is required so per-world settings c
 *   If you modified creature/category settings, **save the `.json` file** and **replace it** after the new structure is generated
 *   If you modified Blood Moon drops settings, **save the `.json` file** and **replace it** after the new structure is generated
 *   If you changed the default creature multipliers per category using the GUI, **take a screenshot** or save your values somewhere and re-apply them after the new structure is generated
-
-**OBS:** The `HUD` is currently experiencing several bugs, so for now try disabling it.
 
 ***
 
@@ -66,7 +76,7 @@ Opens the Hardcore Mode configuration menu.
 
 The mod features a complete in-game configuration system divided into multiple pages:
 
-### 📋 Main Menu
+### ðŸ“‹ Main Menu
 
 Central hub to access all configuration sections:
 
@@ -77,11 +87,11 @@ Central hub to access all configuration sections:
 
 ![image](https://media.forgecdn.net/attachments/description/1439115/description_c547c607-a05e-4982-b996-9fd9d2ac0cb0.png)
 
-### ⚔️ Enemy Settings
+### âš”ï¸ Enemy Settings
 
 Configure difficulty for each creature category:
 
-> ✅ **Per-world (>= 3.1.0):** Enemy Settings are saved per world.
+> âœ… **Per-world (>= 3.1.0):** Enemy Settings are saved per world.
 
 ![image](https://media.forgecdn.net/attachments/description/1439115/description_f7cdbf99-dfa9-4928-97a0-ed560f9cd4ef.png)
 
@@ -105,11 +115,11 @@ Configure difficulty for each creature category:
 *   **Global Hardcore Mode**: Toggle all categories at once
 *   **Global Health/Damage**: Base multipliers applied to all categories
 
-### 🌙 Blood Moon Settings
+### ðŸŒ™ Blood Moon Settings
 
 Configure the periodic Blood Moon event with advanced options:
 
-> ✅ **Per-world (>= 3.1.0):** Blood Moon settings are saved per world (**drops remain global**).
+> âœ… **Per-world (>= 3.1.0):** Blood Moon settings are saved per world (**drops remain global**).
 
 ![image](https://media.forgecdn.net/attachments/description/1439115/description_c5040825-96c1-40ba-929b-770565d6dc0b.png)
 
@@ -132,7 +142,6 @@ Configure the periodic Blood Moon event with advanced options:
 **Special Features**:
 
 *   **XP Multiplier**: Bonus XP during Blood Moon (requires RPGLeveling mod)
-*   **Blood Moon HUD**: Real-time progress bar showing remaining time
 *   **Force Blood Moon**: Manually trigger the event immediately (cooldown decreases every hour)
 *   **Death Player Settings**: Increased penalties during Blood Moon
     *   Item Durability Loss (%)
@@ -144,11 +153,11 @@ Configure the periodic Blood Moon event with advanced options:
 *   **Drop Management GUI**: Add/remove/enable/disable drops
 *   Access via "Blood Moon Drops" button in General Settings
 
-### 💀 Player Settings
+### ðŸ’€ Player Settings
 
 Configure death penalties:
 
-> ✅ **Per-world (>= 3.1.0):** Player Settings are saved per world.
+> âœ… **Per-world (>= 3.1.0):** Player Settings are saved per world.
 
 ![image](https://media.forgecdn.net/attachments/description/1439115/description_76781bf1-b95e-4e57-81a6-6224f07ad965.png)
 
@@ -161,7 +170,7 @@ Configure death penalties:
 *   Higher penalties during Blood Moon events (optional)
 *   Independent configuration
 
-### ⚙️ General Settings
+### âš™ï¸ General Settings
 
 Advanced configuration options:
 
@@ -177,7 +186,7 @@ Advanced configuration options:
 
 ### Mob Categories Page
 
-Access via General Settings → "Mob Categories"
+Access via General Settings â†’ "Mob Categories"
 
 ![image](https://media.forgecdn.net/attachments/description/1439115/description_08ffe46a-621b-4b38-a5dd-872721f080c1.png)
 
@@ -196,7 +205,7 @@ The mod uses a flexible system to classify creatures:
 **File**: `HardcoreModeCategories.json`
 
 *   Located in the server config directory (in: `com.example.HardcoreMode`)
-*   Categories: PASSIVE, CRITTER, HOSTILE, ELITE, MINIBOSS, WORLDBOSS, NONE (**All mobs that don’t have a specific category are classified as NONE**)
+*   Categories: PASSIVE, CRITTER, HOSTILE, ELITE, MINIBOSS, WORLDBOSS, NONE (**All mobs that donâ€™t have a specific category are classified as NONE**)
 
 **Example**:
 
@@ -215,13 +224,13 @@ The mod uses a flexible system to classify creatures:
 
 **Fallback System**: If a creature is not in the file, it uses Hytale's disposition system:
 
-*   Aggressive → HOSTILE, ELITE, MINIBOSS and WORLDBOSS
-*   Passive → PASSIVE
-*   Neutral → CRITTER
+*   Aggressive â†’ HOSTILE, ELITE, MINIBOSS and WORLDBOSS
+*   Passive â†’ PASSIVE
+*   Neutral â†’ CRITTER
 
 **Adding New Mobs**:
 
-You can only add new mobs to one of the six categories that already exist in the mod (PASSIVE, CRITTER, HOSTILE, ELITE, MINIBOSS, and WORLDBOSS) by editing the `HardcoreModeCategories.json` file located in the server’s default directory (`com.example.HardcoreMode`).
+You can only add new mobs to one of the six categories that already exist in the mod (PASSIVE, CRITTER, HOSTILE, ELITE, MINIBOSS, and WORLDBOSS) by editing the `HardcoreModeCategories.json` file located in the serverâ€™s default directory (`com.example.HardcoreMode`).
 
 ***
 
@@ -262,7 +271,7 @@ Configure custom item drops for each category during Blood Moon events.
 
 ### Blood Moon Drops GUI
 
-Access via General Settings → "Blood Moon Drops"
+Access via General Settings â†’ "Blood Moon Drops"
 
 **Features**:
 
@@ -276,7 +285,7 @@ Access via General Settings → "Blood Moon Drops"
 
 **Adding New Drops**:
 
-Only by editing the `HardcoreModeBloodMoonDrops.json` file located in the server’s default directory (`com.example.HardcoreMode`) is it possible to add new drops for each category.
+Only by editing the `HardcoreModeBloodMoonDrops.json` file located in the serverâ€™s default directory (`com.example.HardcoreMode`) is it possible to add new drops for each category.
 
 ***
 
@@ -297,7 +306,7 @@ These settings are now **saved per world**:
 *   **Player Settings**
 *   **Enable/Disable HardcoreMode effects** per world
 
-### 🌍 Still global (shared across all worlds)
+### ðŸŒ Still global (shared across all worlds)
 
 These settings are still **global** (shared across all worlds):
 
@@ -350,7 +359,7 @@ This file is located in the `config` folder, and it basically stores the worlds 
 *   **Backup Configs**: Always back up configuration files before major changes
 *   **Creature IDs**: Use F3 or mod tools to find exact creature identifiers
 *   **Performance**: Limit drops per category to avoid lag with many creatures
-*   **Multiplayer**: All players see Blood Moon events, HUD, and drops
+*   **Multiplayer**: All players see Blood Moon events and drops
 
 ***
 
@@ -368,38 +377,5 @@ This file is located in the `config` folder, and it basically stores the worlds 
 *   Verify item IDs are correct
 *   Check drop chance percentage
 *   Confirm category matches creature classification
-
-**HUD not showing**:
-
-*   Enable Blood Moon HUD in General Settings
-*   Check if Blood Moon is actually active
-*   Verify player joined during event
-*   Other HUDs from other mods can overlap the Blood Moon HUD when they’re updated by ticks
-
-**Settings not applying in a specific world (>= 3.1.0)**:
-
-*   Make sure you are editing the correct world’s settings (world-scoped configs)
-*   Check if the mod effects are disabled for that world
-*   If you upgraded to >= 3.1.0, confirm you deleted `com.example.HardcoreMode` and let the server regenerate the new structure
-
-**Creatures not affected**:
-
-*   Check category enable status
-*   Verify creature classification in Mob Categories
-*   Review `HardcoreModeCategories.json` file
-*   Check multiplier values are not 1.0x
-
-***
-
-## Support & Development
-
-For issues, suggestions, or contributions:
-
-*   Check configuration files for errors
-*   Review server console logs
-*   Test using the **Force Blood Moon** feature
-*   Verify mod compatibility
-
-***
 
 **Enjoy!! =)**

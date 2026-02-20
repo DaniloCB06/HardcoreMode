@@ -116,6 +116,48 @@ public class MobCategoryResolver {
         loadPatterns();
     }
 
+    public boolean addEntry(MobCategory category, String rawPattern) {
+        if (category == null || rawPattern == null) {
+            return false;
+        }
+
+        String trimmed = rawPattern.trim();
+        if (trimmed.isEmpty()) {
+            return false;
+        }
+
+        for (CategoryPattern existing : patterns) {
+            if (existing.rawPattern.equalsIgnoreCase(trimmed)) {
+                return false;
+            }
+        }
+
+        int order = getNextOrder();
+        Pattern regex = compileGlob(trimmed);
+        patterns.add(new CategoryPattern(category, trimmed, regex, order));
+        saveToJson();
+        return true;
+    }
+
+    public boolean removeEntry(MobCategory category, String rawPattern) {
+        if (category == null || rawPattern == null) {
+            return false;
+        }
+
+        String trimmed = rawPattern.trim();
+        if (trimmed.isEmpty()) {
+            return false;
+        }
+
+        boolean removed = patterns.removeIf(
+                entry -> entry.category == category && entry.rawPattern.equalsIgnoreCase(trimmed)
+        );
+        if (removed) {
+            saveToJson();
+        }
+        return removed;
+    }
+
     private void loadPatterns() {
         List<CategoryPattern> loaded = tryLoadFromJson();
         if (loaded.isEmpty()) {
@@ -197,6 +239,31 @@ public class MobCategoryResolver {
                 Files.createDirectories(parent);
             }
             String json = serializeToJson(loaded);
+            Files.writeString(jsonPath, json, StandardCharsets.UTF_8);
+        } catch (IOException ignored) {
+        }
+    }
+
+    private int getNextOrder() {
+        int max = -1;
+        for (CategoryPattern entry : patterns) {
+            if (entry.order > max) {
+                max = entry.order;
+            }
+        }
+        return max + 1;
+    }
+
+    private void saveToJson() {
+        if (jsonPath == null) {
+            return;
+        }
+        try {
+            Path parent = jsonPath.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            String json = serializeToJson(patterns);
             Files.writeString(jsonPath, json, StandardCharsets.UTF_8);
         } catch (IOException ignored) {
         }

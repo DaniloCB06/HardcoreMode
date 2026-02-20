@@ -1,0 +1,198 @@
+$C = "../Common.ui";
+
+$C.@PageOverlay {}
+
+$C.@Container {
+  Anchor: (Width: 700, Height: 560);
+
+  #Title {
+    Group {
+      $C.@Title #PageTitle {
+        @Text = "Hardcore Mode";
+      }
+    }
+  }
+
+  #Content {
+    LayoutMode: Top;
+    Padding: (Left: 36, Right: 36, Top: 16, Bottom: 16);
+
+    Label #SectionTitle {
+      Style: (
+        FontSize: 22,
+        RenderBold: true,
+        TextColor: #d3d6db,
+        VerticalAlignment: Center,
+        HorizontalAlignment: Center
+      );
+      Anchor: (Bottom: 20);
+      Text: "Add Mob Category Entry";
+    }
+
+    Group #FormContainer {
+      LayoutMode: Top;
+      Background: (Color: #0d1a2b);
+      Padding: (Full: 20);
+      Anchor: (Bottom: 16);
+
+      Group #CategoryRow {
+        LayoutMode: Left;
+        Anchor: (Bottom: 16);
+
+        Label #CategoryLabel {
+          Anchor: (Width: 150);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 16, RenderBold: true, TextColor: #d3d6db, VerticalAlignment: Center);
+          Text: "Category:";
+        }
+
+        Group #CategoryButtons {
+          LayoutMode: Top;
+          FlexWeight: 1;
+
+          Group #CategoryRowTop {
+            LayoutMode: Left;
+            Anchor: (Bottom: 6);
+
+            $C.@SmallSecondaryTextButton #HostileButton {
+              Anchor: (Width: 90, Height: 32, Right: 6);
+              Text: "Hostile";
+            }
+
+            $C.@SmallSecondaryTextButton #EliteButton {
+              Anchor: (Width: 90, Height: 32, Right: 6);
+              Text: "Elite";
+            }
+
+            $C.@SmallSecondaryTextButton #MinibossButton {
+              Anchor: (Width: 110, Height: 32);
+              Text: "Miniboss";
+            }
+          }
+
+          Group #CategoryRowBottom {
+            LayoutMode: Left;
+
+            $C.@SmallSecondaryTextButton #WorldbossButton {
+              Anchor: (Width: 110, Height: 32, Right: 6);
+              Text: "Worldboss";
+            }
+
+            $C.@SmallSecondaryTextButton #PassiveButton {
+              Anchor: (Width: 90, Height: 32, Right: 6);
+              Text: "Passive";
+            }
+
+            $C.@SmallSecondaryTextButton #CritterButton {
+              Anchor: (Width: 90, Height: 32);
+              Text: "Critter";
+            }
+          }
+
+          $C.@CheckBox #HostileValue {
+            Anchor: (Width: 0, Height: 0);
+            Visible: false;
+            Value: true;
+          }
+
+          $C.@CheckBox #EliteValue {
+            Anchor: (Width: 0, Height: 0);
+            Visible: false;
+            Value: true;
+          }
+
+          $C.@CheckBox #MinibossValue {
+            Anchor: (Width: 0, Height: 0);
+            Visible: false;
+            Value: true;
+          }
+
+          $C.@CheckBox #WorldbossValue {
+            Anchor: (Width: 0, Height: 0);
+            Visible: false;
+            Value: true;
+          }
+
+          $C.@CheckBox #PassiveValue {
+            Anchor: (Width: 0, Height: 0);
+            Visible: false;
+            Value: true;
+          }
+
+          $C.@CheckBox #CritterValue {
+            Anchor: (Width: 0, Height: 0);
+            Visible: false;
+            Value: true;
+          }
+        }
+      }
+
+      Label #SelectedCategory {
+        Anchor: (Bottom: 12, Left: 150);
+        Style: (...$C.@DefaultLabelStyle, FontSize: 14, TextColor: #7fb3ff, VerticalAlignment: Center);
+        Text: "Selected: Hostile";
+      }
+
+      Group #PatternRow {
+        LayoutMode: Left;
+        Anchor: (Bottom: 10);
+
+        Label #PatternLabel {
+          Anchor: (Width: 150);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 16, RenderBold: true, TextColor: #d3d6db, VerticalAlignment: Center);
+          Text: "Mob ID Pattern:";
+        }
+
+        TextField #PatternInput {
+          Anchor: (Height: 34);
+          FlexWeight: 1;
+          PlaceholderText: "NPC_Golem_*";
+          Padding: (Top: 8, Bottom: 8, Left: 12, Right: 12);
+          Background: (Color: #1a2433);
+        }
+      }
+
+      Label #PatternHint {
+        Anchor: (Bottom: 6, Left: 150);
+        Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #7a8596, VerticalAlignment: Center);
+        Text: "Use * as wildcard (example: NPC_Golem_*)";
+      }
+    }
+
+    Group #Spacer {
+      FlexWeight: 1;
+    }
+
+    Group #BottomButtonsContainer {
+      LayoutMode: Left;
+      Anchor: (Bottom: 6);
+
+      $C.@SmallSecondaryTextButton #CancelButton {
+        Anchor: (Width: 110, Height: 32);
+        Text: "Cancel";
+      }
+
+      $C.@CheckBox #CancelValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      Group {
+        FlexWeight: 1;
+      }
+
+      $C.@SmallSecondaryTextButton #SaveButton {
+        Anchor: (Width: 110, Height: 32);
+        Text: "Save";
+      }
+
+      $C.@CheckBox #SaveValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+    }
+  }
+}
+
+$C.@BackButton {}

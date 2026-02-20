@@ -19,9 +19,11 @@ public class WorldConfigManager {
     
     private final Map<String, WorldHardcoreConfig> worldConfigs = new ConcurrentHashMap<>();
     private final Path configDir;
+    private final java.util.function.Supplier<HardcoreModeConfig> globalConfigSupplier;
     
-    public WorldConfigManager(Path dataDirectory) {
+    public WorldConfigManager(Path dataDirectory, java.util.function.Supplier<HardcoreModeConfig> globalConfigSupplier) {
         this.configDir = dataDirectory.resolve("worlds");
+        this.globalConfigSupplier = globalConfigSupplier;
         ensureConfigDirectory();
     }
     
@@ -54,6 +56,10 @@ public class WorldConfigManager {
         WorldHardcoreConfig config = loadConfig(key);
         if (config == null) {
             config = new WorldHardcoreConfig();
+            HardcoreModeConfig globalConfig = globalConfigSupplier != null ? globalConfigSupplier.get() : null;
+            if (globalConfig != null) {
+                config.applyDefaultsFromGlobal(globalConfig);
+            }
         }
         
         // Usar putIfAbsent para evitar race conditions
@@ -183,5 +189,27 @@ public class WorldConfigManager {
      */
     public java.util.Set<String> getLoadedWorlds() {
         return new java.util.HashSet<>(worldConfigs.keySet());
+    }
+
+    /**
+     * Obtém todos os mundos armazenados em disco (arquivos .json).
+     */
+    public java.util.Set<String> getStoredWorlds() {
+        java.util.Set<String> result = new java.util.HashSet<>();
+        try {
+            ensureConfigDirectory();
+            try (java.util.stream.Stream<Path> stream = Files.list(configDir)) {
+                stream.filter(path -> path.getFileName().toString().toLowerCase().endsWith(".json"))
+                        .forEach(path -> {
+                            String fileName = path.getFileName().toString();
+                            int dotIndex = fileName.lastIndexOf('.');
+                            if (dotIndex > 0) {
+                                result.add(fileName.substring(0, dotIndex));
+                            }
+                        });
+            }
+        } catch (IOException ignored) {
+        }
+        return result;
     }
 }

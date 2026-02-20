@@ -44,7 +44,6 @@ public class HardcoreModeConfig {
         public static final String KEY_BLOOD_MOON_WORLDBOSS_ENABLED = "BloodMoonWorldbossEnabled";
         public static final String KEY_BLOOD_MOON_WORLDBOSS_HEALTH_MULTIPLIER = "BloodMoonWorldbossHealthMultiplier";
         public static final String KEY_BLOOD_MOON_WORLDBOSS_DAMAGE_MULTIPLIER = "BloodMoonWorldbossDamageMultiplier";
-        public static final String KEY_BLOOD_MOON_HUD_ENABLED = "BloodMoonHudEnabled";
         // Blood Moon Drop System Keys
         public static final String KEY_BLOOD_MOON_DROPS_ENABLED = "BloodMoonDropsEnabled";
         public static final String KEY_BLOOD_MOON_HOSTILE_DROP_ENABLED = "BloodMoonHostileDropEnabled";
@@ -229,10 +228,6 @@ public class HardcoreModeConfig {
                                         (config, value) -> config.bloodMoonXpMultiplierEnabled = value,
                                         config -> config.bloodMoonXpMultiplierEnabled)
                         .add()
-                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_HUD_ENABLED, Codec.BOOLEAN),
-                                        (config, value) -> config.bloodMoonHudEnabled = value,
-                                        config -> config.bloodMoonHudEnabled)
-                        .add()
                         // Blood Moon Drop System Codecs
                         .append(new KeyedCodec<>(KEY_BLOOD_MOON_DROPS_ENABLED, Codec.BOOLEAN),
                                         (config, value) -> config.bloodMoonDropsEnabled = value,
@@ -357,7 +352,7 @@ public class HardcoreModeConfig {
         public float bloodMoonHostileHealthMultiplier = 2.0f;
         public float bloodMoonHostileDamageMultiplier = 2.0f;
         public float bloodMoonXpMultiplier = 2.0f;
-        public boolean bloodMoonXpMultiplierEnabled = true;
+        public boolean bloodMoonXpMultiplierEnabled = false;
         public boolean bloodMoonHostileEnabled = false;
         public boolean bloodMoonEliteEnabled = false;
         public float bloodMoonEliteHealthMultiplier = 2.0f;
@@ -368,22 +363,21 @@ public class HardcoreModeConfig {
         public boolean bloodMoonWorldbossEnabled = false;
         public float bloodMoonWorldbossHealthMultiplier = 2.0f;
         public float bloodMoonWorldbossDamageMultiplier = 2.0f;
-        public boolean bloodMoonHudEnabled = true;
         // Blood Moon Drop System Fields
-        public boolean bloodMoonDropsEnabled = true;
-        public boolean bloodMoonHostileDropEnabled = true;
+        public boolean bloodMoonDropsEnabled = false;
+        public boolean bloodMoonHostileDropEnabled = false;
         public String bloodMoonHostileDropItem = "Ingredient_Bar_Iron";
         public int bloodMoonHostileDropQuantity = 1;
         public float bloodMoonHostileDropChance = 100.0f;
-        public boolean bloodMoonEliteDropEnabled = true;
+        public boolean bloodMoonEliteDropEnabled = false;
         public String bloodMoonEliteDropItem = "Ingredient_Bar_Thorium";
         public int bloodMoonEliteDropQuantity = 1;
         public float bloodMoonEliteDropChance = 100.0f;
-        public boolean bloodMoonMinibossDropEnabled = true;
+        public boolean bloodMoonMinibossDropEnabled = false;
         public String bloodMoonMinibossDropItem = "Ingredient_Bar_Adamantite";
         public int bloodMoonMinibossDropQuantity = 1;
         public float bloodMoonMinibossDropChance = 100.0f;
-        public boolean bloodMoonWorldbossDropEnabled = true;
+        public boolean bloodMoonWorldbossDropEnabled = false;
         public String bloodMoonWorldbossDropItem = "Ingredient_Bar_Mithril";
         public int bloodMoonWorldbossDropQuantity = 1;
         public float bloodMoonWorldbossDropChance = 100.0f;
@@ -395,26 +389,35 @@ public class HardcoreModeConfig {
         public int bloodMoonItemDurabilityLossPercent = 50;
         public int bloodMoonItemDropPercent = 50;
 
-        // World Settings - mundos DESABILITADOS (armazenados como string separada por vírgulas)
-        // Por padrão, todos os mundos estão HABILITADOS
-        // Armazenamos apenas os mundos que foram explicitamente desabilitados
+        // World Settings
+        // Por padrão, TODOS os mundos iniciam DESABILITADOS.
+        // Quando defaultWorldsEnabled == false, usamos a lista de mundos habilitados.
+        // Quando defaultWorldsEnabled == true (modo legado), usamos a lista de mundos desabilitados.
+        private static final String DISABLED_WORLDS_FILE = "HardcoreModeDisabledWorlds.txt";
+        private static final String ENABLED_WORLDS_FILE = "HardcoreModeEnabledWorlds.txt";
         private transient java.util.Set<String> disabledWorldsCache = null;
+        private transient java.util.Set<String> enabledWorldsCache = null;
+        private transient boolean defaultWorldsEnabled = false;
 
         public HardcoreModeConfig() {
         }
 
         /**
          * Verifica se um mundo está habilitado para os efeitos do HardcoreMode.
-         * Por padrão, todos os mundos estão habilitados.
-         * Apenas mundos explicitamente desabilitados retornam false.
+         * Por padrão, mundos novos ficam desabilitados até serem ativados.
          */
         public boolean isWorldEnabled(String worldName) {
             if (worldName == null || worldName.isEmpty()) {
                 return false;
             }
-            loadDisabledWorldsIfNeeded();
-            // Mundo está habilitado se NÃO está na lista de desabilitados
-            return !disabledWorldsCache.contains(worldName.toLowerCase());
+            loadWorldSettingsIfNeeded();
+            String key = worldName.toLowerCase();
+            if (defaultWorldsEnabled) {
+                // Mundo está habilitado se NÃO está na lista de desabilitados
+                return !disabledWorldsCache.contains(key);
+            }
+            // Modo default (novos mundos): habilita somente se estiver na lista
+            return enabledWorldsCache.contains(key);
         }
 
         /**
@@ -424,41 +427,55 @@ public class HardcoreModeConfig {
             if (worldName == null || worldName.isEmpty()) {
                 return;
             }
-            loadDisabledWorldsIfNeeded();
-            
+            loadWorldSettingsIfNeeded();
+
             String lowerName = worldName.toLowerCase();
-            
-            if (enabled) {
-                // Remover da lista de desabilitados para habilitar
-                disabledWorldsCache.remove(lowerName);
+
+            if (defaultWorldsEnabled) {
+                if (enabled) {
+                    // Remover da lista de desabilitados para habilitar
+                    disabledWorldsCache.remove(lowerName);
+                } else {
+                    // Adicionar à lista de desabilitados para desabilitar
+                    disabledWorldsCache.add(lowerName);
+                }
             } else {
-                // Adicionar à lista de desabilitados para desabilitar
-                disabledWorldsCache.add(lowerName);
+                if (enabled) {
+                    enabledWorldsCache.add(lowerName);
+                } else {
+                    enabledWorldsCache.remove(lowerName);
+                }
             }
-            
+
             saveWorldSettings();
         }
 
         /**
-         * Obtém a lista de mundos desabilitados.
+         * Obtém a lista de mundos desabilitados (somente no modo legado).
          */
         public java.util.Set<String> getDisabledWorlds() {
-            loadDisabledWorldsIfNeeded();
-            return new java.util.HashSet<>(disabledWorldsCache);
+            loadWorldSettingsIfNeeded();
+            if (defaultWorldsEnabled) {
+                return new java.util.HashSet<>(disabledWorldsCache);
+            }
+            return new java.util.HashSet<>();
         }
 
         /**
-         * Define todos os mundos como habilitados (limpa a lista de desabilitados).
+         * Define todos os mundos como habilitados.
          */
         public void enableAllWorlds() {
-            loadDisabledWorldsIfNeeded();
+            loadWorldSettingsIfNeeded();
+            defaultWorldsEnabled = true;
             disabledWorldsCache.clear();
+            enabledWorldsCache.clear();
             saveWorldSettings();
         }
 
-        private void loadDisabledWorldsIfNeeded() {
-            if (disabledWorldsCache == null) {
+        private void loadWorldSettingsIfNeeded() {
+            if (disabledWorldsCache == null || enabledWorldsCache == null) {
                 disabledWorldsCache = new java.util.HashSet<>();
+                enabledWorldsCache = new java.util.HashSet<>();
                 loadWorldSettings();
             }
         }
@@ -466,29 +483,43 @@ public class HardcoreModeConfig {
         private void loadWorldSettings() {
             try {
                 java.nio.file.Path configDir = java.nio.file.Paths.get("config");
-                java.nio.file.Path worldsFile = configDir.resolve("HardcoreModeDisabledWorlds.txt");
-                
-                if (java.nio.file.Files.exists(worldsFile)) {
-                    String content = java.nio.file.Files.readString(worldsFile).trim();
-                    parseDisabledWorlds(content);
+                java.nio.file.Path enabledFile = configDir.resolve(ENABLED_WORLDS_FILE);
+                java.nio.file.Path disabledFile = configDir.resolve(DISABLED_WORLDS_FILE);
+
+                if (java.nio.file.Files.exists(enabledFile)) {
+                    defaultWorldsEnabled = false;
+                    String content = java.nio.file.Files.readString(enabledFile).trim();
+                    parseWorldList(content, enabledWorldsCache);
+                    return;
                 }
-                // Se o arquivo não existe, disabledWorldsCache fica vazio (todos habilitados)
+
+                if (java.nio.file.Files.exists(disabledFile)) {
+                    // Modo legado: mundos habilitados por padrão
+                    defaultWorldsEnabled = true;
+                    String content = java.nio.file.Files.readString(disabledFile).trim();
+                    parseWorldList(content, disabledWorldsCache);
+                    return;
+                }
+
+                // Sem arquivos: padrão desabilitado para novos mundos
+                defaultWorldsEnabled = false;
             } catch (Exception e) {
-                // Em caso de erro, manter vazio (todos habilitados)
+                // Em caso de erro, manter padrão desabilitado
+                defaultWorldsEnabled = false;
             }
         }
 
-        private void parseDisabledWorlds(String content) {
-            disabledWorldsCache.clear();
+        private void parseWorldList(String content, java.util.Set<String> target) {
+            target.clear();
             if (content == null || content.isEmpty()) {
                 return;
             }
-            
+
             String[] parts = content.split(",");
             for (String part : parts) {
                 String trimmed = part.trim().toLowerCase();
                 if (!trimmed.isEmpty()) {
-                    disabledWorldsCache.add(trimmed);
+                    target.add(trimmed);
                 }
             }
         }
@@ -497,15 +528,61 @@ public class HardcoreModeConfig {
             try {
                 java.nio.file.Path configDir = java.nio.file.Paths.get("config");
                 java.nio.file.Files.createDirectories(configDir);
-                java.nio.file.Path worldsFile = configDir.resolve("HardcoreModeDisabledWorlds.txt");
-                
-                if (disabledWorldsCache.isEmpty()) {
-                    // Se não há mundos desabilitados, podemos deletar o arquivo ou deixar vazio
-                    java.nio.file.Files.writeString(worldsFile, "");
+                java.nio.file.Path enabledFile = configDir.resolve(ENABLED_WORLDS_FILE);
+                java.nio.file.Path disabledFile = configDir.resolve(DISABLED_WORLDS_FILE);
+
+                if (defaultWorldsEnabled) {
+                    if (disabledWorldsCache.isEmpty()) {
+                        java.nio.file.Files.writeString(disabledFile, "");
+                    } else {
+                        java.nio.file.Files.writeString(disabledFile, String.join(",", disabledWorldsCache));
+                    }
+                    try {
+                        java.nio.file.Files.deleteIfExists(enabledFile);
+                    } catch (Exception ignored) {
+                    }
                 } else {
-                    java.nio.file.Files.writeString(worldsFile, String.join(",", disabledWorldsCache));
+                    if (enabledWorldsCache.isEmpty()) {
+                        java.nio.file.Files.writeString(enabledFile, "");
+                    } else {
+                        java.nio.file.Files.writeString(enabledFile, String.join(",", enabledWorldsCache));
+                    }
+                    try {
+                        java.nio.file.Files.deleteIfExists(disabledFile);
+                    } catch (Exception ignored) {
+                    }
                 }
             } catch (Exception ignored) {
             }
         }
+
+        /**
+         * Migra a lista legada de mundos desabilitados para o novo modo default desabilitado.
+         * Preserva mundos existentes como habilitados (exceto os que estavam explicitamente desabilitados).
+         * @return true se houve migração
+         */
+        public boolean migrateLegacyWorldSettings(java.util.Set<String> knownWorlds) {
+            loadWorldSettingsIfNeeded();
+            if (!defaultWorldsEnabled) {
+                return false;
+            }
+
+            enabledWorldsCache.clear();
+            if (knownWorlds != null) {
+                for (String worldName : knownWorlds) {
+                    if (worldName == null || worldName.isEmpty()) {
+                        continue;
+                    }
+                    String key = worldName.toLowerCase();
+                    if (!disabledWorldsCache.contains(key)) {
+                        enabledWorldsCache.add(key);
+                    }
+                }
+            }
+
+            defaultWorldsEnabled = false;
+            saveWorldSettings();
+            return true;
+        }
 }
+

@@ -4,21 +4,19 @@ import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
 
-public class HardcoreAddDropPageEventData {
+public class HardcoreAddMobCategoryPageEventData {
     public static final String KEY_CANCEL = "@Cancel";
     public static final String KEY_SAVE = "@Save";
+    public static final String KEY_PATTERN = "@Pattern";
     public static final String KEY_HOSTILE = "@Hostile";
     public static final String KEY_ELITE = "@Elite";
     public static final String KEY_MINIBOSS = "@Miniboss";
     public static final String KEY_WORLDBOSS = "@Worldboss";
-    public static final String KEY_ITEM_ID = "@ItemId";
-    public static final String KEY_MIN_QUANTITY = "@MinQuantity";
-    public static final String KEY_MAX_QUANTITY = "@MaxQuantity";
-    public static final String KEY_DROP_CHANCE = "@DropChance";
-    public static final String KEY_ADJUST = "@Adjust";
+    public static final String KEY_PASSIVE = "@Passive";
+    public static final String KEY_CRITTER = "@Critter";
 
-    public static final BuilderCodec<HardcoreAddDropPageEventData> CODEC = BuilderCodec
-            .builder(HardcoreAddDropPageEventData.class, HardcoreAddDropPageEventData::new)
+    public static final BuilderCodec<HardcoreAddMobCategoryPageEventData> CODEC = BuilderCodec
+            .builder(HardcoreAddMobCategoryPageEventData.class, HardcoreAddMobCategoryPageEventData::new)
             .append(new KeyedCodec<>(KEY_CANCEL, Codec.BOOLEAN),
                     (data, value) -> data.cancel = value,
                     data -> data.cancel)
@@ -26,6 +24,10 @@ public class HardcoreAddDropPageEventData {
             .append(new KeyedCodec<>(KEY_SAVE, Codec.BOOLEAN),
                     (data, value) -> data.save = value,
                     data -> data.save)
+            .add()
+            .append(new KeyedCodec<>(KEY_PATTERN, Codec.STRING),
+                    (data, value) -> data.pattern = value,
+                    data -> data.pattern)
             .add()
             .append(new KeyedCodec<>(KEY_HOSTILE, Codec.BOOLEAN),
                     (data, value) -> data.hostile = value,
@@ -43,41 +45,27 @@ public class HardcoreAddDropPageEventData {
                     (data, value) -> data.worldboss = value,
                     data -> data.worldboss)
             .add()
-            .append(new KeyedCodec<>(KEY_ITEM_ID, Codec.STRING),
-                    (data, value) -> data.itemId = value,
-                    data -> data.itemId)
+            .append(new KeyedCodec<>(KEY_PASSIVE, Codec.BOOLEAN),
+                    (data, value) -> data.passive = value,
+                    data -> data.passive)
             .add()
-            .append(new KeyedCodec<>(KEY_MIN_QUANTITY, Codec.STRING),
-                    (data, value) -> data.minQuantity = value,
-                    data -> data.minQuantity)
-            .add()
-            .append(new KeyedCodec<>(KEY_MAX_QUANTITY, Codec.STRING),
-                    (data, value) -> data.maxQuantity = value,
-                    data -> data.maxQuantity)
-            .add()
-            .append(new KeyedCodec<>(KEY_DROP_CHANCE, Codec.STRING),
-                    (data, value) -> data.dropChance = value,
-                    data -> data.dropChance)
-            .add()
-            .append(new KeyedCodec<>(KEY_ADJUST, Codec.STRING),
-                    (data, value) -> data.adjustAction = value,
-                    data -> data.adjustAction)
+            .append(new KeyedCodec<>(KEY_CRITTER, Codec.BOOLEAN),
+                    (data, value) -> data.critter = value,
+                    data -> data.critter)
             .add()
             .build();
 
     private Boolean cancel;
     private Boolean save;
+    private String pattern;
     private Boolean hostile;
     private Boolean elite;
     private Boolean miniboss;
     private Boolean worldboss;
-    private String itemId;
-    private String minQuantity;
-    private String maxQuantity;
-    private String dropChance;
-    private String adjustAction;
+    private Boolean passive;
+    private Boolean critter;
 
-    public HardcoreAddDropPageEventData() {
+    public HardcoreAddMobCategoryPageEventData() {
     }
 
     public Boolean getCancel() {
@@ -86,6 +74,10 @@ public class HardcoreAddDropPageEventData {
 
     public Boolean getSave() {
         return save;
+    }
+
+    public String getPattern() {
+        return pattern;
     }
 
     public Boolean getHostile() {
@@ -104,23 +96,11 @@ public class HardcoreAddDropPageEventData {
         return worldboss;
     }
 
-    public String getItemId() {
-        return itemId;
+    public Boolean getPassive() {
+        return passive;
     }
 
-    public String getMinQuantity() {
-        return minQuantity;
-    }
-
-    public String getMaxQuantity() {
-        return maxQuantity;
-    }
-
-    public String getDropChance() {
-        return dropChance;
-    }
-
-    public String getAdjustAction() {
-        return adjustAction;
+    public Boolean getCritter() {
+        return critter;
     }
 }

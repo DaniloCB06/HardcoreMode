@@ -44,6 +44,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
 
         private static final String PAGE_TITLE_ID = "#PageTitle.Text";
         private static final String SECTION_TITLE_ID = "#SectionTitle.Text";
+        private static final String SECTION_WORLD_TITLE_ID = "#SectionTitleWorld.Text";
 
         public enum SettingsSection {
                 ENEMY("Enemy Settings"),
@@ -202,7 +203,6 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 Float bloodMoonXpMultiplier = data.getBloodMoonXpMultiplier();
                 Boolean bloodMoonXpMultiplierEnabled = data.getBloodMoonXpMultiplierEnabled();
                 Boolean bloodMoonForce = data.getBloodMoonForce();
-                Boolean bloodMoonHudEnabled = data.getBloodMoonHudEnabled();
                 Boolean bloodMoonDropsEnabled = data.getBloodMoonDropsEnabled();
                 Boolean playerDeathSettingsEnabled = data.getPlayerDeathSettingsEnabled();
                 Float playerItemDurabilityLossPercent = data.getPlayerItemDurabilityLossPercent();
@@ -261,7 +261,6 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 && bloodMoonXpMultiplier == null
                                 && bloodMoonXpMultiplierEnabled == null
                                 && bloodMoonForce == null
-                                && bloodMoonHudEnabled == null
                                 && bloodMoonDropsEnabled == null
                                 && playerDeathSettingsEnabled == null
                                 && playerItemDurabilityLossPercent == null
@@ -513,11 +512,6 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 PERCENT_STEP,
                                 value -> config.bloodMoonItemDropPercent = value);
 
-                if (bloodMoonHudEnabled != null && bloodMoonHudEnabled != config.bloodMoonHudEnabled) {
-                        config.bloodMoonHudEnabled = bloodMoonHudEnabled;
-                        changed = true;
-                }
-
                 if (bloodMoonDropsEnabled != null && bloodMoonDropsEnabled != config.bloodMoonDropsEnabled) {
                         config.bloodMoonDropsEnabled = bloodMoonDropsEnabled;
                         changed = true;
@@ -559,7 +553,8 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 commands.set(PAGE_TITLE_ID, "Hardcore Mode");
                 // Mostrar o nome do mundo no título da seção
                 String worldInfo = " (World: " + currentWorldName + ")";
-                commands.set(SECTION_TITLE_ID, section.getDisplayName() + worldInfo);
+                commands.set(SECTION_TITLE_ID, section.getDisplayName());
+                commands.set(SECTION_WORLD_TITLE_ID, worldInfo);
         }
 
         private void buildSettingsList(UICommandBuilder commands, UIEventBuilder events) {
@@ -841,7 +836,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 HardcoreSettingsPageEventData.KEY_BLOOD_MOON_WORLDBOSS_DAMAGE);
                 index++;
                 
-                // Grid layout: Left column (HUD + Drops), Right column (XP Multiplier)
+                // Grid layout: Left column (Drops), Right column (XP Multiplier)
                 String bottomGridEntry = SETTINGS_LIST_ID + "[" + index + "]";
                 commands.append(SETTINGS_LIST_ID, ENTRY_TWO_COLUMN_PATH);
                 
@@ -849,16 +844,6 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 String bottomRightList = bottomGridEntry + " #RightColumn";
                 int bottomLeftIndex = 0;
                 int bottomRightIndex = 0;
-                
-                // Left column: Show Blood Moon HUD
-                bottomLeftIndex = addToggleEntry(
-                                commands,
-                                events,
-                                bottomLeftList,
-                                bottomLeftIndex,
-                                "Show Blood Moon HUD: " + (config.bloodMoonHudEnabled ? "ON" : "OFF"),
-                                config.bloodMoonHudEnabled,
-                                HardcoreSettingsPageEventData.KEY_BLOOD_MOON_HUD_ENABLED);
                 
                 // Left column: Blood Moon Drops
                 bottomLeftIndex = addToggleEntry(

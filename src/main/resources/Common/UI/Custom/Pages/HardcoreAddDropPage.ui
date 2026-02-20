@@ -78,19 +78,19 @@ $C.@Container {
           $C.@CheckBox #EliteValue {
             Anchor: (Width: 0, Height: 0);
             Visible: false;
-            Value: false;
+            Value: true;
           }
 
           $C.@CheckBox #MinibossValue {
             Anchor: (Width: 0, Height: 0);
             Visible: false;
-            Value: false;
+            Value: true;
           }
 
           $C.@CheckBox #WorldbossValue {
             Anchor: (Width: 0, Height: 0);
             Visible: false;
-            Value: false;
+            Value: true;
           }
         }
       }
@@ -111,16 +111,18 @@ $C.@Container {
           Text: "Item ID:";
         }
 
-        Label #ItemIdValue {
+        TextField #ItemIdInput {
+          Anchor: (Height: 34);
           FlexWeight: 1;
-          Style: (...$C.@DefaultLabelStyle, FontSize: 14, TextColor: #ffcc00, VerticalAlignment: Center);
-          Text: "Ingredient_Bar_Iron (default)";
+          PlaceholderText: "Ingredient_Bar_Iron";
+          Padding: (Top: 8, Bottom: 8, Left: 12, Right: 12);
+          Background: (Color: #1a2433);
         }
 
         Label #ItemIdNote {
-          Anchor: (Width: 200, Left: 10);
-          Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #ff6666, VerticalAlignment: Center);
-          Text: "Edit JSON for other items";
+          Anchor: (Width: 160, Left: 10);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #7a8596, VerticalAlignment: Center);
+          Text: "Example: Ingredient_Bar_Iron";
         }
       }
 
@@ -134,20 +136,20 @@ $C.@Container {
           Text: "Min Quantity:";
         }
 
-        FloatSlider #MinQuantitySlider {
-          Anchor: (Height: 32);
-          FlexWeight: 1;
-          Min: 1;
-          Max: 20;
-          Step: 1;
-          Value: 1;
-          Style: $C.@DefaultSliderStyle;
+        $C.@SmallSecondaryTextButton #MinQuantityMinus {
+          Anchor: (Width: 28, Height: 28);
+          Text: "-";
         }
 
-        Label #MinQuantityValue {
-          Anchor: (Width: 50, Left: 10);
-          Style: (...$C.@DefaultLabelStyle, FontSize: 16, TextColor: #c5d0dd, VerticalAlignment: Center, HorizontalAlignment: Center);
-          Text: "1";
+        TextField #MinQuantityInput {
+          Anchor: (Width: 120, Height: 28, Left: 6);
+          Padding: (Top: 4, Bottom: 4, Left: 8, Right: 8);
+          Background: (Color: #1a2433);
+        }
+
+        $C.@SmallSecondaryTextButton #MinQuantityPlus {
+          Anchor: (Width: 28, Height: 28, Left: 6);
+          Text: "+";
         }
       }
 
@@ -161,20 +163,20 @@ $C.@Container {
           Text: "Max Quantity:";
         }
 
-        FloatSlider #MaxQuantitySlider {
-          Anchor: (Height: 32);
-          FlexWeight: 1;
-          Min: 1;
-          Max: 20;
-          Step: 1;
-          Value: 1;
-          Style: $C.@DefaultSliderStyle;
+        $C.@SmallSecondaryTextButton #MaxQuantityMinus {
+          Anchor: (Width: 28, Height: 28);
+          Text: "-";
         }
 
-        Label #MaxQuantityValue {
-          Anchor: (Width: 50, Left: 10);
-          Style: (...$C.@DefaultLabelStyle, FontSize: 16, TextColor: #c5d0dd, VerticalAlignment: Center, HorizontalAlignment: Center);
-          Text: "1";
+        TextField #MaxQuantityInput {
+          Anchor: (Width: 120, Height: 28, Left: 6);
+          Padding: (Top: 4, Bottom: 4, Left: 8, Right: 8);
+          Background: (Color: #1a2433);
+        }
+
+        $C.@SmallSecondaryTextButton #MaxQuantityPlus {
+          Anchor: (Width: 28, Height: 28, Left: 6);
+          Text: "+";
         }
       }
 
@@ -188,21 +190,33 @@ $C.@Container {
           Text: "Drop Chance (%):";
         }
 
-        FloatSlider #DropChanceSlider {
-          Anchor: (Height: 32);
-          FlexWeight: 1;
-          Min: 0;
-          Max: 100;
-          Step: 1;
-          Value: 50;
-          Style: $C.@DefaultSliderStyle;
+        $C.@SmallSecondaryTextButton #DropChanceMinus {
+          Anchor: (Width: 28, Height: 28);
+          Text: "-";
         }
 
-        Label #DropChanceValue {
-          Anchor: (Width: 50, Left: 10);
-          Style: (...$C.@DefaultLabelStyle, FontSize: 16, TextColor: #c5d0dd, VerticalAlignment: Center, HorizontalAlignment: Center);
-          Text: "50";
+        TextField #DropChanceInput {
+          Anchor: (Width: 120, Height: 28, Left: 6);
+          Padding: (Top: 4, Bottom: 4, Left: 8, Right: 8);
+          Background: (Color: #1a2433);
         }
+
+        $C.@SmallSecondaryTextButton #DropChancePlus {
+          Anchor: (Width: 28, Height: 28, Left: 6);
+          Text: "+";
+        }
+      }
+
+      Group #AdjustValues {
+        Visible: false;
+        Anchor: (Width: 0, Height: 0);
+
+        TextField #AdjustMinQuantityMinus { Value: "min_qty:-"; }
+        TextField #AdjustMinQuantityPlus { Value: "min_qty:+"; }
+        TextField #AdjustMaxQuantityMinus { Value: "max_qty:-"; }
+        TextField #AdjustMaxQuantityPlus { Value: "max_qty:+"; }
+        TextField #AdjustChanceMinus { Value: "chance:-"; }
+        TextField #AdjustChancePlus { Value: "chance:+"; }
       }
     }
 

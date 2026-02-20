@@ -12,12 +12,14 @@ import com.example.plugin.systems.HardcoreMobSetupSystem;
 import com.example.plugin.systems.HardcoreMobStatRefreshSystem;
 import com.example.plugin.systems.HardcorePlayerDeathConfigSystem;
 import com.example.plugin.systems.HardcorePlayerPresenceSystem;
-import com.example.plugin.systems.HardcoreProgressBarSystem;
+import com.example.plugin.visuals.BloodMoonVisuals;
+import com.hypixel.hytale.component.Holder;
 import com.hypixel.hytale.component.ArchetypeChunk;
 import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
+import com.hypixel.hytale.server.core.event.events.player.AddPlayerToWorldEvent;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
@@ -60,7 +62,7 @@ public class HardcoreModePlugin extends JavaPlugin {
     private final HardcoreBloodMoonDropSystem bloodMoonDropSystem;
     private final HardcoreMobStatRefreshSystem mobStatRefreshSystem;
     private final HardcorePlayerPresenceSystem playerPresenceSystem;
-    private final HardcoreProgressBarSystem progressBarSystem;
+    private final BloodMoonVisuals bloodMoonVisuals;
 
     private volatile Ref<EntityStore> cachedPlayerRef;
     private volatile Store<EntityStore> cachedPlayerStore;
@@ -87,15 +89,28 @@ public class HardcoreModePlugin extends JavaPlugin {
         this.config = withConfig("HardcoreMode", HardcoreModeConfig.CODEC);
         this.bloodMoonDropConfig = new BloodMoonDropConfig(getDataDirectory());
         this.mobCategoryResolver = new MobCategoryResolver(getDataDirectory());
-        this.worldConfigManager = new WorldConfigManager(getDataDirectory());
+        this.worldConfigManager = new WorldConfigManager(getDataDirectory(), this::getConfigData);
         this.mobSetupSystem = new HardcoreMobSetupSystem(this);
         this.mobDamageSystem = new HardcoreMobDamageSystem(this);
         this.bloodMoonSystem = new HardcoreBloodMoonSystem(this);
         this.bloodMoonDropSystem = new HardcoreBloodMoonDropSystem(this);
         this.mobStatRefreshSystem = new HardcoreMobStatRefreshSystem(this);
         this.playerPresenceSystem = new HardcorePlayerPresenceSystem(this);
-        this.progressBarSystem = new HardcoreProgressBarSystem(this);
+        this.bloodMoonVisuals = new BloodMoonVisuals();
         instance = this;
+
+        migrateLegacyWorldDefaults();
+    }
+
+    private void migrateLegacyWorldDefaults() {
+        try {
+            java.util.Set<String> storedWorlds = worldConfigManager.getStoredWorlds();
+            boolean migrated = config.get().migrateLegacyWorldSettings(storedWorlds);
+            if (migrated) {
+                config.save();
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     public static HardcoreModePlugin get() {
@@ -187,7 +202,6 @@ public class HardcoreModePlugin extends JavaPlugin {
         getEntityStoreRegistry().registerSystem(mobDamageSystem);
         getEntityStoreRegistry().registerSystem(bloodMoonSystem);
         getEntityStoreRegistry().registerSystem(bloodMoonDropSystem);
-        getEntityStoreRegistry().registerSystem(progressBarSystem);
 
         registerPlayerDeathConfigSystemWithFallback();
 
@@ -195,6 +209,53 @@ public class HardcoreModePlugin extends JavaPlugin {
         getEntityStoreRegistry().registerSystem(playerPresenceSystem);
 
         getCommandRegistry().registerCommand(new HardcoreGuiCommand(this));
+        registerPlayerWorldSync();
+    }
+
+    private void registerPlayerWorldSync() {
+        getEventRegistry().registerGlobal(AddPlayerToWorldEvent.class, event -> {
+            if (event == null) {
+                return;
+            }
+
+            World world = event.getWorld();
+            if (world == null) {
+                return;
+            }
+
+            String worldName = world.getName();
+
+            EntityStore entityStore = world.getEntityStore();
+            if (entityStore == null) {
+                return;
+            }
+
+            Store<EntityStore> store = entityStore.getStore();
+            if (store == null) {
+                return;
+            }
+
+            if (worldName != null && !worldName.isEmpty()) {
+                worldNameCache.put(store, worldName);
+            }
+
+            Holder<EntityStore> holder = event.getHolder();
+            if (holder == null) {
+                return;
+            }
+
+            ComponentType<EntityStore, Player> playerType = Player.getComponentType();
+            if (playerType == null) {
+                return;
+            }
+
+            Player player = holder.getComponent(playerType);
+            if (player == null) {
+                return;
+            }
+
+            syncBloodMoonVisualsForPlayer(player, store, worldName);
+        });
     }
 
     @Override
@@ -469,6 +530,22 @@ public class HardcoreModePlugin extends JavaPlugin {
         return Math.max(0, (int) remaining);
     }
 
+    public void syncBloodMoonVisualsForPlayer(Player player, Store<EntityStore> store, String worldName) {
+        if (player == null || store == null) {
+            return;
+        }
+        String resolvedWorldName = worldName != null && !worldName.isBlank() ? worldName : getWorldName(store);
+        boolean active;
+        if (resolvedWorldName != null) {
+            WorldHardcoreConfig worldConfig = getWorldConfig(resolvedWorldName);
+            active = worldConfig != null && worldConfig.isBloodMoonActive()
+                    && config.get().isWorldEnabled(resolvedWorldName);
+        } else {
+            active = isWorldEnabledForStore(store) && isBloodMoonActive(store);
+        }
+        bloodMoonVisuals.applyWorldVisuals(store, resolvedWorldName, active);
+    }
+
     public void refreshBloodMoonState(Store<EntityStore> store, boolean applyToMobs) {
         String worldName = getWorldName(store);
         refreshBloodMoonState(store, worldName, applyToMobs);
@@ -491,6 +568,7 @@ public class HardcoreModePlugin extends JavaPlugin {
                     worldsWithXpMultiplier.remove(resolvedWorldName);
                     applyGlobalXpMultiplier(resolvedWorldName);
                 }
+                bloodMoonVisuals.applyWorldVisuals(store, resolvedWorldName, false);
             }
             return;
         }
@@ -504,6 +582,7 @@ public class HardcoreModePlugin extends JavaPlugin {
                 // Remove do mapa de XP multipliers e recalcula
                 worldsWithXpMultiplier.remove(resolvedWorldName);
                 applyGlobalXpMultiplier(resolvedWorldName);
+                bloodMoonVisuals.applyWorldVisuals(store, resolvedWorldName, false);
             }
             return;
         }
@@ -531,6 +610,7 @@ public class HardcoreModePlugin extends JavaPlugin {
         if (changed) {
             syncRpgLevelingMultiplier(resolvedWorldName, active, worldConfig);
             announceBloodMoon(active, store);
+            bloodMoonVisuals.applyWorldVisuals(store, resolvedWorldName, active);
             if (applyToMobs) {
                 applyToExistingMobs(store);
             }

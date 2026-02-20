@@ -29,6 +29,8 @@ public class HardcoreMobCategoriesPage extends InteractiveCustomUIPage<HardcoreM
     private static final String PAGE_INFO_ID = "#PageInfoLabel.Text";
     private static final String BACK_BUTTON_PATH = "#BottomButtonsContainer #BackButton";
     private static final String BACK_VALUE_PATH = "#BottomButtonsContainer #BackValue.Value";
+    private static final String ADD_BUTTON_PATH = "#BottomButtonsContainer #AddButton";
+    private static final String ADD_VALUE_PATH = "#BottomButtonsContainer #AddValue.Value";
     private static final String RELOAD_BUTTON_PATH = "#BottomButtonsContainer #ReloadButton";
     private static final String RELOAD_VALUE_PATH = "#BottomButtonsContainer #ReloadValue.Value";
     private static final String PREV_PAGE_BUTTON_PATH = "#PaginationContainer #PrevPageButton";
@@ -106,10 +108,11 @@ public class HardcoreMobCategoriesPage extends InteractiveCustomUIPage<HardcoreM
     ) {
         commands.append(PAGE_PATH);
         fillHeader(commands);
-        buildMobsList(commands);
+        buildMobsList(commands, events);
         bindFilterButtons(events);
         bindPaginationButtons(events);
         bindNavigation(events);
+        bindCrudButtons(events);
     }
 
     @Override
@@ -133,6 +136,17 @@ public class HardcoreMobCategoriesPage extends InteractiveCustomUIPage<HardcoreM
         if (Boolean.TRUE.equals(reloadConfig)) {
             plugin.getMobCategoryResolver().reload();
             reopenPage(ref, store, currentFilter, 0);
+            return;
+        }
+
+        if (Boolean.TRUE.equals(data.getAddEntry())) {
+            openAddEntryPage(ref, store);
+            return;
+        }
+
+        int removeIndex = data.getRemoveRowIndex();
+        if (removeIndex >= 0) {
+            openRemoveConfirmation(ref, store, removeIndex);
             return;
         }
 
@@ -195,7 +209,7 @@ public class HardcoreMobCategoriesPage extends InteractiveCustomUIPage<HardcoreM
         commands.set(SECTION_TITLE_ID, "Mob Categories");
     }
 
-    private void buildMobsList(UICommandBuilder commands) {
+    private void buildMobsList(UICommandBuilder commands, UIEventBuilder events) {
         List<MobCategoryResolver.CategoryEntry> filteredEntries = getFilteredEntries();
         int totalItems = filteredEntries.size();
         int totalPages = getTotalPages(totalItems);
@@ -226,9 +240,17 @@ public class HardcoreMobCategoriesPage extends InteractiveCustomUIPage<HardcoreM
 
             String mobIdPath = rowId + " #MobId.Text";
             String categoryPath = rowId + " #Category.Text";
+            String removeButtonPath = rowId + " #RemoveButton";
+            String removeValuePath = rowId + " #RemoveValue.Value";
 
             commands.set(mobIdPath, entry.pattern);
             commands.set(categoryPath, formatCategoryName(entry.category));
+
+            String removeKey = HardcoreMobCategoriesPageEventData.getRemoveKeyForRow(rowIndex);
+            if (removeKey != null) {
+                EventData removeData = EventData.of(removeKey, removeValuePath);
+                events.addEventBinding(CustomUIEventBindingType.Activating, removeButtonPath, removeData, false);
+            }
 
             rowIndex++;
         }
@@ -312,6 +334,14 @@ public class HardcoreMobCategoriesPage extends InteractiveCustomUIPage<HardcoreM
         events.addEventBinding(CustomUIEventBindingType.Activating, RELOAD_BUTTON_PATH, reloadData, false);
     }
 
+    private void bindCrudButtons(UIEventBuilder events) {
+        EventData addData = EventData.of(
+                HardcoreMobCategoriesPageEventData.KEY_ADD_ENTRY,
+                ADD_VALUE_PATH
+        );
+        events.addEventBinding(CustomUIEventBindingType.Activating, ADD_BUTTON_PATH, addData, false);
+    }
+
     private void openGeneralSettings(
             Ref<EntityStore> ref,
             Store<EntityStore> store
@@ -326,6 +356,56 @@ public class HardcoreMobCategoriesPage extends InteractiveCustomUIPage<HardcoreM
         }
 
         player.getPageManager().openCustomPage(ref, store, new HardcoreGeneralSettingsPage(plugin, playerRef));
+    }
+
+    private void openAddEntryPage(
+            Ref<EntityStore> ref,
+            Store<EntityStore> store
+    ) {
+        if (store == null || ref == null) {
+            return;
+        }
+
+        Player player = store.getComponent(ref, Player.getComponentType());
+        if (player == null) {
+            return;
+        }
+
+        player.getPageManager().openCustomPage(
+                ref,
+                store,
+                new HardcoreAddMobCategoryPage(plugin, playerRef, currentFilter, currentPage)
+        );
+    }
+
+    private void openRemoveConfirmation(
+            Ref<EntityStore> ref,
+            Store<EntityStore> store,
+            int rowIndex
+    ) {
+        List<MobCategoryResolver.CategoryEntry> filteredEntries = getFilteredEntries();
+        int globalIndex = (currentPage * ITEMS_PER_PAGE) + rowIndex;
+
+        if (globalIndex < 0 || globalIndex >= filteredEntries.size()) {
+            return;
+        }
+
+        MobCategoryResolver.CategoryEntry entry = filteredEntries.get(globalIndex);
+
+        if (store == null || ref == null) {
+            return;
+        }
+
+        Player player = store.getComponent(ref, Player.getComponentType());
+        if (player == null) {
+            return;
+        }
+
+        player.getPageManager().openCustomPage(
+                ref,
+                store,
+                new HardcoreRemoveMobCategoryPage(plugin, playerRef, entry, currentFilter, currentPage)
+        );
     }
 
     private void reopenPage(

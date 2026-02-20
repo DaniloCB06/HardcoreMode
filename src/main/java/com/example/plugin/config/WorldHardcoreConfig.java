@@ -182,11 +182,6 @@ public class WorldHardcoreConfig {
                     (config, value) -> config.bloodMoonDropsEnabled = value,
                     config -> config.bloodMoonDropsEnabled)
             .add()
-            // Blood Moon HUD
-            .append(new KeyedCodec<>("BloodMoonHudEnabled", Codec.BOOLEAN),
-                    (config, value) -> config.bloodMoonHudEnabled = value,
-                    config -> config.bloodMoonHudEnabled)
-            .add()
             // Player Death Settings
             .append(new KeyedCodec<>("PlayerDeathSettingsEnabled", Codec.BOOLEAN),
                     (config, value) -> config.playerDeathSettingsEnabled = value,
@@ -216,7 +211,7 @@ public class WorldHardcoreConfig {
             .build();
 
     // Whether HardcoreMode is enabled for this world
-    public boolean enabled = true;
+    public boolean enabled = false;
 
     // Base multipliers
     public float healthMultiplier = 1.0f;
@@ -225,10 +220,10 @@ public class WorldHardcoreConfig {
     // Category enabled flags
     public boolean passiveEnabled = false;
     public boolean critterEnabled = false;
-    public boolean hostileEnabled = true;
-    public boolean eliteEnabled = true;
-    public boolean minibossEnabled = true;
-    public boolean worldbossEnabled = true;
+    public boolean hostileEnabled = false;
+    public boolean eliteEnabled = false;
+    public boolean minibossEnabled = false;
+    public boolean worldbossEnabled = false;
 
     // Category health multipliers
     public float passiveHealthMultiplier = 1.0f;
@@ -247,16 +242,16 @@ public class WorldHardcoreConfig {
     public float worldbossDamageMultiplier = 3.0f;
 
     // Blood Moon settings
-    public boolean bloodMoonEnabled = true;
+    public boolean bloodMoonEnabled = false;
     public int bloodMoonIntervalDays = 7;
     public int bloodMoonDurationHours = 3;
     public int bloodMoonStartHour = 20;
 
     // Blood Moon category enabled
-    public boolean bloodMoonHostileEnabled = true;
-    public boolean bloodMoonEliteEnabled = true;
-    public boolean bloodMoonMinibossEnabled = true;
-    public boolean bloodMoonWorldbossEnabled = true;
+    public boolean bloodMoonHostileEnabled = false;
+    public boolean bloodMoonEliteEnabled = false;
+    public boolean bloodMoonMinibossEnabled = false;
+    public boolean bloodMoonWorldbossEnabled = false;
 
     // Blood Moon health multipliers
     public float bloodMoonHostileHealthMultiplier = 3.0f;
@@ -271,14 +266,12 @@ public class WorldHardcoreConfig {
     public float bloodMoonWorldbossDamageMultiplier = 4.0f;
 
     // Blood Moon XP
-    public boolean bloodMoonXpMultiplierEnabled = true;
+    public boolean bloodMoonXpMultiplierEnabled = false;
     public float bloodMoonXpMultiplier = 2.0f;
 
     // Blood Moon Drops
-    public boolean bloodMoonDropsEnabled = true;
+    public boolean bloodMoonDropsEnabled = false;
     
-    // Blood Moon HUD
-    public boolean bloodMoonHudEnabled = true;
 
     // Player Death Settings
     public boolean playerDeathSettingsEnabled = false;
@@ -298,6 +291,73 @@ public class WorldHardcoreConfig {
     private transient long lastProcessedHourOfEpoch = -1;
 
     public WorldHardcoreConfig() {
+    }
+
+    /**
+     * Aplica defaults globais do HardcoreMode para este mundo.
+     * Sempre força o mundo a iniciar desativado.
+     */
+    public void applyDefaultsFromGlobal(HardcoreModeConfig global) {
+        if (global == null) {
+            return;
+        }
+
+        this.enabled = false;
+        this.healthMultiplier = global.healthMultiplier;
+        this.damageMultiplier = global.damageMultiplier;
+
+        this.passiveEnabled = global.passiveEnabled;
+        this.critterEnabled = global.critterEnabled;
+        this.hostileEnabled = global.hostileEnabled;
+        this.eliteEnabled = global.eliteEnabled;
+        this.minibossEnabled = global.minibossEnabled;
+        this.worldbossEnabled = global.worldbossEnabled;
+
+        this.passiveHealthMultiplier = global.passiveHealthMultiplier;
+        this.critterHealthMultiplier = global.critterHealthMultiplier;
+        this.hostileHealthMultiplier = global.hostileHealthMultiplier;
+        this.eliteHealthMultiplier = global.eliteHealthMultiplier;
+        this.minibossHealthMultiplier = global.minibossHealthMultiplier;
+        this.worldbossHealthMultiplier = global.worldbossHealthMultiplier;
+
+        this.passiveDamageMultiplier = global.passiveDamageMultiplier;
+        this.critterDamageMultiplier = global.critterDamageMultiplier;
+        this.hostileDamageMultiplier = global.hostileDamageMultiplier;
+        this.eliteDamageMultiplier = global.eliteDamageMultiplier;
+        this.minibossDamageMultiplier = global.minibossDamageMultiplier;
+        this.worldbossDamageMultiplier = global.worldbossDamageMultiplier;
+
+        this.bloodMoonEnabled = global.bloodMoonEnabled;
+        this.bloodMoonIntervalDays = global.bloodMoonIntervalDays;
+        this.bloodMoonDurationHours = global.bloodMoonDurationHours;
+        this.bloodMoonStartHour = global.bloodMoonStartHour;
+
+        this.bloodMoonHostileEnabled = global.bloodMoonHostileEnabled;
+        this.bloodMoonEliteEnabled = global.bloodMoonEliteEnabled;
+        this.bloodMoonMinibossEnabled = global.bloodMoonMinibossEnabled;
+        this.bloodMoonWorldbossEnabled = global.bloodMoonWorldbossEnabled;
+
+        this.bloodMoonHostileHealthMultiplier = global.bloodMoonHostileHealthMultiplier;
+        this.bloodMoonEliteHealthMultiplier = global.bloodMoonEliteHealthMultiplier;
+        this.bloodMoonMinibossHealthMultiplier = global.bloodMoonMinibossHealthMultiplier;
+        this.bloodMoonWorldbossHealthMultiplier = global.bloodMoonWorldbossHealthMultiplier;
+
+        this.bloodMoonHostileDamageMultiplier = global.bloodMoonHostileDamageMultiplier;
+        this.bloodMoonEliteDamageMultiplier = global.bloodMoonEliteDamageMultiplier;
+        this.bloodMoonMinibossDamageMultiplier = global.bloodMoonMinibossDamageMultiplier;
+        this.bloodMoonWorldbossDamageMultiplier = global.bloodMoonWorldbossDamageMultiplier;
+
+        this.bloodMoonXpMultiplierEnabled = global.bloodMoonXpMultiplierEnabled;
+        this.bloodMoonXpMultiplier = global.bloodMoonXpMultiplier;
+        this.bloodMoonDropsEnabled = global.bloodMoonDropsEnabled;
+
+        this.playerDeathSettingsEnabled = global.playerDeathSettingsEnabled;
+        this.playerItemDurabilityLossPercent = global.playerItemDurabilityLossPercent;
+        this.playerItemDropPercent = global.playerItemDropPercent;
+
+        this.bloodMoonDeathSettingsEnabled = global.bloodMoonDeathSettingsEnabled;
+        this.bloodMoonItemDurabilityLossPercent = global.bloodMoonItemDurabilityLossPercent;
+        this.bloodMoonItemDropPercent = global.bloodMoonItemDropPercent;
     }
 
     /**
@@ -354,7 +414,6 @@ public class WorldHardcoreConfig {
         this.bloodMoonXpMultiplierEnabled = other.bloodMoonXpMultiplierEnabled;
         this.bloodMoonXpMultiplier = other.bloodMoonXpMultiplier;
         this.bloodMoonDropsEnabled = other.bloodMoonDropsEnabled;
-        this.bloodMoonHudEnabled = other.bloodMoonHudEnabled;
         
         this.playerDeathSettingsEnabled = other.playerDeathSettingsEnabled;
         this.playerItemDurabilityLossPercent = other.playerItemDurabilityLossPercent;

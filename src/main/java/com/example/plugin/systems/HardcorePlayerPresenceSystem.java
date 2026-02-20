@@ -1,7 +1,6 @@
 package com.example.plugin.systems;
 
 import com.example.plugin.HardcoreModePlugin;
-import com.example.plugin.ui.HardcoreProgressBarHud;
 import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
@@ -38,20 +37,8 @@ public class HardcorePlayerPresenceSystem extends RefChangeSystem<EntityStore, P
     ) {
         plugin.refreshBloodMoonStateIfNeeded(store, true);
         plugin.applyToExistingMobs(store, ref);
+        plugin.syncBloodMoonVisualsForPlayer(component, store, plugin.getWorldName(store));
         
-        // Abre a HUD da Blood Moon se estiver ativa
-        if (plugin.isBloodMoonActive()) {
-            float progress = plugin.getBloodMoonProgress(store);
-            int hoursRemaining = plugin.getBloodMoonHoursRemaining(store);
-            
-            HardcoreProgressBarHud hud = new HardcoreProgressBarHud(
-                component.getPlayerRef(),
-                progress,
-                hoursRemaining,
-                true
-            );
-            component.getHudManager().setCustomHud(component.getPlayerRef(), hud);
-        }
     }
 
     @Override
@@ -64,6 +51,7 @@ public class HardcorePlayerPresenceSystem extends RefChangeSystem<EntityStore, P
     ) {
         plugin.refreshBloodMoonStateIfNeeded(store, true);
         plugin.applyToExistingMobs(store, ref);
+        plugin.syncBloodMoonVisualsForPlayer(current, store, plugin.getWorldName(store));
     }
 
     @Override

@@ -11,6 +11,7 @@ public class HardcoreBloodMoonDropsPageEventData {
     public static final String KEY_GO_BACK = "@GoBack";
     public static final String KEY_DROP_ENABLED_PREFIX = "@DropEnabled_";
     public static final String KEY_REMOVE_DROP_PREFIX = "@RemoveDrop_";
+    public static final String KEY_ADD_DROP = "@AddDrop";
     public static final String KEY_RELOAD_CONFIG = "@ReloadConfig";
     public static final String KEY_PREV_PAGE = "@PrevPage";
     public static final String KEY_NEXT_PAGE = "@NextPage";
@@ -27,10 +28,15 @@ public class HardcoreBloodMoonDropsPageEventData {
                     (data, value) -> data.reloadConfig = value,
                     data -> data.reloadConfig)
             .add()
+            .append(new KeyedCodec<>(KEY_ADD_DROP, Codec.BOOLEAN),
+                    (data, value) -> data.addDrop = value,
+                    data -> data.addDrop)
+            .add()
             .build();
 
     private Boolean goBack;
     private Boolean reloadConfig;
+    private Boolean addDrop;
     private Boolean prevPage;
     private Boolean nextPage;
     private final Map<String, Boolean> dropChanges = new HashMap<>();
@@ -52,6 +58,14 @@ public class HardcoreBloodMoonDropsPageEventData {
 
     public void setReloadConfig(Boolean reloadConfig) {
         this.reloadConfig = reloadConfig;
+    }
+
+    public Boolean getAddDrop() {
+        return addDrop;
+    }
+
+    public void setAddDrop(Boolean addDrop) {
+        this.addDrop = addDrop;
     }
 
     public Boolean getPrevPage() {

@@ -37,7 +37,7 @@ $C.@Container {
         HorizontalAlignment: Center
       );
       Anchor: (Bottom: 16);
-      Text: "To add new drops, edit 'HardcoreModeBloodMoonDrops.json' in 'com.example_HardcoreMode' folder";
+      Text: "Use the Add button below to create drops. For bulk edits, change 'HardcoreModeBloodMoonDrops.json' in 'com.example_HardcoreMode'";
     }
 
     Group #DropsList {
@@ -88,7 +88,7 @@ $C.@Container {
         }
 
         Label #HeaderActions {
-          Anchor: (Width: 88);
+          Anchor: (Width: 100);
           Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #d3d6db, HorizontalAlignment: Center, VerticalAlignment: Center);
           Text: "Actions";
         }
@@ -175,6 +175,17 @@ $C.@Container {
 
       Group {
         FlexWeight: 1;
+      }
+
+      $C.@SmallSecondaryTextButton #AddButton {
+        Anchor: (Width: 110, Height: 32, Right: 8);
+        Text: "Add";
+      }
+
+      $C.@CheckBox #AddValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
       }
 
       $C.@SmallSecondaryTextButton #ReloadButton {
