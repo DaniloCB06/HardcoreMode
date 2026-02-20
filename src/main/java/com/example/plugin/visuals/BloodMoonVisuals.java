@@ -1,6 +1,7 @@
 package com.example.plugin.visuals;
 
 import com.hypixel.hytale.builtin.ambience.resources.AmbienceResource;
+import com.hypixel.hytale.builtin.weather.components.WeatherTracker;
 import com.hypixel.hytale.builtin.weather.resources.WeatherResource;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.UpdateType;
@@ -9,6 +10,8 @@ import com.hypixel.hytale.server.core.asset.type.ambiencefx.config.AmbienceFX;
 import com.hypixel.hytale.server.core.asset.type.weather.config.TimeColorAlpha;
 import com.hypixel.hytale.server.core.asset.type.weather.config.Weather;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -64,6 +67,7 @@ public class BloodMoonVisuals {
             clearBloodMoonWeather(store, worldName, world);
             clearBloodMoonMusic(store, worldName, world);
             setMoonNormal(world.getPlayers());
+            resyncWeatherForPlayers(store, world.getPlayers());
         }
     }
 
@@ -279,6 +283,46 @@ public class BloodMoonVisuals {
             }
             try {
                 player.getPlayerConnection().writeNoCache(packet);
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    private void resyncWeatherForPlayers(Store<EntityStore> store, List<Player> players) {
+        if (store == null || players == null || players.isEmpty()) {
+            return;
+        }
+
+        WeatherResource weatherResource = store.getResource(WeatherResource.getResourceType());
+        if (weatherResource == null) {
+            return;
+        }
+
+        com.hypixel.hytale.component.ComponentType<EntityStore, WeatherTracker> trackerType =
+                WeatherTracker.getComponentType();
+        com.hypixel.hytale.component.ComponentType<EntityStore, TransformComponent> transformType =
+                TransformComponent.getComponentType();
+        if (trackerType == null || transformType == null) {
+            return;
+        }
+
+        for (Player player : players) {
+            if (player == null) {
+                continue;
+            }
+            try {
+                PlayerRef playerRef = player.getPlayerRef();
+                if (playerRef == null || !playerRef.isValid()) {
+                    continue;
+                }
+
+                WeatherTracker tracker = playerRef.getComponent(trackerType);
+                TransformComponent transform = playerRef.getComponent(transformType);
+                if (tracker == null || transform == null) {
+                    continue;
+                }
+
+                tracker.updateWeather(playerRef, weatherResource, transform, 1.0f, store);
             } catch (Exception ignored) {
             }
         }
