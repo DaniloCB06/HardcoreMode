@@ -98,6 +98,38 @@ $C.@Container {
         }
       }
 
+      Group #MoneyMobsDropsButtonRow {
+        LayoutMode: Left;
+        Padding: (Full: 2);
+        Anchor: (Bottom: 12);
+        Background: (Color: #07101f); 
+
+        Group #MoneyMobsDropsCard {
+          LayoutMode: Left;
+          Padding: (Full: 10);
+          Background: (Color: #162336);
+          FlexWeight: 1;
+
+          $C.@SecondaryTextButton #MoneyMobsDropsButton {
+            Anchor: (Width: 210, Height: 44);
+            Text: "Money Mobs Drops";
+          }
+
+          Label #MoneyMobsDropsDescription {
+            Anchor: (Left: 18);
+            FlexWeight: 1;
+            Style: (...$C.@DefaultLabelStyle, FontSize: 15, TextColor: #dce4ef, VerticalAlignment: Center);
+            Text: "Configure money rewards for creatures and categories";
+          }
+
+          $C.@CheckBox #MoneyMobsDropsValue {
+            Anchor: (Width: 0, Height: 0);
+            Visible: false;
+            Value: true;
+          }
+        }
+      }
+
       Group #WorldSettingsButtonRow {
         LayoutMode: Left;
         Padding: (Full: 2);

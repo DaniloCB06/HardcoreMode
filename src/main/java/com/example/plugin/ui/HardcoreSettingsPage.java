@@ -202,6 +202,8 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 Float bloodMoonWorldbossDamageMultiplier = data.getBloodMoonWorldbossDamageMultiplier();
                 Float bloodMoonXpMultiplier = data.getBloodMoonXpMultiplier();
                 Boolean bloodMoonXpMultiplierEnabled = data.getBloodMoonXpMultiplierEnabled();
+                Float bloodMoonMoneyMultiplier = data.getBloodMoonMoneyMultiplier();
+                Boolean bloodMoonMoneyMultiplierEnabled = data.getBloodMoonMoneyMultiplierEnabled();
                 Boolean bloodMoonForce = data.getBloodMoonForce();
                 Boolean bloodMoonDropsEnabled = data.getBloodMoonDropsEnabled();
                 Boolean playerDeathSettingsEnabled = data.getPlayerDeathSettingsEnabled();
@@ -260,6 +262,8 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 && bloodMoonWorldbossDamageMultiplier == null
                                 && bloodMoonXpMultiplier == null
                                 && bloodMoonXpMultiplierEnabled == null
+                                && bloodMoonMoneyMultiplier == null
+                                && bloodMoonMoneyMultiplierEnabled == null
                                 && bloodMoonForce == null
                                 && bloodMoonDropsEnabled == null
                                 && playerDeathSettingsEnabled == null
@@ -474,6 +478,17 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 bloodMoonXpMultiplierEnabled,
                                 config.bloodMoonXpMultiplierEnabled,
                                 value -> config.bloodMoonXpMultiplierEnabled = value);
+                changed |= applyFloatSetting(
+                                bloodMoonMoneyMultiplier,
+                                config.bloodMoonMoneyMultiplier,
+                                MIN_MULTIPLIER,
+                                MAX_MULTIPLIER,
+                                STEP,
+                                value -> config.bloodMoonMoneyMultiplier = value);
+                changed |= applyEnabled(
+                                bloodMoonMoneyMultiplierEnabled,
+                                config.bloodMoonMoneyMultiplierEnabled,
+                                value -> config.bloodMoonMoneyMultiplierEnabled = value);
                 changed |= applyEnabled(
                                 playerDeathSettingsEnabled,
                                 config.playerDeathSettingsEnabled,
@@ -846,6 +861,11 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 String bottomRightList = bottomGridEntry + " #RightColumn";
                 int bottomLeftIndex = 0;
                 int bottomRightIndex = 0;
+                boolean moneyMultiplierSupported = plugin.getVaultEconomyCoordinator() != null
+                                && plugin.getVaultEconomyCoordinator().isAvailable();
+                float bloodMoonMoneyMultiplierValue = config.bloodMoonMoneyMultiplier > 0.0f
+                                ? config.bloodMoonMoneyMultiplier
+                                : 2.0f;
                 
                 // Left column: Blood Moon Drops
                 bottomLeftIndex = addToggleEntry(
@@ -856,7 +876,33 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 "Blood Moon Drops: " + (config.bloodMoonDropsEnabled ? "ON" : "OFF"),
                                 config.bloodMoonDropsEnabled,
                                 HardcoreSettingsPageEventData.KEY_BLOOD_MOON_DROPS_ENABLED);
-                
+
+                if (moneyMultiplierSupported) {
+                        bottomLeftIndex = addToggleEntry(
+                                        commands,
+                                        events,
+                                        bottomLeftList,
+                                        bottomLeftIndex,
+                                        "Money Multiplier: " + (config.bloodMoonMoneyMultiplierEnabled ? "ON" : "OFF"),
+                                        config.bloodMoonMoneyMultiplierEnabled,
+                                        HardcoreSettingsPageEventData.KEY_BLOOD_MOON_MONEY_MULTIPLIER_ENABLED);
+                        bottomLeftIndex = addSliderEntry(
+                                        commands,
+                                        events,
+                                        bottomLeftList,
+                                        bottomLeftIndex,
+                                        "Money Multiplier",
+                                        bloodMoonMoneyMultiplierValue,
+                                        HardcoreSettingsPageEventData.KEY_BLOOD_MOON_MONEY_MULTIPLIER);
+                } else {
+                        bottomLeftIndex = addInfoTextEntry(
+                                        commands,
+                                        bottomLeftList,
+                                        bottomLeftIndex,
+                                        "Money Multiplier unavailable: VaultUnlocked and a compatible economy mod must both be installed."
+                        );
+                }
+
                 // Right column: XP multiplier support for compatible leveling mods
                 if (plugin.isXpMultiplierSupported()) {
                         bottomRightIndex = addToggleEntry(

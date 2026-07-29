@@ -24,6 +24,10 @@ public class HardcoreGeneralSettingsPage extends InteractiveCustomUIPage<Hardcor
     private static final String BLOOD_MOON_DROPS_VALUE_PATH = "#BloodMoonDropsButtonRow #BloodMoonDropsValue.Value";
     private static final String BLOOD_MOON_DROPS_BUTTON_TEXT_ID = "#BloodMoonDropsButton.Text";
     private static final String BLOOD_MOON_DROPS_DESCRIPTION_ID = "#BloodMoonDropsDescription.Text";
+    private static final String MONEY_MOBS_DROPS_BUTTON_PATH = "#MoneyMobsDropsButtonRow #MoneyMobsDropsButton";
+    private static final String MONEY_MOBS_DROPS_VALUE_PATH = "#MoneyMobsDropsButtonRow #MoneyMobsDropsValue.Value";
+    private static final String MONEY_MOBS_DROPS_BUTTON_TEXT_ID = "#MoneyMobsDropsButton.Text";
+    private static final String MONEY_MOBS_DROPS_DESCRIPTION_ID = "#MoneyMobsDropsDescription.Text";
     private static final String MOB_CATEGORIES_BUTTON_PATH = "#MobCategoriesButtonRow #MobCategoriesButton";
     private static final String MOB_CATEGORIES_VALUE_PATH = "#MobCategoriesButtonRow #MobCategoriesValue.Value";
     private static final String MOB_CATEGORIES_BUTTON_TEXT_ID = "#MobCategoriesButton.Text";
@@ -68,6 +72,7 @@ public class HardcoreGeneralSettingsPage extends InteractiveCustomUIPage<Hardcor
 
         Boolean goBack = data.getGoBack();
         Boolean openBloodMoonDrops = data.getOpenBloodMoonDrops();
+        Boolean openMoneyMobsDrops = data.getOpenMoneyMobsDrops();
         Boolean openMobCategories = data.getOpenMobCategories();
         Boolean openWorldSettings = data.getOpenWorldSettings();
 
@@ -78,6 +83,11 @@ public class HardcoreGeneralSettingsPage extends InteractiveCustomUIPage<Hardcor
 
         if (Boolean.TRUE.equals(openBloodMoonDrops)) {
             openBloodMoonDrops(ref, store);
+            return;
+        }
+
+        if (Boolean.TRUE.equals(openMoneyMobsDrops)) {
+            openMoneyMobsDrops(ref, store);
             return;
         }
 
@@ -99,6 +109,8 @@ public class HardcoreGeneralSettingsPage extends InteractiveCustomUIPage<Hardcor
         commands.set(SECTION_TITLE_ID, "General Settings");
         commands.set(BLOOD_MOON_DROPS_BUTTON_TEXT_ID, "Blood Moon Drops");
         commands.set(BLOOD_MOON_DROPS_DESCRIPTION_ID, "Configure item drops during Blood Moon events");
+        commands.set(MONEY_MOBS_DROPS_BUTTON_TEXT_ID, "Money Mobs Drops");
+        commands.set(MONEY_MOBS_DROPS_DESCRIPTION_ID, "Configure money rewards for creatures and categories");
         commands.set(MOB_CATEGORIES_BUTTON_TEXT_ID, "Mob Categories");
         commands.set(MOB_CATEGORIES_DESCRIPTION_ID, "View and manage creature category assignments");
         commands.set(WORLD_SETTINGS_BUTTON_TEXT_ID, "World Settings");
@@ -122,6 +134,12 @@ public class HardcoreGeneralSettingsPage extends InteractiveCustomUIPage<Hardcor
                 MOB_CATEGORIES_VALUE_PATH
         );
         events.addEventBinding(CustomUIEventBindingType.Activating, MOB_CATEGORIES_BUTTON_PATH, mobCategoriesData, false);
+
+        EventData moneyMobsDropsData = EventData.of(
+                HardcoreGeneralSettingsPageEventData.KEY_OPEN_MONEY_MOBS_DROPS,
+                MONEY_MOBS_DROPS_VALUE_PATH
+        );
+        events.addEventBinding(CustomUIEventBindingType.Activating, MONEY_MOBS_DROPS_BUTTON_PATH, moneyMobsDropsData, false);
 
         EventData worldSettingsData = EventData.of(
                 HardcoreGeneralSettingsPageEventData.KEY_OPEN_WORLD_SETTINGS,
@@ -184,6 +202,22 @@ public class HardcoreGeneralSettingsPage extends InteractiveCustomUIPage<Hardcor
         }
 
         player.getPageManager().openCustomPage(ref, store, new HardcoreMobCategoriesPage(plugin, playerRef));
+    }
+
+    private void openMoneyMobsDrops(
+            Ref<EntityStore> ref,
+            Store<EntityStore> store
+    ) {
+        if (store == null || ref == null) {
+            return;
+        }
+
+        Player player = store.getComponent(ref, Player.getComponentType());
+        if (player == null) {
+            return;
+        }
+
+        player.getPageManager().openCustomPage(ref, store, new HardcoreMoneyMobDropsPage(plugin, playerRef));
     }
 
     private void openWorldSettings(

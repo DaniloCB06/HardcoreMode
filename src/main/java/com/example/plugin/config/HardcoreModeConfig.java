@@ -34,6 +34,8 @@ public class HardcoreModeConfig {
         public static final String KEY_BLOOD_MOON_HOSTILE_DAMAGE_MULTIPLIER = "BloodMoonHostileDamageMultiplier";
         public static final String KEY_BLOOD_MOON_XP_MULTIPLIER = "BloodMoonXpMultiplier";
         public static final String KEY_BLOOD_MOON_XP_MULTIPLIER_ENABLED = "BloodMoonXpMultiplierEnabled";
+        public static final String KEY_BLOOD_MOON_MONEY_MULTIPLIER = "BloodMoonMoneyMultiplier";
+        public static final String KEY_BLOOD_MOON_MONEY_MULTIPLIER_ENABLED = "BloodMoonMoneyMultiplierEnabled";
         public static final String KEY_BLOOD_MOON_HOSTILE_ENABLED = "BloodMoonHostileEnabled";
         public static final String KEY_BLOOD_MOON_ELITE_ENABLED = "BloodMoonEliteEnabled";
         public static final String KEY_BLOOD_MOON_ELITE_HEALTH_MULTIPLIER = "BloodMoonEliteHealthMultiplier";
@@ -228,6 +230,14 @@ public class HardcoreModeConfig {
                                         (config, value) -> config.bloodMoonXpMultiplierEnabled = value,
                                         config -> config.bloodMoonXpMultiplierEnabled)
                         .add()
+                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_MONEY_MULTIPLIER, Codec.FLOAT),
+                                        (config, value) -> config.bloodMoonMoneyMultiplier = value,
+                                        config -> config.bloodMoonMoneyMultiplier)
+                        .add()
+                        .append(new KeyedCodec<>(KEY_BLOOD_MOON_MONEY_MULTIPLIER_ENABLED, Codec.BOOLEAN),
+                                        (config, value) -> config.bloodMoonMoneyMultiplierEnabled = value,
+                                        config -> config.bloodMoonMoneyMultiplierEnabled)
+                        .add()
                         // Blood Moon Drop System Codecs
                         .append(new KeyedCodec<>(KEY_BLOOD_MOON_DROPS_ENABLED, Codec.BOOLEAN),
                                         (config, value) -> config.bloodMoonDropsEnabled = value,
@@ -353,6 +363,8 @@ public class HardcoreModeConfig {
         public float bloodMoonHostileDamageMultiplier = 2.0f;
         public float bloodMoonXpMultiplier = 2.0f;
         public boolean bloodMoonXpMultiplierEnabled = false;
+        public float bloodMoonMoneyMultiplier = 2.0f;
+        public boolean bloodMoonMoneyMultiplierEnabled = false;
         public boolean bloodMoonHostileEnabled = false;
         public boolean bloodMoonEliteEnabled = false;
         public float bloodMoonEliteHealthMultiplier = 2.0f;

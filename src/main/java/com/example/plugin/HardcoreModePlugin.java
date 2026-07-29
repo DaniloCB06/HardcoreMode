@@ -3,10 +3,13 @@ package com.example.plugin;
 import com.example.plugin.commands.HardcoreGuiCommand;
 import com.example.plugin.config.BloodMoonDropConfig;
 import com.example.plugin.config.HardcoreModeConfig;
+import com.example.plugin.config.MobMoneyDropConfig;
 import com.example.plugin.config.WorldConfigManager;
 import com.example.plugin.config.WorldHardcoreConfig;
+import com.example.plugin.money.VaultEconomyCoordinator;
 import com.example.plugin.systems.HardcoreBloodMoonDropSystem;
 import com.example.plugin.systems.HardcoreBloodMoonSystem;
+import com.example.plugin.systems.HardcoreMoneyDropSystem;
 import com.example.plugin.systems.HardcoreMobDamageSystem;
 import com.example.plugin.systems.HardcoreMobSetupSystem;
 import com.example.plugin.systems.HardcoreMobStatRefreshSystem;
@@ -54,15 +57,18 @@ public class HardcoreModePlugin extends JavaPlugin {
 
     private final Config<HardcoreModeConfig> config;
     private final BloodMoonDropConfig bloodMoonDropConfig;
+    private final MobMoneyDropConfig mobMoneyDropConfig;
     private final MobCategoryResolver mobCategoryResolver;
     private final WorldConfigManager worldConfigManager;
     private final HardcoreMobSetupSystem mobSetupSystem;
     private final HardcoreMobDamageSystem mobDamageSystem;
     private final HardcoreBloodMoonSystem bloodMoonSystem;
     private final HardcoreBloodMoonDropSystem bloodMoonDropSystem;
+    private final HardcoreMoneyDropSystem moneyDropSystem;
     private final HardcoreMobStatRefreshSystem mobStatRefreshSystem;
     private final HardcorePlayerPresenceSystem playerPresenceSystem;
     private final BloodMoonVisuals bloodMoonVisuals;
+    private final VaultEconomyCoordinator vaultEconomyCoordinator;
 
     private volatile Ref<EntityStore> cachedPlayerRef;
     private volatile Store<EntityStore> cachedPlayerStore;
@@ -89,16 +95,19 @@ public class HardcoreModePlugin extends JavaPlugin {
         super(init);
         this.config = withConfig("HardcoreMode", HardcoreModeConfig.CODEC);
         this.bloodMoonDropConfig = new BloodMoonDropConfig(getDataDirectory());
+        this.mobMoneyDropConfig = new MobMoneyDropConfig(getDataDirectory());
         this.mobCategoryResolver = new MobCategoryResolver(getDataDirectory());
         this.worldConfigManager = new WorldConfigManager(getDataDirectory(), this::getConfigData);
         this.mobSetupSystem = new HardcoreMobSetupSystem(this);
         this.mobDamageSystem = new HardcoreMobDamageSystem(this);
         this.bloodMoonSystem = new HardcoreBloodMoonSystem(this);
         this.bloodMoonDropSystem = new HardcoreBloodMoonDropSystem(this);
+        this.moneyDropSystem = new HardcoreMoneyDropSystem(this);
         this.mobStatRefreshSystem = new HardcoreMobStatRefreshSystem(this);
         this.playerPresenceSystem = new HardcorePlayerPresenceSystem(this);
         this.bloodMoonVisuals = new BloodMoonVisuals();
         this.xpMultiplierCoordinator = new XpMultiplierCoordinator(this);
+        this.vaultEconomyCoordinator = new VaultEconomyCoordinator(getName());
         instance = this;
 
         migrateLegacyWorldDefaults();
@@ -196,6 +205,14 @@ public class HardcoreModePlugin extends JavaPlugin {
         return bloodMoonDropConfig;
     }
 
+    public MobMoneyDropConfig getMobMoneyDropConfig() {
+        return mobMoneyDropConfig;
+    }
+
+    public VaultEconomyCoordinator getVaultEconomyCoordinator() {
+        return vaultEconomyCoordinator;
+    }
+
     @Override
     protected void setup() {
         normalizeConfig();
@@ -204,6 +221,7 @@ public class HardcoreModePlugin extends JavaPlugin {
         getEntityStoreRegistry().registerSystem(mobDamageSystem);
         getEntityStoreRegistry().registerSystem(bloodMoonSystem);
         getEntityStoreRegistry().registerSystem(bloodMoonDropSystem);
+        getEntityStoreRegistry().registerSystem(moneyDropSystem);
 
         registerPlayerDeathConfigSystemWithFallback();
 
@@ -374,6 +392,18 @@ public class HardcoreModePlugin extends JavaPlugin {
     // Método legacy para compatibilidade
     public float getDamageMultiplier(MobCategory category) {
         return getDamageMultiplier(cachedPlayerStore, category);
+    }
+
+    public float getMoneyMultiplier(Store<EntityStore> store) {
+        WorldHardcoreConfig worldConfig = getWorldConfig(store);
+        if (worldConfig == null || !isBloodMoonActive(store) || !worldConfig.bloodMoonMoneyMultiplierEnabled) {
+            return 1.0f;
+        }
+        return worldConfig.bloodMoonMoneyMultiplier > 0.0f ? worldConfig.bloodMoonMoneyMultiplier : 2.0f;
+    }
+
+    public float getMoneyMultiplier() {
+        return getMoneyMultiplier(cachedPlayerStore);
     }
 
     private float resolveCategoryMultiplier(WorldHardcoreConfig worldConfig, MobCategory category, boolean health) {
@@ -803,6 +833,7 @@ public class HardcoreModePlugin extends JavaPlugin {
         if (data.bloodMoonMinibossDamageMultiplier <= 0.0f) { data.bloodMoonMinibossDamageMultiplier = data.minibossDamageMultiplier; changed = true; }
         if (data.bloodMoonWorldbossHealthMultiplier <= 0.0f) { data.bloodMoonWorldbossHealthMultiplier = data.worldbossHealthMultiplier; changed = true; }
         if (data.bloodMoonWorldbossDamageMultiplier <= 0.0f) { data.bloodMoonWorldbossDamageMultiplier = data.worldbossDamageMultiplier; changed = true; }
+        if (data.bloodMoonMoneyMultiplier <= 0.0f) { data.bloodMoonMoneyMultiplier = 2.0f; changed = true; }
         if (!isValidBloodMoonDuration(data.bloodMoonDurationHours)) { data.bloodMoonDurationHours = 3; changed = true; }
 
         if (changed) {
@@ -980,6 +1011,10 @@ public class HardcoreModePlugin extends JavaPlugin {
 
     public String getXpMultiplierStatusMessage() {
         return xpMultiplierCoordinator.getStatusMessage();
+    }
+
+    public String getMoneyRewardStatusMessage() {
+        return vaultEconomyCoordinator.getStatusMessage();
     }
 
     private void syncBloodMoonXpMultiplier(String worldName, boolean active, WorldHardcoreConfig worldConfig) {

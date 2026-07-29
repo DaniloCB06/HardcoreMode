@@ -177,6 +177,14 @@ public class WorldHardcoreConfig {
                     (config, value) -> config.bloodMoonXpMultiplier = value,
                     config -> config.bloodMoonXpMultiplier)
             .add()
+            .append(new KeyedCodec<>("BloodMoonMoneyMultiplierEnabled", Codec.BOOLEAN),
+                    (config, value) -> config.bloodMoonMoneyMultiplierEnabled = value,
+                    config -> config.bloodMoonMoneyMultiplierEnabled)
+            .add()
+            .append(new KeyedCodec<>("BloodMoonMoneyMultiplier", Codec.FLOAT),
+                    (config, value) -> config.bloodMoonMoneyMultiplier = value,
+                    config -> config.bloodMoonMoneyMultiplier)
+            .add()
             // Blood Moon Drops
             .append(new KeyedCodec<>("BloodMoonDropsEnabled", Codec.BOOLEAN),
                     (config, value) -> config.bloodMoonDropsEnabled = value,
@@ -268,6 +276,8 @@ public class WorldHardcoreConfig {
     // Blood Moon XP
     public boolean bloodMoonXpMultiplierEnabled = false;
     public float bloodMoonXpMultiplier = 2.0f;
+    public boolean bloodMoonMoneyMultiplierEnabled = false;
+    public float bloodMoonMoneyMultiplier = 2.0f;
 
     // Blood Moon Drops
     public boolean bloodMoonDropsEnabled = false;
@@ -349,6 +359,8 @@ public class WorldHardcoreConfig {
 
         this.bloodMoonXpMultiplierEnabled = global.bloodMoonXpMultiplierEnabled;
         this.bloodMoonXpMultiplier = global.bloodMoonXpMultiplier;
+        this.bloodMoonMoneyMultiplierEnabled = global.bloodMoonMoneyMultiplierEnabled;
+        this.bloodMoonMoneyMultiplier = global.bloodMoonMoneyMultiplier;
         this.bloodMoonDropsEnabled = global.bloodMoonDropsEnabled;
 
         this.playerDeathSettingsEnabled = global.playerDeathSettingsEnabled;
@@ -410,9 +422,11 @@ public class WorldHardcoreConfig {
         this.bloodMoonEliteDamageMultiplier = other.bloodMoonEliteDamageMultiplier;
         this.bloodMoonMinibossDamageMultiplier = other.bloodMoonMinibossDamageMultiplier;
         this.bloodMoonWorldbossDamageMultiplier = other.bloodMoonWorldbossDamageMultiplier;
-        
+
         this.bloodMoonXpMultiplierEnabled = other.bloodMoonXpMultiplierEnabled;
         this.bloodMoonXpMultiplier = other.bloodMoonXpMultiplier;
+        this.bloodMoonMoneyMultiplierEnabled = other.bloodMoonMoneyMultiplierEnabled;
+        this.bloodMoonMoneyMultiplier = other.bloodMoonMoneyMultiplier;
         this.bloodMoonDropsEnabled = other.bloodMoonDropsEnabled;
         
         this.playerDeathSettingsEnabled = other.playerDeathSettingsEnabled;

@@ -1,0 +1,348 @@
+$C = "../Common.ui";
+
+$C.@PageOverlay {}
+
+$C.@Container {
+  Anchor: (Width: 1260, Height: 1020);
+
+  #Title {
+    Group {
+      $C.@Title #PageTitle {
+        @Text = "Hardcore Mode";
+      }
+    }
+  }
+
+  #Content {
+    LayoutMode: Top;
+    Padding: (Left: 24, Right: 24, Top: 12, Bottom: 12);
+
+    Label #SectionTitle {
+      Style: (
+        FontSize: 22,
+        RenderBold: true,
+        TextColor: #d3d6db,
+        VerticalAlignment: Center,
+        HorizontalAlignment: Center
+      );
+      Anchor: (Bottom: 8);
+      Text: "Money Mobs Drops";
+    }
+
+    Label #WarningText {
+      Style: (
+        FontSize: 12,
+        TextColor: #ff9944,
+        VerticalAlignment: Center,
+        HorizontalAlignment: Center
+      );
+      Anchor: (Bottom: 12);
+      Text: "VaultUnlocked status";
+    }
+
+    Group #MoneyDropsCard {
+      LayoutMode: Left;
+      Background: (Color: #101d2d);
+      Padding: (Left: 14, Right: 14, Top: 10, Bottom: 10);
+      Anchor: (Bottom: 12);
+
+      Group {
+        LayoutMode: Top;
+        FlexWeight: 1;
+        Padding: (Right: 16);
+
+        Label #MoneyDropsLabel {
+          Anchor: (Bottom: 4);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 16, RenderBold: true, TextColor: #dce4ef, VerticalAlignment: Center);
+          Text: "Money Drops: ON";
+        }
+
+        Label #MoneyDropsDescription {
+          Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #9eb0c6, VerticalAlignment: Center);
+          Text: "Enable or disable all creature money rewards, including Blood Moon bonuses.";
+        }
+      }
+
+      $C.@CheckBox #MoneyDropsToggle {
+        Anchor: (Width: 24, Height: 24);
+        Value: true;
+      }
+    }
+
+    Group #CategorySection {
+      LayoutMode: Top;
+      Anchor: (Bottom: 10);
+
+      Label #CategorySectionTitle {
+        Anchor: (Bottom: 6);
+        Style: (...$C.@DefaultLabelStyle, FontSize: 15, RenderBold: true, TextColor: #d3d6db, VerticalAlignment: Center);
+        Text: "Category Defaults";
+      }
+
+      Group #CategoryHeaderRow {
+        LayoutMode: Left;
+        Padding: (Left: 8, Right: 8, Top: 8, Bottom: 8);
+        Background: (Color: #162336);
+        Anchor: (Bottom: 2);
+
+        Label #HeaderCategory {
+          Anchor: (Width: 140);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #d3d6db, VerticalAlignment: Center);
+          Text: "Category";
+        }
+
+        Label #HeaderInfo {
+          FlexWeight: 1;
+          Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #d3d6db, VerticalAlignment: Center);
+          Text: "Default Money";
+        }
+
+        Label #HeaderActions {
+          Anchor: (Width: 180);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #d3d6db, HorizontalAlignment: Center, VerticalAlignment: Center);
+          Text: "Actions";
+        }
+      }
+
+      Group #CategoryList {
+        LayoutMode: Top;
+        Background: (Color: #0a1420);
+        Padding: (Full: 2);
+      }
+    }
+
+    Group #FiltersContainer {
+      LayoutMode: Left;
+      Padding: (Left: 8, Right: 8, Top: 6, Bottom: 6);
+      Background: (Color: #0d1a2b);
+      Anchor: (Bottom: 8);
+
+      Label #SearchLabel {
+        Anchor: (Width: 55);
+        Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #a8b5c9, VerticalAlignment: Center);
+        Text: "Search:";
+      }
+
+      TextField #SearchInput {
+        Anchor: (Width: 210, Height: 28, Right: 10);
+        PlaceholderText: "Mob pattern...";
+        Padding: (Top: 6, Bottom: 6, Left: 10, Right: 10);
+        Background: (Color: #1a2433);
+      }
+
+      Label #FilterByCategoryLabel {
+        Anchor: (Width: 70);
+        Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #a8b5c9, VerticalAlignment: Center);
+        Text: "Filter:";
+      }
+
+      $C.@SmallSecondaryTextButton #FilterAllButton {
+        Anchor: (Width: 60, Height: 26, Left: 4);
+        Text: "All";
+      }
+
+      $C.@CheckBox #FilterAllValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      $C.@SmallSecondaryTextButton #FilterPassiveButton {
+        Anchor: (Width: 80, Height: 26, Left: 4);
+        Text: "Passive";
+      }
+
+      $C.@CheckBox #FilterPassiveValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      $C.@SmallSecondaryTextButton #FilterCritterButton {
+        Anchor: (Width: 75, Height: 26, Left: 4);
+        Text: "Critter";
+      }
+
+      $C.@CheckBox #FilterCritterValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      $C.@SmallSecondaryTextButton #FilterHostileButton {
+        Anchor: (Width: 75, Height: 26, Left: 4);
+        Text: "Hostile";
+      }
+
+      $C.@CheckBox #FilterHostileValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      $C.@SmallSecondaryTextButton #FilterEliteButton {
+        Anchor: (Width: 60, Height: 26, Left: 4);
+        Text: "Elite";
+      }
+
+      $C.@CheckBox #FilterEliteValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      $C.@SmallSecondaryTextButton #FilterMinibossButton {
+        Anchor: (Width: 90, Height: 26, Left: 4);
+        Text: "Miniboss";
+      }
+
+      $C.@CheckBox #FilterMinibossValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      $C.@SmallSecondaryTextButton #FilterWorldbossButton {
+        Anchor: (Width: 100, Height: 26, Left: 4);
+        Text: "Worldboss";
+      }
+
+      $C.@CheckBox #FilterWorldbossValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+    }
+
+    Group #TableContainer {
+      LayoutMode: Top;
+      Padding: (Top: 4);
+
+      Group #HeaderRow {
+        LayoutMode: Left;
+        Padding: (Left: 8, Right: 8, Top: 8, Bottom: 8);
+        Background: (Color: #162336);
+        Anchor: (Bottom: 2);
+
+        Label #HeaderMobPattern {
+          FlexWeight: 1;
+          Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #d3d6db, VerticalAlignment: Center);
+          Text: "Mob ID (Pattern)";
+        }
+
+        Label #HeaderCategory {
+          Anchor: (Width: 120);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #d3d6db, HorizontalAlignment: Center, VerticalAlignment: Center);
+          Text: "Category";
+        }
+
+        Label #HeaderMoney {
+          Anchor: (Width: 110);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #d3d6db, HorizontalAlignment: Center, VerticalAlignment: Center);
+          Text: "Money";
+        }
+
+        Label #HeaderActions {
+          Anchor: (Width: 180);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #d3d6db, HorizontalAlignment: Center, VerticalAlignment: Center);
+          Text: "Actions";
+        }
+      }
+
+      Group #ItemsList {
+        LayoutMode: Top;
+        Background: (Color: #0a1420);
+        Padding: (Full: 2);
+      }
+    }
+
+    Group #Spacer {
+      FlexWeight: 1;
+    }
+
+    Group #PaginationContainer {
+      LayoutMode: Left;
+      Padding: (Top: 12, Bottom: 8);
+
+      $C.@SmallSecondaryTextButton #PrevPageButton {
+        Anchor: (Width: 120, Height: 30);
+        Text: "< Previous";
+      }
+
+      $C.@CheckBox #PrevPageValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      Group {
+        FlexWeight: 1;
+      }
+
+      Label #PageInfoLabel {
+        Anchor: (Width: 200);
+        Style: (...$C.@DefaultLabelStyle, FontSize: 14, TextColor: #d3d6db, HorizontalAlignment: Center, VerticalAlignment: Center);
+        Text: "Page 1 of 1";
+      }
+
+      Group {
+        FlexWeight: 1;
+      }
+
+      $C.@SmallSecondaryTextButton #NextPageButton {
+        Anchor: (Width: 120, Height: 30);
+        Text: "Next >";
+      }
+
+      $C.@CheckBox #NextPageValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+    }
+
+    Label #ResultsCountLabel {
+      Style: (
+        FontSize: 13,
+        TextColor: #a8b5c9,
+        VerticalAlignment: Center,
+        HorizontalAlignment: Center
+      );
+      Anchor: (Bottom: 8);
+      Text: "Showing 0 entries";
+    }
+
+    Group #BottomButtonsContainer {
+      LayoutMode: Left;
+      Anchor: (Top: 4);
+
+      $C.@SmallSecondaryTextButton #BackButton {
+        Anchor: (Width: 110, Height: 32);
+        Text: "Back";
+      }
+
+      $C.@CheckBox #BackValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      Group {
+        FlexWeight: 1;
+      }
+
+      $C.@SmallSecondaryTextButton #ReloadButton {
+        Anchor: (Width: 160, Height: 32);
+        Text: "Reload Config";
+      }
+
+      $C.@CheckBox #ReloadValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+    }
+  }
+}
+
+$C.@BackButton {}

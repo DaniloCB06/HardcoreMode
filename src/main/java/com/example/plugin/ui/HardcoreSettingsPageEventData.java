@@ -38,6 +38,8 @@ public class HardcoreSettingsPageEventData {
     public static final String KEY_BLOOD_MOON_HOSTILE_DAMAGE = "@BloodMoonHostileDamageMultiplier";
     public static final String KEY_BLOOD_MOON_XP_MULTIPLIER = "@BloodMoonXpMultiplier";
     public static final String KEY_BLOOD_MOON_XP_MULTIPLIER_ENABLED = "@BloodMoonXpMultiplierEnabled";
+    public static final String KEY_BLOOD_MOON_MONEY_MULTIPLIER = "@BloodMoonMoneyMultiplier";
+    public static final String KEY_BLOOD_MOON_MONEY_MULTIPLIER_ENABLED = "@BloodMoonMoneyMultiplierEnabled";
     public static final String KEY_BLOOD_MOON_HOSTILE_ENABLED = "@BloodMoonHostileEnabled";
     public static final String KEY_BLOOD_MOON_ELITE_ENABLED = "@BloodMoonEliteEnabled";
     public static final String KEY_BLOOD_MOON_ELITE_HEALTH = "@BloodMoonEliteHealthMultiplier";
@@ -237,6 +239,14 @@ public class HardcoreSettingsPageEventData {
                     (data, value) -> data.bloodMoonXpMultiplierEnabled = value,
                     data -> data.bloodMoonXpMultiplierEnabled)
             .add()
+            .append(new KeyedCodec<>(KEY_BLOOD_MOON_MONEY_MULTIPLIER, Codec.FLOAT),
+                    (data, value) -> data.bloodMoonMoneyMultiplier = value,
+                    data -> data.bloodMoonMoneyMultiplier)
+            .add()
+            .append(new KeyedCodec<>(KEY_BLOOD_MOON_MONEY_MULTIPLIER_ENABLED, Codec.BOOLEAN),
+                    (data, value) -> data.bloodMoonMoneyMultiplierEnabled = value,
+                    data -> data.bloodMoonMoneyMultiplierEnabled)
+            .add()
             .append(new KeyedCodec<>(KEY_BLOOD_MOON_FORCE, Codec.BOOLEAN),
                     (data, value) -> data.bloodMoonForce = value,
                     data -> data.bloodMoonForce)
@@ -305,6 +315,8 @@ public class HardcoreSettingsPageEventData {
     private Float bloodMoonHostileDamageMultiplier;
     private Float bloodMoonXpMultiplier;
     private Boolean bloodMoonXpMultiplierEnabled;
+    private Float bloodMoonMoneyMultiplier;
+    private Boolean bloodMoonMoneyMultiplierEnabled;
     private Boolean bloodMoonHostileEnabled;
     private Boolean bloodMoonEliteEnabled;
     private Float bloodMoonEliteHealthMultiplier;
@@ -459,6 +471,14 @@ public class HardcoreSettingsPageEventData {
 
     public Boolean getBloodMoonXpMultiplierEnabled() {
         return bloodMoonXpMultiplierEnabled;
+    }
+
+    public Float getBloodMoonMoneyMultiplier() {
+        return bloodMoonMoneyMultiplier;
+    }
+
+    public Boolean getBloodMoonMoneyMultiplierEnabled() {
+        return bloodMoonMoneyMultiplierEnabled;
     }
 
     public Boolean getBloodMoonHostileEnabled() {

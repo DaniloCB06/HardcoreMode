@@ -12,7 +12,8 @@
   "Main": "com.example.plugin.HardcoreModePlugin",
   "OptionalDependencies": {
     "Zuxaw:RPGLeveling": "*",
-    "Airijko:EndlessLevelingCore": "*"
+    "Airijko:EndlessLevelingCore": "*",
+    "TheNewEconomy:VaultUnlocked": "*"
   },
   "IncludesAssetPack": true
 }

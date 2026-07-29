@@ -13,21 +13,23 @@
 - **Personalized Loot Tables**: Configure custom item drops for each category during Blood Moon
 - **Mod Integrations**:
   - **RPGLeveling**: Link XP distribution during Blood Moon events
+  - **EndlessLeveling**: Link XP distribution during Blood Moon events
 - **In-Game GUI**: Complete configuration interface with real-time changes
 - **Player Death Penalties**: Configurable item loss and durability penalties
 - **Multiplayer Optimized**: Thread-safe and fully compatible with multiplayer servers
 
 ---
 
-## ⚠️ Update 3.2.0 (Summary) ⚠️
+## ⚠️ Update 4.0.0 (Summary) ⚠️
 
-- **Per-world Blood Moon visuals**: red ambience + red moon (and sun) only appear in worlds where Blood Moon is active, with proper cleanup when switching worlds
-- **Ambient music**: Trork camp music plays during Blood Moon (when available) *(not working for now...)*
-- **Per-world defaults**: new worlds start with HardcoreMode disabled and now inherit the global `HardcoreMode.json` values as a template  
-  *(If the file isn’t showing up, enable HardcoreMode in one of your existing worlds and the file will be created. Then just configure it however you prefer and restart the server/world.)*
-- **GUI Blood Moon Drops / Mob Categories**: added Add/Remove pages with confirmation and fixed editing fields (quantity/chance as text with +/-)
-- **Layout and UX**: spacing/size adjustments on category pages and world name highlight in section titles
-- **HUD**: removed the old progress bar
+- **Updated for Hytale Early Access 0.5.7**: the mod has been refreshed for the newest Hytale version
+- **Proper target version support**: HardcoreMode now reports its compatibility correctly in the Hytale mods menu
+- **Mod icon support**: the mod now displays its icon correctly in the mods tab
+- **Blood Moon Drops toggle fixed**: Blood Moon drops now only happen when the option is actually enabled
+- **Blood Moon category drops fixed**: creatures defeated during Blood Moon now correctly drop the items configured for their category
+- **Expanded XP Multiplier integration**: Blood Moon XP multiplier now works with **RPGLeveling** or **EndlessLeveling**
+- **XP mod conflict warning**: if both leveling mods are installed at the same time, HardcoreMode now shows a clear warning in the setup
+- **Blood Moon stability improvements**: improved compatibility and behavior when Blood Moon starts and ends with supported XP mods
 
 ---
 
@@ -61,6 +63,10 @@ Sorry for the inconvenience, but this change is required so per-world settings c
 
 - **RPGLeveling Mod**: Custom XP multipliers during Blood Moon events. Automatically detected.  
   (https://www.curseforge.com/hytale/mods/rpg-leveling-and-stats)
+- **EndlessLeveling Mod**: Custom XP multipliers during Blood Moon events. Automatically detected.
+  (https://www.curseforge.com/hytale/mods/endlessleveling)
+  
+  *[Use only one XP leveling mod at a time for the setup to work correctly.]*
 
 ---
 
@@ -146,7 +152,7 @@ Configure the periodic Blood Moon event with advanced options:
 
 **Special Features**:
 
-- **XP Multiplier**: Bonus XP during Blood Moon (requires RPGLeveling mod)
+- **XP Multiplier**: Bonus XP during Blood Moon (requires **RPGLeveling** or **EndlessLeveling**)
 - **Force Blood Moon**: Manually trigger the event immediately (cooldown decreases every hour)
 - **Death Player Settings**: Increased penalties during Blood Moon
   - Item Durability Loss (%)
@@ -318,7 +324,7 @@ These settings are still **global** (shared across all worlds):
 
 - **Creature settings and categories** (classification and category rules)
 - **Blood Moon drops configuration**
-- **XP multiplier integration** (active when the **RPGLeveling** mod is detected) is **global** and affects **all worlds** =C
+- **XP multiplier integration** (active when **RPGLeveling** or **EndlessLeveling** is detected) is **global** and affects **all worlds** =C
 
 ---
 

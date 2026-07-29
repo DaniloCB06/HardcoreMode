@@ -1,0 +1,40 @@
+$C = "../Common.ui";
+
+Group {
+  LayoutMode: Left;
+  Padding: (Left: 8, Right: 8, Top: 6, Bottom: 6);
+  Background: (Color: #0d1a2b);
+  Anchor: (Bottom: 1);
+
+  Label #Category {
+    Anchor: (Width: 140);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #dce4ef, VerticalAlignment: Center);
+  }
+
+  Label #Amount {
+    FlexWeight: 1;
+    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #b8c8d8, VerticalAlignment: Center);
+  }
+
+  $C.@SmallSecondaryTextButton #EditButton {
+    Anchor: (Width: 80, Height: 24, Left: 8);
+    Text: "Edit";
+  }
+
+  $C.@CheckBox #EditValue {
+    Anchor: (Width: 0, Height: 0);
+    Visible: false;
+    Value: true;
+  }
+
+  $C.@SmallSecondaryTextButton #ClearButton {
+    Anchor: (Width: 80, Height: 24, Left: 8);
+    Text: "Clear";
+  }
+
+  $C.@CheckBox #ClearValue {
+    Anchor: (Width: 0, Height: 0);
+    Visible: false;
+    Value: true;
+  }
+}
