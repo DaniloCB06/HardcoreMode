@@ -184,7 +184,7 @@ public class HardcoreEditMoneyDropPage extends InteractiveCustomUIPage<HardcoreE
             return;
         }
 
-        plugin.getMobMoneyDropConfig().setMobAmount(targetPattern, amount);
+        plugin.getMobMoneyDropConfig().setMobAmount(targetPattern, targetCategory, amount);
     }
 
     private void handleAdjustAction(String action) {

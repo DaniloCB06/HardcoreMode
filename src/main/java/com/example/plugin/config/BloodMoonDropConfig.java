@@ -198,6 +198,15 @@ public class BloodMoonDropConfig {
             if (parent != null && !Files.exists(parent)) {
                 Files.createDirectories(parent);
             }
+
+            try (InputStream stream = BloodMoonDropConfig.class.getClassLoader()
+                    .getResourceAsStream(JSON_FILE)) {
+                if (stream != null) {
+                    Files.writeString(jsonPath, new String(stream.readAllBytes(), StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+                    return;
+                }
+            }
+
             Files.writeString(jsonPath, getDefaultJsonContent(), StandardCharsets.UTF_8);
         } catch (IOException ignored) {
         }

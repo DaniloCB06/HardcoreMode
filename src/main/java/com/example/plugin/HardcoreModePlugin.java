@@ -95,8 +95,8 @@ public class HardcoreModePlugin extends JavaPlugin {
         super(init);
         this.config = withConfig("HardcoreMode", HardcoreModeConfig.CODEC);
         this.bloodMoonDropConfig = new BloodMoonDropConfig(getDataDirectory());
-        this.mobMoneyDropConfig = new MobMoneyDropConfig(getDataDirectory());
         this.mobCategoryResolver = new MobCategoryResolver(getDataDirectory());
+        this.mobMoneyDropConfig = new MobMoneyDropConfig(getDataDirectory(), this.mobCategoryResolver);
         this.worldConfigManager = new WorldConfigManager(getDataDirectory(), this::getConfigData);
         this.mobSetupSystem = new HardcoreMobSetupSystem(this);
         this.mobDamageSystem = new HardcoreMobDamageSystem(this);

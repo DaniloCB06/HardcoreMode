@@ -137,5 +137,8 @@ val validateModIcon by tasks.registering {
 tasks.processResources {
     dependsOn(validateModIcon)
     from("Category_Mobs.txt")
+    from("HardcoreModeCategories.json")
+    from("HardcoreModeBloodMoonDrops.json")
+    from("HardcoreModeMoneyMobsDrops.json")
     from("icon-256.png")
 }

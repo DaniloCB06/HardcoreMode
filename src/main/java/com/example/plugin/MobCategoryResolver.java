@@ -24,6 +24,10 @@ public class MobCategoryResolver {
             Pattern.CASE_INSENSITIVE | Pattern.DOTALL
     );
     private static final Pattern ENTRY_PATTERN = Pattern.compile("\"([^\"]+)\"");
+    private static final Pattern JSON_CATEGORY_SECTION_PATTERN = Pattern.compile(
+            "\\{\\s*\"category\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"mobs\"\\s*:\\s*\\[(.*?)]\\s*}",
+            Pattern.CASE_INSENSITIVE | Pattern.DOTALL
+    );
     private static final Pattern JSON_ENTRY_PATTERN = Pattern.compile(
             "\\{\\s*\"category\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"pattern\"\\s*:\\s*\"([^\"]+)\"\\s*}",
             Pattern.CASE_INSENSITIVE | Pattern.DOTALL
@@ -41,6 +45,7 @@ public class MobCategoryResolver {
         this.dataDirectory = dataDirectory;
         this.jsonPath = resolveJsonPath();
         this.patterns = new ArrayList<>();
+        ensureDefaultJsonExists();
         loadPatterns();
     }
 
@@ -109,6 +114,28 @@ public class MobCategoryResolver {
             entries.add(new CategoryEntry(p.category, p.rawPattern));
         }
         return Collections.unmodifiableList(entries);
+    }
+
+    public java.util.Map<MobCategory, List<String>> getEntriesByCategory() {
+        java.util.Map<MobCategory, List<String>> grouped = new java.util.LinkedHashMap<>();
+        for (MobCategory category : MobCategory.values()) {
+            if (category != MobCategory.NONE) {
+                grouped.put(category, new ArrayList<>());
+            }
+        }
+
+        for (CategoryPattern entry : patterns) {
+            List<String> values = grouped.get(entry.category);
+            if (values != null) {
+                values.add(entry.rawPattern);
+            }
+        }
+
+        java.util.Map<MobCategory, List<String>> result = new java.util.LinkedHashMap<>();
+        for (java.util.Map.Entry<MobCategory, List<String>> entry : grouped.entrySet()) {
+            result.put(entry.getKey(), Collections.unmodifiableList(entry.getValue()));
+        }
+        return Collections.unmodifiableMap(result);
     }
 
     public void reload() {
@@ -182,6 +209,65 @@ public class MobCategoryResolver {
     }
 
     private List<CategoryPattern> buildPatternsFromJson(String json) {
+        List<CategoryPattern> grouped = buildPatternsFromGroupedJson(json);
+        if (!grouped.isEmpty()) {
+            return grouped;
+        }
+
+        return buildPatternsFromLegacyJson(json);
+    }
+
+    private void ensureDefaultJsonExists() {
+        if (jsonPath == null || Files.isRegularFile(jsonPath)) {
+            return;
+        }
+
+        try {
+            Path parent = jsonPath.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+
+            try (InputStream stream = MobCategoryResolver.class.getClassLoader()
+                    .getResourceAsStream(JSON_CLASSIFICATION_FILE)) {
+                if (stream != null) {
+                    Files.writeString(jsonPath, new String(stream.readAllBytes(), StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+                    return;
+                }
+            }
+
+            String sourceText = loadClassificationText();
+            List<CategoryPattern> loaded = buildPatternsFromText(sourceText);
+            writeJsonSnapshot(loaded);
+        } catch (IOException ignored) {
+        }
+    }
+
+    private List<CategoryPattern> buildPatternsFromGroupedJson(String json) {
+        List<CategoryPattern> result = new ArrayList<>();
+        if (json == null || json.isEmpty()) {
+            return result;
+        }
+
+        Matcher matcher = JSON_CATEGORY_SECTION_PATTERN.matcher(json);
+        int order = 0;
+        while (matcher.find()) {
+            MobCategory category = MobCategory.fromFileKey(matcher.group(1));
+            if (category == MobCategory.NONE) {
+                continue;
+            }
+
+            Matcher entryMatcher = ENTRY_PATTERN.matcher(matcher.group(2));
+            while (entryMatcher.find()) {
+                String rawPattern = entryMatcher.group(1);
+                Pattern regex = compileGlob(rawPattern);
+                result.add(new CategoryPattern(category, rawPattern, regex, order++));
+            }
+        }
+        return result;
+    }
+
+    private List<CategoryPattern> buildPatternsFromLegacyJson(String json) {
         List<CategoryPattern> result = new ArrayList<>();
         if (json == null || json.isEmpty()) {
             return result;
@@ -271,15 +357,40 @@ public class MobCategoryResolver {
 
     private String serializeToJson(List<CategoryPattern> loaded) {
         StringBuilder sb = new StringBuilder();
-        sb.append("{\n  \"entries\": [\n");
-        for (int i = 0; i < loaded.size(); i++) {
-            CategoryPattern p = loaded.get(i);
-            sb.append("    {\"category\": \"")
-                    .append(escapeJson(p.category.name()))
-                    .append("\", \"pattern\": \"")
-                    .append(escapeJson(p.rawPattern))
-                    .append("\"}");
-            if (i < loaded.size() - 1) {
+        sb.append("{\n");
+        sb.append("  \"description\": \"Mob categories grouped by the same structure used in Category_Mobs.txt.\",\n");
+        sb.append("  \"categories\": [\n");
+
+        java.util.Map<MobCategory, List<String>> grouped = new java.util.LinkedHashMap<>();
+        for (MobCategory category : MobCategory.values()) {
+            if (category != MobCategory.NONE) {
+                grouped.put(category, new ArrayList<>());
+            }
+        }
+        for (CategoryPattern pattern : loaded) {
+            List<String> values = grouped.get(pattern.category);
+            if (values != null) {
+                values.add(pattern.rawPattern);
+            }
+        }
+
+        List<MobCategory> orderedCategories = new ArrayList<>(grouped.keySet());
+        for (int i = 0; i < orderedCategories.size(); i++) {
+            MobCategory category = orderedCategories.get(i);
+            List<String> mobs = grouped.get(category);
+            sb.append("    {\n");
+            sb.append("      \"category\": \"").append(escapeJson(category.getFileKey())).append("\",\n");
+            sb.append("      \"mobs\": [\n");
+            for (int j = 0; j < mobs.size(); j++) {
+                sb.append("        \"").append(escapeJson(mobs.get(j))).append("\"");
+                if (j < mobs.size() - 1) {
+                    sb.append(",");
+                }
+                sb.append("\n");
+            }
+            sb.append("      ]\n");
+            sb.append("    }");
+            if (i < orderedCategories.size() - 1) {
                 sb.append(",");
             }
             sb.append("\n");

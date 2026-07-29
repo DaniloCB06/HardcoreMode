@@ -1,10 +1,12 @@
 package com.example.plugin.config;
 
 import com.example.plugin.MobCategory;
+import com.example.plugin.MobCategoryResolver;
 import com.hypixel.hytale.server.npc.entities.NPCEntity;
 import com.hypixel.hytale.server.npc.role.Role;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,27 +25,40 @@ import java.util.regex.Pattern;
 
 public class MobMoneyDropConfig {
     private static final String JSON_FILE = "HardcoreModeMoneyMobsDrops.json";
+    private static final String LEGACY_GROUPED_JSON_FILE = "HardcoreModeMoneyMobsDropsByCategory.json";
+
     private static final Pattern ENABLED_PATTERN = Pattern.compile(
             "\"enabled\"\\s*:\\s*(true|false)",
             Pattern.CASE_INSENSITIVE
     );
-
-    private static final Pattern CATEGORY_ENTRY_PATTERN = Pattern.compile(
+    private static final Pattern GROUPED_CATEGORY_PATTERN = Pattern.compile(
+            "\\{\\s*\"category\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"defaultAmount\"\\s*:\\s*([-]?[\\d.]+)\\s*,\\s*\"mobs\"\\s*:\\s*\\[(.*?)]\\s*}",
+            Pattern.CASE_INSENSITIVE | Pattern.DOTALL
+    );
+    private static final Pattern GROUPED_MOB_PATTERN = Pattern.compile(
+            "\\{\\s*\"pattern\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"amount\"\\s*:\\s*([-]?[\\d.]+)\\s*,\\s*\"override\"\\s*:\\s*(true|false)\\s*}",
+            Pattern.CASE_INSENSITIVE | Pattern.DOTALL
+    );
+    private static final Pattern LEGACY_CATEGORY_ENTRY_PATTERN = Pattern.compile(
             "\\{\\s*\"category\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"amount\"\\s*:\\s*([-]?[\\d.]+)\\s*}",
             Pattern.CASE_INSENSITIVE | Pattern.DOTALL
     );
-    private static final Pattern MOB_ENTRY_PATTERN = Pattern.compile(
+    private static final Pattern LEGACY_MOB_ENTRY_PATTERN = Pattern.compile(
             "\\{\\s*\"pattern\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"amount\"\\s*:\\s*([-]?[\\d.]+)\\s*}",
             Pattern.CASE_INSENSITIVE | Pattern.DOTALL
     );
 
     private final Map<MobCategory, Double> categoryAmounts = new EnumMap<>(MobCategory.class);
     private final Map<String, MoneyPatternEntry> mobEntries = new LinkedHashMap<>();
+    private final MobCategoryResolver categoryResolver;
     private final Path jsonPath;
-    private boolean enabled = true;
+    private final Path legacyGroupedJsonPath;
+    private boolean enabled = false;
 
-    public MobMoneyDropConfig(Path dataDirectory) {
+    public MobMoneyDropConfig(Path dataDirectory, MobCategoryResolver categoryResolver) {
+        this.categoryResolver = categoryResolver;
         this.jsonPath = dataDirectory != null ? dataDirectory.resolve(JSON_FILE) : Path.of(JSON_FILE);
+        this.legacyGroupedJsonPath = dataDirectory != null ? dataDirectory.resolve(LEGACY_GROUPED_JSON_FILE) : Path.of(LEGACY_GROUPED_JSON_FILE);
         initializeDefaults();
         ensureDefaultConfigExists();
         reload();
@@ -52,19 +67,24 @@ public class MobMoneyDropConfig {
     public synchronized void reload() {
         initializeDefaults();
         mobEntries.clear();
-        enabled = true;
+        enabled = false;
 
-        if (!Files.isRegularFile(jsonPath)) {
+        Path sourcePath = selectPreferredSourcePath();
+        if (sourcePath == null || !Files.isRegularFile(sourcePath)) {
+            saveToJson();
             return;
         }
 
         try {
-            String content = Files.readString(jsonPath, StandardCharsets.UTF_8);
+            String content = Files.readString(sourcePath, StandardCharsets.UTF_8);
             loadEnabled(content);
-            loadCategories(content);
-            loadMobEntries(content);
+            if (!loadGroupedContent(content)) {
+                loadLegacyContent(content);
+            }
         } catch (IOException ignored) {
         }
+
+        saveToJson();
     }
 
     public synchronized boolean isEnabled() {
@@ -118,11 +138,18 @@ public class MobMoneyDropConfig {
     }
 
     public synchronized void setMobAmount(String pattern, double amount) {
+        setMobAmount(pattern, inferCategoryForPattern(pattern), amount);
+    }
+
+    public synchronized void setMobAmount(String pattern, MobCategory category, double amount) {
         String normalized = normalizePattern(pattern);
         if (normalized == null) {
             return;
         }
-        mobEntries.put(normalized, new MoneyPatternEntry(normalized, sanitizeAmount(amount), mobEntries.size()));
+        mobEntries.put(
+                normalized,
+                new MoneyPatternEntry(normalized, sanitizeAmount(amount), mobEntries.size(), normalizeCategory(category))
+        );
         saveToJson();
     }
 
@@ -189,7 +216,7 @@ public class MobMoneyDropConfig {
     public synchronized List<MobMoneyEntry> getMobEntries() {
         List<MobMoneyEntry> entries = new ArrayList<>();
         for (MoneyPatternEntry entry : mobEntries.values()) {
-            entries.add(new MobMoneyEntry(entry.rawPattern, sanitizeAmount(entry.amount)));
+            entries.add(new MobMoneyEntry(entry.rawPattern, sanitizeAmount(entry.amount), entry.category));
         }
         return Collections.unmodifiableList(entries);
     }
@@ -203,7 +230,7 @@ public class MobMoneyDropConfig {
     }
 
     private void ensureDefaultConfigExists() {
-        if (Files.isRegularFile(jsonPath)) {
+        if (Files.isRegularFile(jsonPath) || Files.isRegularFile(legacyGroupedJsonPath)) {
             return;
         }
 
@@ -212,13 +239,59 @@ public class MobMoneyDropConfig {
             if (parent != null) {
                 Files.createDirectories(parent);
             }
-            Files.writeString(jsonPath, getDefaultJsonContent(), StandardCharsets.UTF_8);
+
+            try (InputStream stream = MobMoneyDropConfig.class.getClassLoader().getResourceAsStream(JSON_FILE)) {
+                if (stream != null) {
+                    Files.writeString(jsonPath, new String(stream.readAllBytes(), StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+                    return;
+                }
+            }
         } catch (IOException ignored) {
         }
+
+        saveToJson();
     }
 
-    private void loadCategories(String content) {
-        Matcher matcher = CATEGORY_ENTRY_PATTERN.matcher(content);
+    private boolean loadGroupedContent(String content) {
+        Matcher categoryMatcher = GROUPED_CATEGORY_PATTERN.matcher(content);
+        int order = 0;
+        boolean found = false;
+
+        while (categoryMatcher.find()) {
+            found = true;
+            MobCategory category = MobCategory.fromFileKey(categoryMatcher.group(1));
+            if (category == MobCategory.NONE) {
+                continue;
+            }
+
+            double defaultAmount = sanitizeAmount(parseAmount(categoryMatcher.group(2)));
+            categoryAmounts.put(category, defaultAmount);
+
+            Matcher mobMatcher = GROUPED_MOB_PATTERN.matcher(categoryMatcher.group(3));
+            while (mobMatcher.find()) {
+                String pattern = normalizePattern(mobMatcher.group(1));
+                if (pattern == null) {
+                    continue;
+                }
+
+                double amount = sanitizeAmount(parseAmount(mobMatcher.group(2)));
+                boolean override = Boolean.parseBoolean(mobMatcher.group(3).toLowerCase(Locale.US));
+                if (override) {
+                    mobEntries.put(pattern, new MoneyPatternEntry(pattern, amount, order++, category));
+                }
+            }
+        }
+
+        return found;
+    }
+
+    private void loadLegacyContent(String content) {
+        loadLegacyCategories(content);
+        loadLegacyMobEntries(content);
+    }
+
+    private void loadLegacyCategories(String content) {
+        Matcher matcher = LEGACY_CATEGORY_ENTRY_PATTERN.matcher(content);
         while (matcher.find()) {
             MobCategory category = MobCategory.fromFileKey(matcher.group(1));
             if (category == MobCategory.NONE) {
@@ -228,22 +301,30 @@ public class MobMoneyDropConfig {
         }
     }
 
-    private void loadEnabled(String content) {
-        Matcher matcher = ENABLED_PATTERN.matcher(content);
-        if (matcher.find()) {
-            enabled = Boolean.parseBoolean(matcher.group(1).toLowerCase(Locale.US));
-        }
-    }
-
-    private void loadMobEntries(String content) {
-        Matcher matcher = MOB_ENTRY_PATTERN.matcher(content);
+    private void loadLegacyMobEntries(String content) {
+        Matcher matcher = LEGACY_MOB_ENTRY_PATTERN.matcher(content);
         int order = 0;
         while (matcher.find()) {
             String pattern = normalizePattern(matcher.group(1));
             if (pattern == null) {
                 continue;
             }
-            mobEntries.put(pattern, new MoneyPatternEntry(pattern, sanitizeAmount(parseAmount(matcher.group(2))), order++));
+            mobEntries.put(
+                    pattern,
+                    new MoneyPatternEntry(
+                            pattern,
+                            sanitizeAmount(parseAmount(matcher.group(2))),
+                            order++,
+                            inferCategoryForPattern(pattern)
+                    )
+            );
+        }
+    }
+
+    private void loadEnabled(String content) {
+        Matcher matcher = ENABLED_PATTERN.matcher(content);
+        if (matcher.find()) {
+            enabled = Boolean.parseBoolean(matcher.group(1).toLowerCase(Locale.US));
         }
     }
 
@@ -267,11 +348,31 @@ public class MobMoneyDropConfig {
 
     private void saveToJson() {
         try {
-            Path parent = jsonPath.getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-            Files.writeString(jsonPath, serializeToJson(), StandardCharsets.UTF_8);
+            String serialized = serializeToJson();
+            writeJson(jsonPath, serialized);
+            deleteLegacyGroupedJson();
+        } catch (IOException ignored) {
+        }
+    }
+
+    private void writeJson(Path path, String content) throws IOException {
+        if (path == null) {
+            return;
+        }
+        Path parent = path.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+        Files.writeString(path, content, StandardCharsets.UTF_8);
+    }
+
+    private void deleteLegacyGroupedJson() {
+        if (legacyGroupedJsonPath == null || !Files.isRegularFile(legacyGroupedJsonPath)) {
+            return;
+        }
+
+        try {
+            Files.deleteIfExists(legacyGroupedJsonPath);
         } catch (IOException ignored) {
         }
     }
@@ -279,43 +380,42 @@ public class MobMoneyDropConfig {
     private String serializeToJson() {
         StringBuilder sb = new StringBuilder();
         sb.append("{\n");
-        sb.append("  \"description\": \"Money rewards for creature kills. Category values are the default reward, and mob patterns can override them.\",\n");
-        sb.append("  \"note\": \"Category edits affect the whole category. Mob edits override a single mob pattern.\",\n");
+        sb.append("  \"description\": \"Money rewards grouped by category using the same structure as Category_Mobs.txt.\",\n");
+        sb.append("  \"note\": \"Category defaults apply to the whole category. Set override=true for a mob-specific value.\",\n");
         sb.append("  \"enabled\": ").append(enabled).append(",\n");
-        sb.append("  \"categoryAmounts\": [\n");
+        sb.append("  \"categories\": [\n");
 
-        List<MobCategory> categories = new ArrayList<>();
-        for (MobCategory category : MobCategory.values()) {
-            if (category != MobCategory.NONE) {
-                categories.add(category);
+        Map<MobCategory, List<String>> groupedPatterns = buildGroupedPatterns();
+        List<MobCategory> orderedCategories = new ArrayList<>(groupedPatterns.keySet());
+        for (int i = 0; i < orderedCategories.size(); i++) {
+            MobCategory category = orderedCategories.get(i);
+            double defaultAmount = getCategoryAmount(category);
+            List<String> patterns = groupedPatterns.getOrDefault(category, List.of());
+
+            sb.append("    {\n");
+            sb.append("      \"category\": \"").append(category.getFileKey()).append("\",\n");
+            sb.append("      \"defaultAmount\": ").append(formatAmount(defaultAmount)).append(",\n");
+            sb.append("      \"mobs\": [\n");
+            for (int j = 0; j < patterns.size(); j++) {
+                String pattern = patterns.get(j);
+                MoneyPatternEntry overrideEntry = mobEntries.get(normalizePattern(pattern));
+                boolean override = overrideEntry != null;
+                double amount = override ? overrideEntry.amount : defaultAmount;
+                sb.append("        {\"pattern\": \"")
+                        .append(escapeJson(pattern))
+                        .append("\", \"amount\": ")
+                        .append(formatAmount(amount))
+                        .append(", \"override\": ")
+                        .append(override)
+                        .append("}");
+                if (j < patterns.size() - 1) {
+                    sb.append(",");
+                }
+                sb.append("\n");
             }
-        }
-
-        for (int i = 0; i < categories.size(); i++) {
-            MobCategory category = categories.get(i);
-            sb.append("    {\"category\": \"")
-                    .append(category.getFileKey())
-                    .append("\", \"amount\": ")
-                    .append(formatAmount(getCategoryAmount(category)))
-                    .append("}");
-            if (i < categories.size() - 1) {
-                sb.append(",");
-            }
-            sb.append("\n");
-        }
-
-        sb.append("  ],\n");
-        sb.append("  \"mobAmounts\": [\n");
-
-        List<MoneyPatternEntry> values = new ArrayList<>(mobEntries.values());
-        for (int i = 0; i < values.size(); i++) {
-            MoneyPatternEntry entry = values.get(i);
-            sb.append("    {\"pattern\": \"")
-                    .append(escapeJson(entry.rawPattern))
-                    .append("\", \"amount\": ")
-                    .append(formatAmount(entry.amount))
-                    .append("}");
-            if (i < values.size() - 1) {
+            sb.append("      ]\n");
+            sb.append("    }");
+            if (i < orderedCategories.size() - 1) {
                 sb.append(",");
             }
             sb.append("\n");
@@ -326,21 +426,75 @@ public class MobMoneyDropConfig {
         return sb.toString();
     }
 
-    private String getDefaultJsonContent() {
-        return "{\n" +
-                "  \"description\": \"Money rewards for creature kills. Category values are the default reward, and mob patterns can override them.\",\n" +
-                "  \"note\": \"Category edits affect the whole category. Mob edits override a single mob pattern.\",\n" +
-                "  \"enabled\": true,\n" +
-                "  \"categoryAmounts\": [\n" +
-                "    {\"category\": \"PASSIVE\", \"amount\": 0.0},\n" +
-                "    {\"category\": \"CRITTER\", \"amount\": 0.0},\n" +
-                "    {\"category\": \"HOSTILE\", \"amount\": 0.0},\n" +
-                "    {\"category\": \"ELITE\", \"amount\": 0.0},\n" +
-                "    {\"category\": \"MINIBOSS\", \"amount\": 0.0},\n" +
-                "    {\"category\": \"WORLDBOSS\", \"amount\": 0.0}\n" +
-                "  ],\n" +
-                "  \"mobAmounts\": []\n" +
-                "}\n";
+    private Map<MobCategory, List<String>> buildGroupedPatterns() {
+        Map<MobCategory, LinkedHashSet<String>> grouped = new LinkedHashMap<>();
+        for (MobCategory category : MobCategory.values()) {
+            if (category != MobCategory.NONE) {
+                grouped.put(category, new LinkedHashSet<>());
+            }
+        }
+
+        if (categoryResolver != null) {
+            Map<MobCategory, List<String>> resolverEntries = categoryResolver.getEntriesByCategory();
+            for (Map.Entry<MobCategory, List<String>> entry : resolverEntries.entrySet()) {
+                LinkedHashSet<String> values = grouped.get(entry.getKey());
+                if (values != null) {
+                    values.addAll(entry.getValue());
+                }
+            }
+        }
+
+        for (MoneyPatternEntry entry : mobEntries.values()) {
+            if (entry.category == MobCategory.NONE) {
+                continue;
+            }
+            grouped.computeIfAbsent(entry.category, ignored -> new LinkedHashSet<>()).add(entry.rawPattern);
+        }
+
+        Map<MobCategory, List<String>> result = new LinkedHashMap<>();
+        for (Map.Entry<MobCategory, LinkedHashSet<String>> entry : grouped.entrySet()) {
+            result.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+        }
+        return result;
+    }
+
+    private Path selectPreferredSourcePath() {
+        boolean hasPrimary = Files.isRegularFile(jsonPath);
+        boolean hasGrouped = Files.isRegularFile(legacyGroupedJsonPath);
+        if (hasPrimary) {
+            return jsonPath;
+        }
+        if (hasGrouped) {
+            return legacyGroupedJsonPath;
+        }
+
+        try (InputStream stream = MobMoneyDropConfig.class.getClassLoader().getResourceAsStream(JSON_FILE)) {
+            if (stream != null) {
+                writeJson(jsonPath, new String(stream.readAllBytes(), StandardCharsets.UTF_8));
+                return jsonPath;
+            }
+        } catch (IOException ignored) {
+        }
+
+        if (hasPrimary) {
+            return jsonPath;
+        }
+        return null;
+    }
+
+    private MobCategory inferCategoryForPattern(String pattern) {
+        String normalized = normalizePattern(pattern);
+        if (normalized == null || categoryResolver == null) {
+            return MobCategory.NONE;
+        }
+
+        for (MobCategoryResolver.CategoryEntry entry : categoryResolver.getEntries()) {
+            if (entry.pattern.equalsIgnoreCase(normalized)) {
+                return normalizeCategory(entry.category);
+            }
+        }
+
+        return MobCategory.NONE;
     }
 
     private static Set<String> collectCandidateIds(NPCEntity npcEntity) {
@@ -368,6 +522,10 @@ public class MobMoneyDropConfig {
         }
         String normalized = pattern.trim();
         return normalized.isEmpty() ? null : normalized;
+    }
+
+    private static MobCategory normalizeCategory(MobCategory category) {
+        return category == null ? MobCategory.NONE : category;
     }
 
     private static double parseAmount(String raw) {
@@ -412,10 +570,12 @@ public class MobMoneyDropConfig {
     public static final class MobMoneyEntry {
         public final String pattern;
         public final double amount;
+        public final MobCategory category;
 
-        public MobMoneyEntry(String pattern, double amount) {
+        public MobMoneyEntry(String pattern, double amount, MobCategory category) {
             this.pattern = pattern;
             this.amount = sanitizeAmount(amount);
+            this.category = normalizeCategory(category);
         }
     }
 
@@ -426,8 +586,9 @@ public class MobMoneyDropConfig {
         private final int wildcardCount;
         private final int order;
         private final double amount;
+        private final MobCategory category;
 
-        private MoneyPatternEntry(String rawPattern, double amount, int order) {
+        private MoneyPatternEntry(String rawPattern, double amount, int order, MobCategory category) {
             this.rawPattern = rawPattern;
             this.pattern = compileGlob(rawPattern);
             int stars = (int) rawPattern.chars().filter(ch -> ch == '*').count();
@@ -435,6 +596,7 @@ public class MobMoneyDropConfig {
             this.wildcardCount = stars;
             this.order = order;
             this.amount = sanitizeAmount(amount);
+            this.category = normalizeCategory(category);
         }
 
         private boolean isMoreSpecificThan(MoneyPatternEntry other) {

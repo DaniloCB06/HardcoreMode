@@ -1,0 +1,988 @@
+﻿{
+    "description":  "Money rewards grouped by category using the same structure as Category_Mobs.txt.",
+    "note":  "Category defaults apply to the whole category. Set override=true for a mob-specific value.",
+    "enabled":  false,
+    "categories":  [
+                       {
+                           "category":  "PASSIVE",
+                           "defaultAmount":  0,
+                           "mobs":  [
+                                        {
+                                            "pattern":  "Antelope",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Archaeopteryx",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Armadillo",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Bison",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Bison_Calf",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Boar",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Cactee",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Camel",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Camel_Calf",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Cow",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Cow_Calf",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "CustomMerchant",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Deer_Doe",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Deer_Stag",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Goat",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Goat_Wagon",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Horse",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Horse_Mount",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Horse_Mount_Black",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Horse_Mount_Blue",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Horse_Mount_Green",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Horse_Mount_Red",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Horse_Skeleton",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Horse_Skeleton_Armored",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Hound_Wagon",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Hyena_Wagon",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Klops_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Kweebec_Merchant",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Kweebec_Razorleaf*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Kweebec_Rootling",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Kweebec_Sapling*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Kweebec_Sproutling_Patrol",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Molerat",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Moose_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Mosshorn*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Mouflon",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Pig",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Pig_Wild",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Pterodactyl",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Ram",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Ram_Lamb",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Sheep",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Snapjaw",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Snake_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Snake_Cobra",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Spark_Living",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Temple_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Tortoise",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Vulture",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Warthog",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Whale_Humpback",
+                                            "amount":  0,
+                                            "override":  false
+                                        }
+                                    ]
+                       },
+                       {
+                           "category":  "CRITTER",
+                           "defaultAmount":  0,
+                           "mobs":  [
+                                        {
+                                            "pattern":  "*_Baby",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "*_Chick",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "*_Cub",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "*_Foal",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "*_Kid",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "*_Lamb",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "*_Piglet",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "*_Seedling",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "*_Sproutling",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Bat*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Bluebird",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Bluegill",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Bunny",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Catfish",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Chicken",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Chicken_Desert",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Clownfish",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Crab",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Crow",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Duck",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Eel_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Finch_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Flamingo",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Fox",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Frog_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Frostgill",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Gecko",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Hatworm",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Hawk",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Jellyfish_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Jellyfish_Man_Of_War",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Larva_Silk",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Lobster",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Meerkat",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Minnow",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Mouse",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Owl_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Parrot",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Penguin",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Pike",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Piranha*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Pufferfish",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Rabbit",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Rat",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Raven",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Salmon",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Scarak_Louse",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Shellfish_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Skrill*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Snail_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Snake_Marsh",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Sparrow",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Tang_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Tetrabird",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Trilobite*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Trout_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Turkey*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Woodpecker",
+                                            "amount":  0,
+                                            "override":  false
+                                        }
+                                    ]
+                       },
+                       {
+                           "category":  "HOSTILE",
+                           "defaultAmount":  0,
+                           "mobs":  [
+                                        {
+                                            "pattern":  "*_Void",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Bear_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Chicken_Undead",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Crawler_Void",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Crocodile",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Cow_Undead",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Dungeon_Scarak_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Dungeon_Skeleton_Sand_Archer",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Dungeon_Skeleton_Sand_Assassin",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Dungeon_Skeleton_Sand_Mage",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Dungeon_Skeleton_Sand_Soldier",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Empty_Role",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Fen_Stalker",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Goblin_Hermit",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Goblin_Lobber*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Goblin_Miner*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Goblin_Ogre",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Goblin_Scavenger*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Goblin_Scrapper*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Goblin_Thief*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Hedera",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Hyena",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Larva_Void",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Leopard_Snow",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Lizard_Sand",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Outlander_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Outlander_Berserker",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Outlander_Brute",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Pig_Undead",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Raptor_Cave",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Risen_Knight",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Scarak_Broodmother*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Scarak_Defender*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Scarak_Fighter*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Scarak_Seeker*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Shark_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Skeleton",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Skeleton_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Skeleton_Archer",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Skeleton_Burnt_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Skeleton_Incandescent_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Skeleton_Pirate_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Slug_Magma",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Snapdragon",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Spider*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Spirit_Ember",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Spirit_Frost",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Spirit_Root",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Spirit_Thunder",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Static",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Static2",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Static3",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Static4",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Trillodon",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Trork_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Trork_Chieftain",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Wraith_Lantern",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Wolf_Black",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Wolf_White",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Zombie*",
+                                            "amount":  0,
+                                            "override":  false
+                                        }
+                                    ]
+                       },
+                       {
+                           "category":  "ELITE",
+                           "defaultAmount":  0,
+                           "mobs":  [
+                                        {
+                                            "pattern":  "Emberwulf",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Ghoul",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Goblin_Duke*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Golem_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Golem_Crystal_Sand",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Hound_Bleached",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Eye_Void",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Spawn_Void",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Tiger_Sabertooth",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Toad_Rhino*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Wraith",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Zombie_Aberrant_Small",
+                                            "amount":  0,
+                                            "override":  false
+                                        }
+                                    ]
+                       },
+                       {
+                           "category":  "MINIBOSS",
+                           "defaultAmount":  0,
+                           "mobs":  [
+                                        {
+                                            "pattern":  "Rex_Cave",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Werewolf",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Yeti",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Zombie_Aberrant",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Zombie_Aberrant_Big",
+                                            "amount":  0,
+                                            "override":  false
+                                        }
+                                    ]
+                       },
+                       {
+                           "category":  "WORLDBOSS",
+                           "defaultAmount":  0,
+                           "mobs":  [
+                                        {
+                                            "pattern":  "*_Titan",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Dragon_*",
+                                            "amount":  0,
+                                            "override":  false
+                                        },
+                                        {
+                                            "pattern":  "Shadow_Knight",
+                                            "amount":  0,
+                                            "override":  false
+                                        }
+                                    ]
+                       }
+                   ]
+}
