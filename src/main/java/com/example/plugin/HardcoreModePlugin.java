@@ -13,6 +13,7 @@ import com.example.plugin.systems.HardcoreMobStatRefreshSystem;
 import com.example.plugin.systems.HardcorePlayerDeathConfigSystem;
 import com.example.plugin.systems.HardcorePlayerPresenceSystem;
 import com.example.plugin.visuals.BloodMoonVisuals;
+import com.example.plugin.xp.XpMultiplierCoordinator;
 import com.hypixel.hytale.component.Holder;
 import com.hypixel.hytale.component.ArchetypeChunk;
 import com.hypixel.hytale.component.ComponentType;
@@ -49,7 +50,6 @@ public class HardcoreModePlugin extends JavaPlugin {
     private static final String RPG_LEVELING_PLUGIN_CLASS = "org.zuxaw.plugin.RPGLevelingPlugin";
     private static final String RPG_LEVELING_CONFIG_CLASS = "org.zuxaw.plugin.config.LevelingConfig";
 
-
     private final AtomicReference<Store<EntityStore>> activeStoreRef = new AtomicReference<>();
 
     private final Config<HardcoreModeConfig> config;
@@ -70,6 +70,7 @@ public class HardcoreModePlugin extends JavaPlugin {
     // Cache de nome do mundo por store para performance
     private final Map<Store<EntityStore>, String> worldNameCache = 
             Collections.synchronizedMap(new WeakHashMap<>());
+    private final XpMultiplierCoordinator xpMultiplierCoordinator;
 
     private boolean rpgLevelingChecked;
     private boolean rpgLevelingAvailable;
@@ -97,6 +98,7 @@ public class HardcoreModePlugin extends JavaPlugin {
         this.mobStatRefreshSystem = new HardcoreMobStatRefreshSystem(this);
         this.playerPresenceSystem = new HardcorePlayerPresenceSystem(this);
         this.bloodMoonVisuals = new BloodMoonVisuals();
+        this.xpMultiplierCoordinator = new XpMultiplierCoordinator(this);
         instance = this;
 
         migrateLegacyWorldDefaults();
@@ -565,8 +567,7 @@ public class HardcoreModePlugin extends JavaPlugin {
                 worldConfig.clearBloodMoonState();
                 // Remove do mapa de XP multipliers e recalcula
                 if (resolvedWorldName != null) {
-                    worldsWithXpMultiplier.remove(resolvedWorldName);
-                    applyGlobalXpMultiplier(resolvedWorldName);
+                    xpMultiplierCoordinator.clearWorld(resolvedWorldName);
                 }
                 bloodMoonVisuals.applyWorldVisuals(store, resolvedWorldName, false);
             }
@@ -580,8 +581,7 @@ public class HardcoreModePlugin extends JavaPlugin {
                 worldConfig.setBloodMoonActive(false);
                 worldConfig.clearBloodMoonState();
                 // Remove do mapa de XP multipliers e recalcula
-                worldsWithXpMultiplier.remove(resolvedWorldName);
-                applyGlobalXpMultiplier(resolvedWorldName);
+                xpMultiplierCoordinator.clearWorld(resolvedWorldName);
                 bloodMoonVisuals.applyWorldVisuals(store, resolvedWorldName, false);
             }
             return;
@@ -608,7 +608,7 @@ public class HardcoreModePlugin extends JavaPlugin {
         
         // Sync RPG leveling apenas se houver mudança
         if (changed) {
-            syncRpgLevelingMultiplier(resolvedWorldName, active, worldConfig);
+            syncBloodMoonXpMultiplier(resolvedWorldName, active, worldConfig);
             announceBloodMoon(active, store);
             bloodMoonVisuals.applyWorldVisuals(store, resolvedWorldName, active);
             if (applyToMobs) {
@@ -656,6 +656,50 @@ public class HardcoreModePlugin extends JavaPlugin {
         worldConfig.setForcedBloodMoonEndHourOfEpoch(currentHourOfEpoch + durationHours);
 
         refreshBloodMoonState(store, worldName, true);
+    }
+
+    public void refreshBloodMoonXpMultiplierState(Store<EntityStore> store, String worldName) {
+        String resolvedWorldName = worldName != null ? worldName : getWorldName(store);
+        if (resolvedWorldName == null) {
+            return;
+        }
+
+        WorldHardcoreConfig worldConfig = getWorldConfig(resolvedWorldName);
+        if (worldConfig == null) {
+            xpMultiplierCoordinator.clearWorld(resolvedWorldName);
+            return;
+        }
+
+        boolean active;
+        if ("Forgotten Temple".equals(resolvedWorldName) || !config.get().isWorldEnabled(resolvedWorldName)) {
+            active = false;
+        } else if (store != null) {
+            active = computeBloodMoonActive(store, worldConfig);
+        } else {
+            active = worldConfig.isBloodMoonActive();
+        }
+
+        syncBloodMoonXpMultiplier(resolvedWorldName, active, worldConfig);
+    }
+
+    public void refreshAllWorldBloodMoonStates(boolean applyToMobs) {
+        Universe universe = Universe.get();
+        if (universe == null) {
+            return;
+        }
+
+        Map<String, World> worlds = universe.getWorlds();
+        if (worlds == null || worlds.isEmpty()) {
+            return;
+        }
+
+        for (Map.Entry<String, World> entry : worlds.entrySet()) {
+            World world = entry.getValue();
+            if (world == null || world.getEntityStore() == null) {
+                continue;
+            }
+            refreshBloodMoonState(world.getEntityStore().getStore(), entry.getKey(), applyToMobs);
+        }
     }
 
     public void applyToExistingMobs(Store<EntityStore> store) {
@@ -928,6 +972,19 @@ public class HardcoreModePlugin extends JavaPlugin {
         } catch (ReflectiveOperationException | RuntimeException ignored) {
             return false;
         }
+    }
+
+    public boolean isXpMultiplierSupported() {
+        return xpMultiplierCoordinator.isSupported();
+    }
+
+    public String getXpMultiplierStatusMessage() {
+        return xpMultiplierCoordinator.getStatusMessage();
+    }
+
+    private void syncBloodMoonXpMultiplier(String worldName, boolean active, WorldHardcoreConfig worldConfig) {
+        boolean worldEnabled = worldName != null && config.get().isWorldEnabled(worldName);
+        xpMultiplierCoordinator.syncWorld(worldName, active, worldConfig, worldEnabled);
     }
 
     private void syncRpgLevelingMultiplier(String worldName, boolean active, WorldHardcoreConfig worldConfig) {

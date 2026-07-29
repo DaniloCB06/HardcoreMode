@@ -130,6 +130,7 @@ public class HardcoreWorldSettingsPage extends InteractiveCustomUIPage<HardcoreW
             
             if (changed) {
                 plugin.getConfig().save();
+                plugin.refreshAllWorldBloodMoonStates(false);
                 // Reabrir a página para refletir as mudanças
                 reopenPage(ref, store, currentPage);
             }

@@ -535,8 +535,10 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                 if (changed) {
                         // Salvar a configuração do mundo
                         plugin.getWorldConfigManager().saveWorldConfig(currentWorldName);
+                        plugin.refreshBloodMoonXpMultiplierState(currentStore, currentWorldName);
                         if (currentStore != null) {
                                 plugin.refreshBloodMoonState(currentStore, currentWorldName, false);
+                                plugin.refreshBloodMoonXpMultiplierState(currentStore, currentWorldName);
                                 plugin.applyToExistingMobs(currentStore);
                         }
                 }
@@ -855,14 +857,14 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                 config.bloodMoonDropsEnabled,
                                 HardcoreSettingsPageEventData.KEY_BLOOD_MOON_DROPS_ENABLED);
                 
-                // Right column: RPG XP Multiplier - only shown if RPGLeveling is available
-                if (plugin.isRpgLevelingAvailable()) {
+                // Right column: XP multiplier support for compatible leveling mods
+                if (plugin.isXpMultiplierSupported()) {
                         bottomRightIndex = addToggleEntry(
                                         commands,
                                         events,
                                         bottomRightList,
                                         bottomRightIndex,
-                                        "RPG XP Multiplier: " + (config.bloodMoonXpMultiplierEnabled ? "ON" : "OFF"),
+                                        "XP Multiplier: " + (config.bloodMoonXpMultiplierEnabled ? "ON" : "OFF"),
                                         config.bloodMoonXpMultiplierEnabled,
                                         HardcoreSettingsPageEventData.KEY_BLOOD_MOON_XP_MULTIPLIER_ENABLED);
                         bottomRightIndex = addSliderEntry(
@@ -878,7 +880,7 @@ public class HardcoreSettingsPage extends InteractiveCustomUIPage<HardcoreSettin
                                         commands,
                                         bottomRightList,
                                         bottomRightIndex,
-                                        "RPGLeveling mod not found");
+                                        plugin.getXpMultiplierStatusMessage());
                 }
                 index++;
                 

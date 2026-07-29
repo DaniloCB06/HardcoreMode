@@ -1,3 +1,5 @@
+import javax.imageio.ImageIO
+
 plugins {
     id("java")
 }
@@ -91,7 +93,49 @@ tasks.test {
     enabled = false
 }
 
+val validateModIcon by tasks.registering {
+    val iconFile = layout.projectDirectory.file("icon-256.png").asFile
+
+    inputs.file(iconFile)
+
+    doLast {
+        require(iconFile.isFile) {
+            "Missing mod icon at ${iconFile.path}."
+        }
+
+        val imageReader = ImageIO.createImageInputStream(iconFile).use { input ->
+            requireNotNull(input) {
+                "Could not open ${iconFile.name} for validation."
+            }
+
+            val readers = ImageIO.getImageReaders(input)
+            require(readers.hasNext()) {
+                "${iconFile.name} is not a readable image."
+            }
+
+            val reader = readers.next()
+            try {
+                reader.input = input
+                val formatName = reader.formatName ?: ""
+                require(formatName.equals("png", ignoreCase = true)) {
+                    "${iconFile.name} must be a real PNG file."
+                }
+
+                val width = reader.getWidth(0)
+                val height = reader.getHeight(0)
+                require(width == 256 && height == 256) {
+                    "${iconFile.name} must be 256x256, but found ${width}x${height}."
+                }
+            } finally {
+                reader.dispose()
+            }
+        }
+    }
+}
+
 // Bundle the creature classification file so it is available on the classpath at runtime.
 tasks.processResources {
+    dependsOn(validateModIcon)
     from("Category_Mobs.txt")
+    from("icon-256.png")
 }
