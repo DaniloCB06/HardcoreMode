@@ -4,20 +4,27 @@ import com.example.plugin.HardcoreModePlugin;
 import com.example.plugin.MobCategory;
 import com.example.plugin.config.BloodMoonDropConfig;
 import com.example.plugin.config.HardcoreModeConfig;
+import com.hypixel.hytale.component.AddReason;
 import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.component.ComponentType;
+import com.hypixel.hytale.component.Holder;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.dependency.Dependency;
 import com.hypixel.hytale.component.dependency.Order;
 import com.hypixel.hytale.component.dependency.SystemDependency;
-import com.hypixel.hytale.server.core.entity.ItemUtils;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
+import com.hypixel.hytale.server.core.modules.entity.component.HeadRotation;
+import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.modules.entity.damage.DeathComponent;
 import com.hypixel.hytale.server.core.modules.entity.damage.DeathSystems;
+import com.hypixel.hytale.server.core.modules.entity.item.ItemComponent;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.npc.entities.NPCEntity;
+import com.hypixel.hytale.math.vector.Rotation3f;
+import org.joml.Vector3d;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -36,25 +43,39 @@ public class HardcoreBloodMoonDropSystem extends DeathSystems.OnDeathSystem {
 
     @Override
     public com.hypixel.hytale.component.query.Query<EntityStore> getQuery() {
-        return NPCEntity.getComponentType();
+        return com.hypixel.hytale.component.query.Query.and(
+            NPCEntity.getComponentType(),
+            TransformComponent.getComponentType(),
+            HeadRotation.getComponentType()
+        );
     }
 
     @Override
     public Set<Dependency<EntityStore>> getDependencies() {
         Set<Dependency<EntityStore>> deps = new LinkedHashSet<>();
-        try {
-            Class<?> npcDeathClass = Class.forName(
-                "com.hypixel.hytale.server.npc.systems.NPCDamageSystems$DropDeathItems"
-            );
-            deps.add(createSystemDependency(npcDeathClass));
-        } catch (ClassNotFoundException ignored) {
-        }
+        addSystemDependencyIfPresent(deps, Order.AFTER,
+            "com.hypixel.hytale.server.core.modules.entity.damage.DeathSystems$TickCorpseRemoval");
+        addSystemDependencyIfPresent(deps, Order.BEFORE,
+            "com.hypixel.hytale.server.core.modules.entity.damage.DeathSystems$CorpseRemoval");
         return deps;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private Dependency<EntityStore> createSystemDependency(Class<?> dependencyClass) {
         return new SystemDependency(Order.AFTER, (Class) dependencyClass);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void addSystemDependencyIfPresent(
+            Set<Dependency<EntityStore>> deps,
+            Order order,
+            String className
+    ) {
+        try {
+            Class<?> dependencyClass = Class.forName(className);
+            deps.add(new SystemDependency(order, (Class) dependencyClass));
+        } catch (ClassNotFoundException ignored) {
+        }
     }
 
     @Override
@@ -98,21 +119,23 @@ public class HardcoreBloodMoonDropSystem extends DeathSystems.OnDeathSystem {
         if (dropConfig != null) {
             List<BloodMoonDropConfig.DropEntry> entries = dropConfig.getDropEntries(category);
             if (!entries.isEmpty()) {
-                processJsonDrops(ref, commandBuffer, entries);
+                processJsonDrops(ref, store, commandBuffer, entries);
                 return;
             }
         }
 
         // Legacy drops usam config global
         HardcoreModeConfig globalConfig = plugin.getConfigData();
-        processLegacyDrop(ref, commandBuffer, category, globalConfig);
+        processLegacyDrop(ref, store, commandBuffer, category, globalConfig);
     }
 
     private void processJsonDrops(
             Ref<EntityStore> ref,
+            Store<EntityStore> store,
             CommandBuffer<EntityStore> commandBuffer,
             List<BloodMoonDropConfig.DropEntry> entries
     ) {
+        List<ItemStack> drops = new ArrayList<>();
         for (BloodMoonDropConfig.DropEntry entry : entries) {
             if (!entry.enabled || !entry.shouldDrop()) {
                 continue;
@@ -123,15 +146,18 @@ public class HardcoreBloodMoonDropSystem extends DeathSystems.OnDeathSystem {
                 continue;
             }
 
-            try {
-                spawnDropItem(ref, commandBuffer, entry.itemId, quantity);
-            } catch (Exception ignored) {
+            ItemStack itemStack = buildDropItemStack(entry.itemId, quantity);
+            if (itemStack != null) {
+                drops.add(itemStack);
             }
         }
+
+        spawnDropItems(ref, store, commandBuffer, drops);
     }
 
     private void processLegacyDrop(
             Ref<EntityStore> ref,
+            Store<EntityStore> store,
             CommandBuffer<EntityStore> commandBuffer,
             MobCategory category,
             HardcoreModeConfig config
@@ -152,9 +178,9 @@ public class HardcoreBloodMoonDropSystem extends DeathSystems.OnDeathSystem {
             return;
         }
 
-        try {
-            spawnDropItem(ref, commandBuffer, itemId, quantity);
-        } catch (Exception ignored) {
+        ItemStack itemStack = buildDropItemStack(itemId, quantity);
+        if (itemStack != null) {
+            spawnDropItems(ref, store, commandBuffer, List.of(itemStack));
         }
     }
 
@@ -207,19 +233,56 @@ public class HardcoreBloodMoonDropSystem extends DeathSystems.OnDeathSystem {
         }
     }
 
-    private void spawnDropItem(
-            Ref<EntityStore> entityRef,
-            CommandBuffer<EntityStore> commandBuffer,
+    private ItemStack buildDropItemStack(
             String itemId,
             int quantity
     ) {
+        if (itemId == null || itemId.isEmpty() || quantity <= 0) {
+            return null;
+        }
+
         ItemStack itemStack = new ItemStack(itemId, quantity);
         if (itemStack.isEmpty() || !itemStack.isValid()) {
+            return null;
+        }
+        return itemStack;
+    }
+
+    private void spawnDropItems(
+            Ref<EntityStore> entityRef,
+            Store<EntityStore> store,
+            CommandBuffer<EntityStore> commandBuffer,
+            List<ItemStack> itemStacks
+    ) {
+        if (itemStacks == null || itemStacks.isEmpty()) {
             return;
         }
 
         try {
-            ItemUtils.dropItem(entityRef, itemStack, commandBuffer);
+            ComponentType<EntityStore, TransformComponent> transformType = TransformComponent.getComponentType();
+            ComponentType<EntityStore, HeadRotation> headRotationType = HeadRotation.getComponentType();
+            if (transformType == null || headRotationType == null) {
+                return;
+            }
+
+            TransformComponent transform = store.getComponent(entityRef, transformType);
+            HeadRotation headRotation = store.getComponent(entityRef, headRotationType);
+            if (transform == null || headRotation == null) {
+                return;
+            }
+
+            Vector3d dropPosition = new Vector3d(transform.getPosition()).add(0.0, 1.0, 0.0);
+            Rotation3f rotation = new Rotation3f(headRotation.getRotation());
+            Holder<EntityStore>[] generatedDrops = ItemComponent.generateItemDrops(
+                store,
+                itemStacks,
+                dropPosition,
+                rotation
+            );
+
+            if (generatedDrops != null && generatedDrops.length > 0) {
+                commandBuffer.addEntities(generatedDrops, AddReason.SPAWN);
+            }
         } catch (Exception ignored) {
         }
     }
