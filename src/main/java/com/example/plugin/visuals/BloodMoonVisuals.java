@@ -1,15 +1,15 @@
 package com.example.plugin.visuals;
 
-import com.hypixel.hytale.builtin.ambience.resources.AmbienceResource;
 import com.hypixel.hytale.builtin.weather.components.WeatherTracker;
 import com.hypixel.hytale.builtin.weather.resources.WeatherResource;
+import com.hypixel.hytale.component.Holder;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.UpdateType;
 import com.hypixel.hytale.protocol.packets.assets.UpdateWeathers;
-import com.hypixel.hytale.server.core.asset.type.ambiencefx.config.AmbienceFX;
 import com.hypixel.hytale.server.core.asset.type.weather.config.TimeColorAlpha;
 import com.hypixel.hytale.server.core.asset.type.weather.config.Weather;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
@@ -19,6 +19,7 @@ import com.hypixel.hytale.protocol.ColorAlpha;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -28,13 +29,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class BloodMoonVisuals {
     public static final String BLOOD_MOON_WEATHER_ID = "Hardcore_Blood_Moon";
-    private static final String[] TRORK_CAMP_MUSIC_FALLBACKS = new String[]{
-            "Mus_Trork_Camp",
-            "Mus_Trork_Campfire",
-            "Mus_Trork_Outpost",
-            "Ambience_Trork_Camp",
-            "Trork_Camp_Music"
-    };
 
     private static final byte MOON_ALPHA = (byte) 255;
     private static final byte MOON_RED = (byte) 255;
@@ -47,7 +41,6 @@ public class BloodMoonVisuals {
     private static Field cachedPacketField;
 
     private final Set<String> weatherLockedWorlds = ConcurrentHashMap.newKeySet();
-    private final Set<String> musicLockedWorlds = ConcurrentHashMap.newKeySet();
 
     public void applyWorldVisuals(Store<EntityStore> store, String worldName, boolean active) {
         if (store == null) {
@@ -61,13 +54,11 @@ public class BloodMoonVisuals {
 
         if (active) {
             forceBloodMoonWeather(store, worldName, world);
-            forceBloodMoonMusic(store, worldName, world);
-            setMoonRed(world.getPlayers());
+            setMoonRed(world.getPlayerRefs());
         } else {
             clearBloodMoonWeather(store, worldName, world);
-            clearBloodMoonMusic(store, worldName, world);
-            setMoonNormal(world.getPlayers());
-            resyncWeatherForPlayers(store, world.getPlayers());
+            setMoonNormal(world.getPlayerRefs());
+            resyncWeatherForPlayers(store, world.getPlayerRefs());
         }
     }
 
@@ -75,7 +66,11 @@ public class BloodMoonVisuals {
         if (player == null) {
             return;
         }
-        List<Player> players = Collections.singletonList(player);
+        PlayerRef playerRef = player.toHolder().getComponent(PlayerRef.getComponentType());
+        if (playerRef == null || !playerRef.isValid()) {
+            return;
+        }
+        List<PlayerRef> players = Collections.singletonList(playerRef);
         if (active) {
             setMoonRed(players);
         } else {
@@ -109,46 +104,6 @@ public class BloodMoonVisuals {
         }
         if (forcedIndex == bloodMoonIndex) {
             weatherResource.setForcedWeather(null);
-        }
-    }
-
-    private void forceBloodMoonMusic(Store<EntityStore> store, String worldName, World world) {
-        AmbienceResource ambienceResource = store.getResource(AmbienceResource.getResourceType());
-        if (ambienceResource == null) {
-            return;
-        }
-
-        String musicId = resolveTrorkCampMusicId();
-        if (musicId == null || musicId.isBlank()) {
-            return;
-        }
-
-        String key = resolveWorldKey(worldName, world);
-        ambienceResource.setForcedMusicAmbience(musicId);
-        musicLockedWorlds.add(key);
-    }
-
-    private void clearBloodMoonMusic(Store<EntityStore> store, String worldName, World world) {
-        AmbienceResource ambienceResource = store.getResource(AmbienceResource.getResourceType());
-        if (ambienceResource == null) {
-            return;
-        }
-
-        String key = resolveWorldKey(worldName, world);
-        boolean wasLocked = musicLockedWorlds.remove(key);
-
-        String musicId = resolveTrorkCampMusicId();
-        if (musicId == null || musicId.isBlank()) {
-            return;
-        }
-
-        int forcedIndex = ambienceResource.getForcedMusicIndex();
-        int musicIndex = AmbienceFX.getAssetMap().getIndex(musicId);
-        if (!wasLocked && forcedIndex != musicIndex) {
-            return;
-        }
-        if (forcedIndex == musicIndex) {
-            ambienceResource.setForcedMusicAmbience(null);
         }
     }
 
@@ -191,62 +146,15 @@ public class BloodMoonVisuals {
         return null;
     }
 
-    private static String resolveTrorkCampMusicId() {
-        String resolved = findTrorkCampMusicId();
-        if (resolved != null && !resolved.isBlank()) {
-            return resolved;
-        }
-
-        for (String candidate : TRORK_CAMP_MUSIC_FALLBACKS) {
-            if (candidate == null || candidate.isBlank()) {
-                continue;
-            }
-            int index = AmbienceFX.getAssetMap().getIndex(candidate);
-            if (index != AmbienceFX.EMPTY_ID) {
-                return candidate;
-            }
-        }
-
-        return null;
-    }
-
-    private static String findTrorkCampMusicId() {
-        Map<String, AmbienceFX> assets = AmbienceFX.getAssetMap().getAssetMap();
-        if (assets == null || assets.isEmpty()) {
-            return null;
-        }
-
-        for (Map.Entry<String, AmbienceFX> entry : assets.entrySet()) {
-            String id = entry.getKey();
-            if (id == null) {
-                continue;
-            }
-            String lower = id.toLowerCase();
-            if (!lower.contains("trork")) {
-                continue;
-            }
-            if (!(lower.contains("camp") || lower.contains("outpost") || lower.contains("encamp"))) {
-                continue;
-            }
-
-            AmbienceFX fx = entry.getValue();
-            if (fx != null && fx.getMusic() != null) {
-                return id;
-            }
-        }
-
-        return null;
-    }
-
-    private void setMoonRed(List<Player> players) {
+    private void setMoonRed(Collection<PlayerRef> players) {
         sendMoonUpdate(players, true);
     }
 
-    private void setMoonNormal(List<Player> players) {
+    private void setMoonNormal(Collection<PlayerRef> players) {
         sendMoonUpdate(players, false);
     }
 
-    private void sendMoonUpdate(List<Player> players, boolean red) {
+    private void sendMoonUpdate(Collection<PlayerRef> players, boolean red) {
         if (players == null || players.isEmpty()) {
             return;
         }
@@ -277,18 +185,21 @@ public class BloodMoonVisuals {
                 updated
         );
 
-        for (Player player : players) {
-            if (player == null) {
+        for (PlayerRef playerRef : players) {
+            if (playerRef == null || !playerRef.isValid()) {
                 continue;
             }
             try {
-                player.getPlayerConnection().writeNoCache(packet);
+                PacketHandler packetHandler = playerRef.getPacketHandler();
+                if (packetHandler != null) {
+                    packetHandler.writeNoCache(packet);
+                }
             } catch (Exception ignored) {
             }
         }
     }
 
-    private void resyncWeatherForPlayers(Store<EntityStore> store, List<Player> players) {
+    private void resyncWeatherForPlayers(Store<EntityStore> store, Collection<PlayerRef> players) {
         if (store == null || players == null || players.isEmpty()) {
             return;
         }
@@ -306,18 +217,18 @@ public class BloodMoonVisuals {
             return;
         }
 
-        for (Player player : players) {
-            if (player == null) {
+        for (PlayerRef playerRef : players) {
+            if (playerRef == null || !playerRef.isValid()) {
                 continue;
             }
             try {
-                PlayerRef playerRef = player.getPlayerRef();
-                if (playerRef == null || !playerRef.isValid()) {
+                Holder<EntityStore> holder = playerRef.getHolder();
+                if (holder == null) {
                     continue;
                 }
 
-                WeatherTracker tracker = playerRef.getComponent(trackerType);
-                TransformComponent transform = playerRef.getComponent(transformType);
+                WeatherTracker tracker = holder.getComponent(trackerType);
+                TransformComponent transform = holder.getComponent(transformType);
                 if (tracker == null || transform == null) {
                     continue;
                 }

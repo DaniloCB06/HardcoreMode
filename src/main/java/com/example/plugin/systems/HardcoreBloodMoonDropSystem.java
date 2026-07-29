@@ -46,12 +46,15 @@ public class HardcoreBloodMoonDropSystem extends DeathSystems.OnDeathSystem {
             Class<?> npcDeathClass = Class.forName(
                 "com.hypixel.hytale.server.npc.systems.NPCDamageSystems$DropDeathItems"
             );
-            @SuppressWarnings({"rawtypes", "unchecked"})
-            SystemDependency dep = new SystemDependency(Order.AFTER, (Class) npcDeathClass);
-            deps.add(dep);
+            deps.add(createSystemDependency(npcDeathClass));
         } catch (ClassNotFoundException ignored) {
         }
         return deps;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private Dependency<EntityStore> createSystemDependency(Class<?> dependencyClass) {
+        return new SystemDependency(Order.AFTER, (Class) dependencyClass);
     }
 
     @Override
