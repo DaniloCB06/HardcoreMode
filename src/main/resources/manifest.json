@@ -9,7 +9,6 @@
   ],
   "Main": "com.example.plugin.HardcoreModePlugin",
   "OptionalDependencies": {
-    "Zoltus:TinyMessage": "*",
     "Zuxaw:RPGLeveling": "*"
   },
   "IncludesAssetPack": true

@@ -13,7 +13,6 @@
 - **Personalized Loot Tables**: Configure custom item drops for each category during Blood Moon
 - **Mod Integrations**:
   - **RPGLeveling**: Link XP distribution during Blood Moon events
-  - **TinyMessage API**: Enhanced visual chat messages
 - **In-Game GUI**: Complete configuration interface with real-time changes
 - **Player Death Penalties**: Configurable item loss and durability penalties
 - **Multiplayer Optimized**: Thread-safe and fully compatible with multiplayer servers
@@ -60,8 +59,6 @@ Sorry for the inconvenience, but this change is required so per-world settings c
 
 **Optional Integrations**:
 
-- **TinyMessage API**: Enhanced red chat messages for Blood Moon announcements. Falls back to plain text if not present.  
-  (https://www.curseforge.com/hytale/mods/tinymessage)
 - **RPGLeveling Mod**: Custom XP multipliers during Blood Moon events. Automatically detected.  
   (https://www.curseforge.com/hytale/mods/rpg-leveling-and-stats)
 

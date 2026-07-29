@@ -33,7 +33,6 @@ repositories {
 dependencies {
     compileOnly(files(hytaleServerJar))
     compileOnly(fileTree("test-integration") { include("RPGLeveling-*.jar") })
-    compileOnly(fileTree("libs") { include("tinymessage-*.jar") })
     testCompileOnly(files(hytaleServerJar))
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
@@ -42,7 +41,6 @@ dependencies {
 
 val prepareCompileLibs by tasks.registering(Sync::class) {
     from(hytaleServerJar)
-    from(fileTree("libs") { include("tinymessage-*.jar") })
     into(compileLibsDir)
 }
 
@@ -58,13 +56,7 @@ val compileJavaExternal by tasks.registering(Exec::class) {
 
     doFirst {
         val libsDir = compileLibsDir.get().asFile
-        val classpathEntries = buildList {
-            add(libsDir.resolve(hytaleServerJar.name).absolutePath)
-            libsDir.listFiles()
-                ?.filter { it.name.startsWith("tinymessage-") && it.extension == "jar" }
-                ?.sortedBy { it.name }
-                ?.mapTo(this) { it.absolutePath }
-        }
+        val classpathEntries = listOf(libsDir.resolve(hytaleServerJar.name).absolutePath)
 
         val outputDir = destinationDir.get().asFile
         outputDir.mkdirs()

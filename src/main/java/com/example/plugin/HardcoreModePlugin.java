@@ -837,7 +837,7 @@ public class HardcoreModePlugin extends JavaPlugin {
         // Anunciar apenas para jogadores no mesmo mundo via chat
         Universe universe = Universe.get();
         if (universe != null) {
-            universe.sendMessage(buildRedTinyMessage(chatText));
+            universe.sendMessage(Message.raw(chatText));
         }
 
         // Title apenas para jogadores no mundo específico
@@ -863,26 +863,13 @@ public class HardcoreModePlugin extends JavaPlugin {
         return hours == 1 || hours == 3 || hours == 6 || hours == 9 || hours == 12;
     }
 
-    private Message buildRedTinyMessage(String text) {
-        try {
-            Class<?> tinyMsgClass = Class.forName("fi.sulku.hytale.TinyMsg");
-            java.lang.reflect.Method parse = tinyMsgClass.getMethod("parse", String.class);
-            Object result = parse.invoke(null, "<red>" + text + "</red>");
-            if (result instanceof Message) {
-                return (Message) result;
-            }
-        } catch (ReflectiveOperationException | RuntimeException ignored) {
-        }
-        return Message.raw(text);
-    }
-    
     /**
      * Envia uma mensagem de erro para um jogador específico.
      */
     public void sendErrorMessage(PlayerRef playerRef, String text) {
         if (playerRef == null) return;
         try {
-            playerRef.sendMessage(buildRedTinyMessage(text));
+            playerRef.sendMessage(Message.raw(text));
         } catch (Exception ignored) {
             // Fallback se sendMessage não funcionar
         }
