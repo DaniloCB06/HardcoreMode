@@ -329,6 +329,8 @@ You can add, edit, enable, disable, and remove drops directly from the GUI, or c
 
 ### Money Mobs Drops Page
 
+![image](https://media.forgecdn.net/attachments/description/1439115/description_4e76360b-ae7d-44d6-b9aa-94cdd450f1fb.png)
+
 Access via General Settings → **Money Mobs Drops**
 
 **Features**:
