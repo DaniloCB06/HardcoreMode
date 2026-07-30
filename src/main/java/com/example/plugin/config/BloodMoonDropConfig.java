@@ -106,6 +106,74 @@ public class BloodMoonDropConfig {
         saveToJson();
     }
 
+    public boolean updateDropEntry(
+            MobCategory originalCategory,
+            String originalItemId,
+            MobCategory newCategory,
+            String newItemId,
+            int minQuantity,
+            int maxQuantity,
+            float dropChance
+    ) {
+        if (originalCategory == null
+                || originalItemId == null
+                || newCategory == null
+                || newItemId == null
+                || newItemId.trim().isEmpty()) {
+            return false;
+        }
+
+        List<DropEntry> sourceEntries = dropEntries.get(originalCategory);
+        if (sourceEntries == null) {
+            return false;
+        }
+
+        int sourceIndex = -1;
+        DropEntry originalEntry = null;
+        for (int i = 0; i < sourceEntries.size(); i++) {
+            DropEntry candidate = sourceEntries.get(i);
+            if (candidate.itemId.equals(originalItemId)) {
+                sourceIndex = i;
+                originalEntry = candidate;
+                break;
+            }
+        }
+
+        if (sourceIndex < 0 || originalEntry == null) {
+            return false;
+        }
+
+        String trimmedItemId = newItemId.trim();
+        List<DropEntry> targetEntries = dropEntries.computeIfAbsent(newCategory, ignored -> new ArrayList<>());
+        for (int i = 0; i < targetEntries.size(); i++) {
+            DropEntry candidate = targetEntries.get(i);
+            boolean sameEntry = originalCategory == newCategory
+                    && i == sourceIndex
+                    && candidate.itemId.equals(originalItemId);
+            if (!sameEntry && candidate.itemId.equals(trimmedItemId)) {
+                return false;
+            }
+        }
+
+        DropEntry updatedEntry = new DropEntry(
+                originalEntry.enabled,
+                trimmedItemId,
+                minQuantity,
+                maxQuantity,
+                dropChance
+        );
+
+        if (originalCategory == newCategory) {
+            targetEntries.set(sourceIndex, updatedEntry);
+        } else {
+            sourceEntries.remove(sourceIndex);
+            targetEntries.add(updatedEntry);
+        }
+
+        saveToJson();
+        return true;
+    }
+
     @Deprecated
     public DropEntry getDropEntry(MobCategory category) {
         List<DropEntry> entries = dropEntries.get(category);

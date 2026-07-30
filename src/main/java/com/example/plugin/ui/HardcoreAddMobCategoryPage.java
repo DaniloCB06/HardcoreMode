@@ -46,7 +46,11 @@ public class HardcoreAddMobCategoryPage extends InteractiveCustomUIPage<Hardcore
     private final HardcoreModePlugin plugin;
     private final PlayerRef playerRef;
     private final MobCategory returnFilter;
+    private final String returnSearch;
     private final int returnPage;
+    private final boolean editMode;
+    private final MobCategory originalCategory;
+    private final String originalPattern;
     private MobCategory selectedCategory;
     private String pattern;
 
@@ -56,9 +60,21 @@ public class HardcoreAddMobCategoryPage extends InteractiveCustomUIPage<Hardcore
             MobCategory returnFilter,
             int returnPage
     ) {
-        this(plugin, playerRef, returnFilter, returnPage,
+        this(plugin, playerRef, returnFilter, "", returnPage,
                 returnFilter != null ? returnFilter : MobCategory.HOSTILE,
-                "");
+                "", false, null, null);
+    }
+
+    public HardcoreAddMobCategoryPage(
+            HardcoreModePlugin plugin,
+            PlayerRef playerRef,
+            MobCategory returnFilter,
+            String returnSearch,
+            int returnPage
+    ) {
+        this(plugin, playerRef, returnFilter, returnSearch, returnPage,
+                returnFilter != null ? returnFilter : MobCategory.HOSTILE,
+                "", false, null, null);
     }
 
     public HardcoreAddMobCategoryPage(
@@ -69,13 +85,69 @@ public class HardcoreAddMobCategoryPage extends InteractiveCustomUIPage<Hardcore
             MobCategory selectedCategory,
             String pattern
     ) {
+        this(plugin, playerRef, returnFilter, "", returnPage,
+                selectedCategory, pattern, false, null, null);
+    }
+
+    public HardcoreAddMobCategoryPage(
+            HardcoreModePlugin plugin,
+            PlayerRef playerRef,
+            MobCategory returnFilter,
+            String returnSearch,
+            int returnPage,
+            MobCategory selectedCategory,
+            String pattern
+    ) {
+        this(plugin, playerRef, returnFilter, returnSearch, returnPage,
+                selectedCategory, pattern, false, null, null);
+    }
+
+    public static HardcoreAddMobCategoryPage forEdit(
+            HardcoreModePlugin plugin,
+            PlayerRef playerRef,
+            MobCategory returnFilter,
+            String returnSearch,
+            int returnPage,
+            MobCategory originalCategory,
+            String originalPattern
+    ) {
+        return new HardcoreAddMobCategoryPage(
+                plugin,
+                playerRef,
+                returnFilter,
+                returnSearch,
+                returnPage,
+                originalCategory,
+                originalPattern,
+                true,
+                originalCategory,
+                originalPattern
+        );
+    }
+
+    private HardcoreAddMobCategoryPage(
+            HardcoreModePlugin plugin,
+            PlayerRef playerRef,
+            MobCategory returnFilter,
+            String returnSearch,
+            int returnPage,
+            MobCategory selectedCategory,
+            String pattern,
+            boolean editMode,
+            MobCategory originalCategory,
+            String originalPattern
+    ) {
         super(playerRef, CustomPageLifetime.CanDismiss, HardcoreAddMobCategoryPageEventData.CODEC);
         this.plugin = plugin;
         this.playerRef = playerRef;
         this.returnFilter = returnFilter;
+        this.returnSearch = returnSearch != null ? returnSearch : "";
         this.returnPage = Math.max(0, returnPage);
         this.selectedCategory = selectedCategory != null ? selectedCategory : MobCategory.HOSTILE;
         this.pattern = pattern != null ? pattern : "";
+        this.editMode = editMode;
+        this.originalCategory = originalCategory;
+        this.originalPattern = originalPattern;
     }
 
     @Override
@@ -144,7 +216,16 @@ public class HardcoreAddMobCategoryPage extends InteractiveCustomUIPage<Hardcore
         if (Boolean.TRUE.equals(data.getSave())) {
             String trimmed = pattern != null ? pattern.trim() : "";
             if (!trimmed.isEmpty()) {
-                plugin.getMobCategoryResolver().addEntry(selectedCategory, trimmed);
+                if (editMode) {
+                    plugin.getMobCategoryResolver().updateEntry(
+                            originalCategory,
+                            originalPattern,
+                            selectedCategory,
+                            trimmed
+                    );
+                } else {
+                    plugin.getMobCategoryResolver().addEntry(selectedCategory, trimmed);
+                }
             }
             openMobCategoriesPage(ref, store);
         }
@@ -152,7 +233,10 @@ public class HardcoreAddMobCategoryPage extends InteractiveCustomUIPage<Hardcore
 
     private void fillHeader(UICommandBuilder commands) {
         commands.set(PAGE_TITLE_ID, "Hardcore Mode");
-        commands.set(SECTION_TITLE_ID, "Add Mob Category Entry");
+        commands.set(
+                SECTION_TITLE_ID,
+                editMode ? "Edit Mob Category Entry" : "Add Mob Category Entry"
+        );
         commands.set(SELECTED_CATEGORY_ID, "Selected: " + formatCategoryName(selectedCategory));
     }
 
@@ -199,8 +283,11 @@ public class HardcoreAddMobCategoryPage extends InteractiveCustomUIPage<Hardcore
             return;
         }
 
-        player.getPageManager().openCustomPage(ref, store,
-                new HardcoreMobCategoriesPage(plugin, playerRef, returnFilter, returnPage));
+        player.getPageManager().openCustomPage(
+                ref,
+                store,
+                new HardcoreMobCategoriesPage(plugin, playerRef, returnFilter, returnSearch, returnPage)
+        );
     }
 
     private void reopenPage(Ref<EntityStore> ref, Store<EntityStore> store) {
@@ -213,15 +300,37 @@ public class HardcoreAddMobCategoryPage extends InteractiveCustomUIPage<Hardcore
             return;
         }
 
-        player.getPageManager().openCustomPage(ref, store,
-                new HardcoreAddMobCategoryPage(plugin, playerRef, returnFilter, returnPage, selectedCategory, pattern));
+        HardcoreAddMobCategoryPage page = editMode
+                ? new HardcoreAddMobCategoryPage(
+                        plugin,
+                        playerRef,
+                        returnFilter,
+                        returnSearch,
+                        returnPage,
+                        selectedCategory,
+                        pattern,
+                        true,
+                        originalCategory,
+                        originalPattern
+                )
+                : new HardcoreAddMobCategoryPage(
+                        plugin,
+                        playerRef,
+                        returnFilter,
+                        returnSearch,
+                        returnPage,
+                        selectedCategory,
+                        pattern
+                );
+
+        player.getPageManager().openCustomPage(ref, store, page);
     }
 
     private String formatCategoryName(MobCategory category) {
         if (category == null) {
             return "Unknown";
         }
-        String name = category.name();
-        return name.charAt(0) + name.substring(1).toLowerCase(Locale.US);
+        String name = category.name().toLowerCase(Locale.US);
+        return Character.toUpperCase(name.charAt(0)) + name.substring(1);
     }
 }

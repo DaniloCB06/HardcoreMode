@@ -32,6 +32,7 @@ public class HardcoreRemoveMobCategoryPage extends InteractiveCustomUIPage<Hardc
     private final PlayerRef playerRef;
     private final MobCategoryResolver.CategoryEntry entry;
     private final MobCategory returnFilter;
+    private final String returnSearch;
     private final int returnPage;
 
     public HardcoreRemoveMobCategoryPage(
@@ -39,6 +40,7 @@ public class HardcoreRemoveMobCategoryPage extends InteractiveCustomUIPage<Hardc
             PlayerRef playerRef,
             MobCategoryResolver.CategoryEntry entry,
             MobCategory returnFilter,
+            String returnSearch,
             int returnPage
     ) {
         super(playerRef, CustomPageLifetime.CanDismiss, HardcoreRemoveMobCategoryPageEventData.CODEC);
@@ -46,6 +48,7 @@ public class HardcoreRemoveMobCategoryPage extends InteractiveCustomUIPage<Hardc
         this.playerRef = playerRef;
         this.entry = entry;
         this.returnFilter = returnFilter;
+        this.returnSearch = returnSearch != null ? returnSearch : "";
         this.returnPage = Math.max(0, returnPage);
     }
 
@@ -103,7 +106,7 @@ public class HardcoreRemoveMobCategoryPage extends InteractiveCustomUIPage<Hardc
         }
 
         player.getPageManager().openCustomPage(ref, store,
-                new HardcoreMobCategoriesPage(plugin, playerRef, returnFilter, returnPage));
+                new HardcoreMobCategoriesPage(plugin, playerRef, returnFilter, returnSearch, returnPage));
     }
 
     private String formatCategoryName(MobCategory category) {

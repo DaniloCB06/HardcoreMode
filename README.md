@@ -4,13 +4,17 @@
 
 **HardcoreMode** is a comprehensive server-side mod that transforms the difficulty and customization of creatures in Hytale. It allows you to adjust the difficulty level of creatures separated into different categories, features a highly configurable **Blood Moon** event to meet any need, and includes integrations with other mods for an enhanced experience.
 
+**Current Public Version**: **4.0.0**
+
 ### Key Features
 
 - **Advanced Creature Categorization**: Classify and configure creatures by categories (Hostile, Elite, Miniboss, Worldboss, Passive, Critter)
 - **Highly Configurable Blood Moon Event**: Automatic scheduling, custom multipliers, duration control, and special drops
+- **Money Rewards System**: Configure money rewards by creature or by category, with optional Blood Moon bonus multiplier
 - **Per-World Configuration (>= 3.1.0)**: Different settings per world (Enemy Settings, Blood Moon, Player Settings) and the ability to disable mod effects in specific worlds
 - **Custom Creature Management**: Add any creature to the mod and assign them to custom categories
 - **Personalized Loot Tables**: Configure custom item drops for each category during Blood Moon
+- **Economy Support**: Works with **VaultUnlocked** and compatible economy mods for money rewards
 - **Mod Integrations**:
   - **RPGLeveling**: Link XP distribution during Blood Moon events
   - **EndlessLeveling**: Link XP distribution during Blood Moon events
@@ -22,14 +26,18 @@
 
 ## ⚠️ Update 4.0.0 (Summary) ⚠️
 
-- **Updated for Hytale Early Access 0.5.7**: the mod has been refreshed for the newest Hytale version
-- **Proper target version support**: HardcoreMode now reports its compatibility correctly in the Hytale mods menu
-- **Mod icon support**: the mod now displays its icon correctly in the mods tab
-- **Blood Moon Drops toggle fixed**: Blood Moon drops now only happen when the option is actually enabled
-- **Blood Moon category drops fixed**: creatures defeated during Blood Moon now correctly drop the items configured for their category
-- **Expanded XP Multiplier integration**: Blood Moon XP multiplier now works with **RPGLeveling** or **EndlessLeveling**
-- **XP mod conflict warning**: if both leveling mods are installed at the same time, HardcoreMode now shows a clear warning in the setup
-- **Blood Moon stability improvements**: improved compatibility and behavior when Blood Moon starts and ends with supported XP mods
+- **Updated for Hytale Early Access 0.5.7**: HardcoreMode is now aligned with the current Hytale version
+- **Version 4.0.0 release**: this update marks the new public generation of HardcoreMode
+- **Correct mod compatibility display**: the mods tab now shows the target version properly
+- **Mod icon added**: HardcoreMode now appears with its own icon in the Hytale mods menu
+- **Blood Moon drops fixed**: creatures now correctly use the configured drop tables during Blood Moon
+- **Blood Moon drops toggle fixed**: disabling the option now truly disables the event drops
+- **Expanded XP support**: the Blood Moon XP multiplier now works with **RPGLeveling** or **EndlessLeveling**
+- **XP conflict warning added**: if both leveling mods are installed together, the mod now warns that only one should be used
+- **Economy integration added**: money rewards can now be configured for creatures and categories
+- **Blood Moon money multiplier added**: Blood Moon can now increase money rewards when economy support is available
+- **Money reward controls added to the GUI**: configure money rewards, search entries, edit values, and manage categories in-game
+- **Blood Moon stability improvements**: smoother behavior when Blood Moon starts and ends with supported integrations
 
 ---
 
@@ -67,6 +75,11 @@ Sorry for the inconvenience, but this change is required so per-world settings c
   (https://www.curseforge.com/hytale/mods/endlessleveling)
   
   *[Use only one XP leveling mod at a time for the setup to work correctly.]*
+
+- **VaultUnlocked Mod**: Required to enable money rewards together with a compatible economy mod.
+  (https://www.curseforge.com/hytale/mods/vaultunlocked)
+
+  *[Money rewards only work when VaultUnlocked and a supported economy mod are both available.]*
 
 ---
 
@@ -153,6 +166,7 @@ Configure the periodic Blood Moon event with advanced options:
 **Special Features**:
 
 - **XP Multiplier**: Bonus XP during Blood Moon (requires **RPGLeveling** or **EndlessLeveling**)
+- **Money Multiplier**: Bonus money during Blood Moon (requires **VaultUnlocked** plus a compatible economy mod)
 - **Force Blood Moon**: Manually trigger the event immediately (cooldown decreases every hour)
 - **Death Player Settings**: Increased penalties during Blood Moon
   - Item Durability Loss (%)
@@ -189,6 +203,7 @@ Advanced configuration options:
 
 - **Mob Categories Manager**: View and configure creature classifications
 - **Blood Moon Drops Manager**: Configure custom loot tables
+- **Money Mobs Drops Manager**: Configure money rewards for creatures and categories
 - **World Settings**: Enable or disable HardcoreMode effects for specific worlds in the universe
 
 ---
@@ -206,6 +221,7 @@ Access via General Settings → **Mob Categories**
 - View all creatures registered in the mod
 - Filter by category (All, Hostile, Elite, Miniboss, Worldboss, Passive, Critter)
 - See current category assignment for each creature
+- Edit creature entries directly from the GUI
 - Pagination support for large lists
 - Search and filter capabilities
 
@@ -223,13 +239,19 @@ The mod uses a flexible system to classify creatures.
 
 ```json
 {
-  "entries": [
-    { "category": "PASSIVE", "pattern": "Sheep" },
-    { "category": "CRITTER", "pattern": "Rat" },
-    { "category": "HOSTILE", "pattern": "Spider*" },
-    { "category": "ELITE", "pattern": "Spawn_Void" },
-    { "category": "MINIBOSS", "pattern": "Rex_Cave" },
-    { "category": "WORLDBOSS", "pattern": "Dragon_*" }
+  "categories": [
+    {
+      "category": "PASSIVE",
+      "mobs": ["Sheep"]
+    },
+    {
+      "category": "CRITTER",
+      "mobs": ["Rat"]
+    },
+    {
+      "category": "HOSTILE",
+      "mobs": ["Spider*"]
+    }
   ]
 }
 ```
@@ -242,7 +264,7 @@ The mod uses a flexible system to classify creatures.
 
 **Adding New Mobs**:
 
-You can only add new mobs to one of the six categories that already exist in the mod (`PASSIVE`, `CRITTER`, `HOSTILE`, `ELITE`, `MINIBOSS`, and `WORLDBOSS`) by editing the `HardcoreModeCategories.json` file located in the server’s default directory (`com.example.HardcoreMode`).
+You can add new mobs to one of the six categories that already exist in the mod (`PASSIVE`, `CRITTER`, `HOSTILE`, `ELITE`, `MINIBOSS`, and `WORLDBOSS`) through the GUI or by editing the `HardcoreModeCategories.json` file located in the server’s default directory (`com.example.HardcoreMode`).
 
 ---
 
@@ -289,15 +311,45 @@ Access via General Settings → **Blood Moon Drops**
 
 - View all configured drops
 - Enable/disable drops with checkbox
+- Edit drops directly from the GUI
 - Remove drops with button
 - Add new drops with the **Add Drop** button
 - Filter by category
+- Search by item or category
 - Pagination for large drop lists
 - Reload configuration button
 
 **Adding New Drops**:
 
-Only by editing the `HardcoreModeBloodMoonDrops.json` file located in the server’s default directory (`com.example.HardcoreMode`) is it possible to add new drops for each category.
+You can add, edit, enable, disable, and remove drops directly from the GUI, or customize them manually in the `HardcoreModeBloodMoonDrops.json` file located in the server’s default directory (`com.example.HardcoreMode`).
+
+---
+
+## Money Rewards System
+
+### Money Mobs Drops Page
+
+Access via General Settings → **Money Mobs Drops**
+
+**Features**:
+
+- Configure money rewards by creature category
+- Configure money rewards for individual creatures
+- Enable or disable all money rewards with a single toggle
+- Search creature patterns quickly
+- Edit or clear values directly from the GUI
+- Use Blood Moon money multiplier when economy support is available
+
+**Requirements**:
+
+- **VaultUnlocked**
+- One compatible economy mod supported by **VaultUnlocked**
+
+**Notes**:
+
+- If the required economy support is missing, HardcoreMode will show a warning in the GUI
+- Money rewards are disabled by default until you choose to enable them
+- Blood Moon money multiplier only appears when the required economy setup is detected
 
 ---
 
@@ -325,6 +377,8 @@ These settings are still **global** (shared across all worlds):
 - **Creature settings and categories** (classification and category rules)
 - **Blood Moon drops configuration**
 - **XP multiplier integration** (active when **RPGLeveling** or **EndlessLeveling** is detected) is **global** and affects **all worlds** =C
+- **Money rewards configuration**
+- **Money multiplier integration** (active when **VaultUnlocked** and a compatible economy mod are detected) is **global** and affects **all worlds**
 
 ---
 
@@ -351,6 +405,7 @@ These files remain **global** (shared across all worlds):
 
 - `HardcoreModeCategories.json` (creatures/categories)
 - `HardcoreModeBloodMoonDrops.json` (Blood Moon drops)
+- `HardcoreModeMoneyMobsDrops.json` (money rewards)
 
 **Note**: You can manually edit values outside GUI slider ranges (e.g., >10x multiplier).
 
@@ -365,6 +420,8 @@ This file is located in the `config` folder, and it basically stores the worlds 
 - **GUI Slider Limits**: Sliders show 1x-10x, but JSON config accepts any value
 - **Per-World Settings (>= 3.1.0)**: Enemy Settings, Blood Moon, and Player Settings are saved per world
 - **Global Settings**: Creature categories, Blood Moon drops, and XP multiplier integration apply to all worlds
+- **Money Rewards**: Creature money rewards are optional and stay disabled until you turn them on
+- **Economy Setup**: Money rewards and Blood Moon money multiplier require **VaultUnlocked** plus a compatible economy mod
 - **Blood Moon Override**: Blood Moon multipliers override normal settings during the event
 - **Category Disable**: Disabling a category removes all buffs, even during Blood Moon (unless the category is enabled for Blood Moon)
 - **Drop Testing**: Use Force Blood Moon to test drop configurations
@@ -389,5 +446,13 @@ This file is located in the `config` folder, and it basically stores the worlds 
 - Verify item IDs are correct
 - Check drop chance percentage
 - Confirm category matches creature classification
+
+**Money rewards not working**:
+
+- Ensure Money Drops is enabled
+- Confirm **VaultUnlocked** is installed
+- Confirm a compatible economy mod is installed
+- Check if the creature or category has a money value configured
+- During Blood Moon, check if the money multiplier is available only when the economy setup is detected
 
 **Enjoy!! =)**

@@ -185,6 +185,47 @@ public class MobCategoryResolver {
         return removed;
     }
 
+    public boolean updateEntry(
+            MobCategory originalCategory,
+            String originalPattern,
+            MobCategory newCategory,
+            String newPattern
+    ) {
+        if (originalCategory == null || originalPattern == null || newCategory == null || newPattern == null) {
+            return false;
+        }
+
+        String originalTrimmed = originalPattern.trim();
+        String newTrimmed = newPattern.trim();
+        if (originalTrimmed.isEmpty() || newTrimmed.isEmpty()) {
+            return false;
+        }
+
+        for (int i = 0; i < patterns.size(); i++) {
+            CategoryPattern current = patterns.get(i);
+            if (current.category != originalCategory || !current.rawPattern.equalsIgnoreCase(originalTrimmed)) {
+                continue;
+            }
+
+            for (int j = 0; j < patterns.size(); j++) {
+                if (i == j) {
+                    continue;
+                }
+
+                CategoryPattern other = patterns.get(j);
+                if (other.rawPattern.equalsIgnoreCase(newTrimmed)) {
+                    return false;
+                }
+            }
+
+            patterns.set(i, new CategoryPattern(newCategory, newTrimmed, compileGlob(newTrimmed), current.order));
+            saveToJson();
+            return true;
+        }
+
+        return false;
+    }
+
     private void loadPatterns() {
         List<CategoryPattern> loaded = tryLoadFromJson();
         if (loaded.isEmpty()) {

@@ -7,7 +7,7 @@ Group {
   Anchor: (Bottom: 2);
 
   Group #EnabledContainer {
-    Anchor: (Width: 60);
+    Anchor: (Width: 70);
     LayoutMode: Left;
 
     $C.@CheckBox #Enabled {
@@ -41,8 +41,19 @@ Group {
     Style: (...$C.@DefaultLabelStyle, FontSize: 14, TextColor: #b8c8d8, HorizontalAlignment: Center, VerticalAlignment: Center);
   }
 
+  $C.@SmallSecondaryTextButton #EditButton {
+    Anchor: (Width: 80, Height: 28, Left: 8);
+    Text: "Edit";
+  }
+
+  $C.@CheckBox #EditValue {
+    Anchor: (Width: 0, Height: 0);
+    Visible: false;
+    Value: true;
+  }
+
   $C.@SmallSecondaryTextButton #RemoveButton {
-    Anchor: (Width: 100, Height: 28, Left: 8);
+    Anchor: (Width: 80, Height: 28, Left: 8);
     Text: "Remove";
   }
 

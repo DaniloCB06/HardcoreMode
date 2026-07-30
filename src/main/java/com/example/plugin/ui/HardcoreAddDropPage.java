@@ -25,7 +25,7 @@ public class HardcoreAddDropPage extends InteractiveCustomUIPage<HardcoreAddDrop
 
     private static final String ITEM_ID_INPUT_PATH = "#ItemIdInput";
     private static final String ITEM_ID_VALUE_PATH = "#ItemIdInput.Value";
-    
+
     private static final String HOSTILE_BUTTON_PATH = "#HostileButton";
     private static final String HOSTILE_VALUE_PATH = "#HostileValue.Value";
     private static final String ELITE_BUTTON_PATH = "#EliteButton";
@@ -34,7 +34,7 @@ public class HardcoreAddDropPage extends InteractiveCustomUIPage<HardcoreAddDrop
     private static final String MINIBOSS_VALUE_PATH = "#MinibossValue.Value";
     private static final String WORLDBOSS_BUTTON_PATH = "#WorldbossButton";
     private static final String WORLDBOSS_VALUE_PATH = "#WorldbossValue.Value";
-    
+
     private static final String MIN_QUANTITY_INPUT_PATH = "#MinQuantityInput";
     private static final String MIN_QUANTITY_VALUE_PATH = "#MinQuantityInput.Value";
     private static final String MAX_QUANTITY_INPUT_PATH = "#MaxQuantityInput";
@@ -61,20 +61,11 @@ public class HardcoreAddDropPage extends InteractiveCustomUIPage<HardcoreAddDrop
             "#FormContainer #AdjustValues #AdjustChanceMinus.Value";
     private static final String ADJUST_CHANCE_PLUS_VALUE_PATH =
             "#FormContainer #AdjustValues #AdjustChancePlus.Value";
-    
+
     private static final String CANCEL_BUTTON_PATH = "#BottomButtonsContainer #CancelButton";
     private static final String CANCEL_VALUE_PATH = "#BottomButtonsContainer #CancelValue.Value";
     private static final String SAVE_BUTTON_PATH = "#BottomButtonsContainer #SaveButton";
     private static final String SAVE_VALUE_PATH = "#BottomButtonsContainer #SaveValue.Value";
-
-    private final HardcoreModePlugin plugin;
-    private final PlayerRef playerRef;
-    private MobCategory selectedCategory = MobCategory.HOSTILE;
-    private String itemId = DEFAULT_ITEM_ID;
-    private int minQuantity = 1;
-    private int maxQuantity = 1;
-    private float dropChance = 50.0f;
-    private final int returnPage;
 
     private static final String DEFAULT_ITEM_ID = "Ingredient_Bar_Iron";
     private static final int MIN_QTY_MIN = 1;
@@ -86,17 +77,44 @@ public class HardcoreAddDropPage extends InteractiveCustomUIPage<HardcoreAddDrop
     private static final int QTY_STEP = 1;
     private static final float CHANCE_STEP = 1.0f;
 
+    private final HardcoreModePlugin plugin;
+    private final PlayerRef playerRef;
+    private final MobCategory returnFilter;
+    private final String returnSearch;
+    private final int returnPage;
+    private final boolean editMode;
+    private final MobCategory originalCategory;
+    private final String originalItemId;
+    private MobCategory selectedCategory = MobCategory.HOSTILE;
+    private String itemId = DEFAULT_ITEM_ID;
+    private int minQuantity = 1;
+    private int maxQuantity = 1;
+    private float dropChance = 50.0f;
+
     public HardcoreAddDropPage(HardcoreModePlugin plugin, PlayerRef playerRef) {
-        this(plugin, playerRef, 0);
+        this(plugin, playerRef, null, "", 0, MobCategory.HOSTILE, DEFAULT_ITEM_ID, 1, 1, 50.0f, false, null, null);
     }
 
     public HardcoreAddDropPage(HardcoreModePlugin plugin, PlayerRef playerRef, int returnPage) {
-        this(plugin, playerRef, returnPage, MobCategory.HOSTILE, DEFAULT_ITEM_ID, 1, 1, 50.0f);
+        this(plugin, playerRef, null, "", returnPage, MobCategory.HOSTILE, DEFAULT_ITEM_ID, 1, 1, 50.0f, false, null, null);
     }
 
     public HardcoreAddDropPage(
             HardcoreModePlugin plugin,
             PlayerRef playerRef,
+            MobCategory returnFilter,
+            String returnSearch,
+            int returnPage
+    ) {
+        this(plugin, playerRef, returnFilter, returnSearch, returnPage,
+                MobCategory.HOSTILE, DEFAULT_ITEM_ID, 1, 1, 50.0f, false, null, null);
+    }
+
+    public HardcoreAddDropPage(
+            HardcoreModePlugin plugin,
+            PlayerRef playerRef,
+            MobCategory returnFilter,
+            String returnSearch,
             int returnPage,
             MobCategory selectedCategory,
             String itemId,
@@ -104,10 +122,63 @@ public class HardcoreAddDropPage extends InteractiveCustomUIPage<HardcoreAddDrop
             int maxQuantity,
             float dropChance
     ) {
+        this(plugin, playerRef, returnFilter, returnSearch, returnPage,
+                selectedCategory, itemId, minQuantity, maxQuantity, dropChance, false, null, null);
+    }
+
+    public static HardcoreAddDropPage forEdit(
+            HardcoreModePlugin plugin,
+            PlayerRef playerRef,
+            MobCategory returnFilter,
+            String returnSearch,
+            int returnPage,
+            MobCategory originalCategory,
+            String originalItemId,
+            int minQuantity,
+            int maxQuantity,
+            float dropChance
+    ) {
+        return new HardcoreAddDropPage(
+                plugin,
+                playerRef,
+                returnFilter,
+                returnSearch,
+                returnPage,
+                originalCategory,
+                originalItemId,
+                minQuantity,
+                maxQuantity,
+                dropChance,
+                true,
+                originalCategory,
+                originalItemId
+        );
+    }
+
+    private HardcoreAddDropPage(
+            HardcoreModePlugin plugin,
+            PlayerRef playerRef,
+            MobCategory returnFilter,
+            String returnSearch,
+            int returnPage,
+            MobCategory selectedCategory,
+            String itemId,
+            int minQuantity,
+            int maxQuantity,
+            float dropChance,
+            boolean editMode,
+            MobCategory originalCategory,
+            String originalItemId
+    ) {
         super(playerRef, CustomPageLifetime.CanDismiss, HardcoreAddDropPageEventData.CODEC);
         this.plugin = plugin;
         this.playerRef = playerRef;
+        this.returnFilter = returnFilter;
+        this.returnSearch = returnSearch != null ? returnSearch : "";
         this.returnPage = Math.max(0, returnPage);
+        this.editMode = editMode;
+        this.originalCategory = originalCategory;
+        this.originalItemId = originalItemId;
         if (selectedCategory != null) {
             this.selectedCategory = selectedCategory;
         }
@@ -150,7 +221,6 @@ public class HardcoreAddDropPage extends InteractiveCustomUIPage<HardcoreAddDrop
         }
 
         boolean clamped = false;
-
         if (data.getMinQuantity() != null) {
             clamped |= applyMinQuantityInput(data.getMinQuantity());
         }
@@ -166,13 +236,11 @@ public class HardcoreAddDropPage extends InteractiveCustomUIPage<HardcoreAddDrop
             return;
         }
 
-        // Handle cancel
         if (Boolean.TRUE.equals(data.getCancel())) {
             openBloodMoonDropsPage(ref, store);
             return;
         }
 
-        // Handle category selection
         if (Boolean.TRUE.equals(data.getHostile())) {
             selectedCategory = MobCategory.HOSTILE;
             reopenPage(ref, store);
@@ -194,26 +262,27 @@ public class HardcoreAddDropPage extends InteractiveCustomUIPage<HardcoreAddDrop
             return;
         }
 
-        // Handle save
         if (Boolean.TRUE.equals(data.getSave())) {
-            String resolvedItemId = itemId != null && !itemId.trim().isEmpty()
-                    ? itemId.trim()
-                    : DEFAULT_ITEM_ID;
-
+            String resolvedItemId = itemId != null && !itemId.trim().isEmpty() ? itemId.trim() : DEFAULT_ITEM_ID;
             int minQty = minQuantity;
-            int maxQty = maxQuantity;
+            int maxQty = Math.max(minQty, maxQuantity);
             float chance = dropChance;
 
-            // Ensure max >= min
-            if (maxQty < minQty) {
-                maxQty = minQty;
+            BloodMoonDropConfig dropConfig = plugin.getBloodMoonDropConfig();
+            if (editMode) {
+                dropConfig.updateDropEntry(
+                        originalCategory,
+                        originalItemId,
+                        selectedCategory,
+                        resolvedItemId,
+                        minQty,
+                        maxQty,
+                        chance
+                );
+            } else {
+                dropConfig.addDropEntry(selectedCategory, resolvedItemId, minQty, maxQty, chance);
             }
 
-            // Add the drop entry
-            BloodMoonDropConfig dropConfig = plugin.getBloodMoonDropConfig();
-            dropConfig.addDropEntry(selectedCategory, resolvedItemId, minQty, maxQty, chance);
-
-            // Go back to drops page
             openBloodMoonDropsPage(ref, store);
             return;
         }
@@ -225,58 +294,34 @@ public class HardcoreAddDropPage extends InteractiveCustomUIPage<HardcoreAddDrop
 
     private void fillHeader(UICommandBuilder commands) {
         commands.set(PAGE_TITLE_ID, "Hardcore Mode");
-        commands.set(SECTION_TITLE_ID, "Add Blood Moon Drop");
-        updateSelectedCategoryLabel(commands);
+        commands.set(SECTION_TITLE_ID, editMode ? "Edit Blood Moon Drop" : "Add Blood Moon Drop");
+        commands.set(SELECTED_CATEGORY_ID, "Selected: " + formatCategoryName(selectedCategory));
     }
 
     private void fillForm(UICommandBuilder commands) {
-        String resolvedItemId = itemId != null ? itemId : DEFAULT_ITEM_ID;
-        commands.set(ITEM_ID_VALUE_PATH, resolvedItemId);
-
+        commands.set(ITEM_ID_VALUE_PATH, itemId != null ? itemId : DEFAULT_ITEM_ID);
         commands.set(MIN_QUANTITY_VALUE_PATH, String.valueOf(minQuantity));
         commands.set(MAX_QUANTITY_VALUE_PATH, String.valueOf(maxQuantity));
         commands.set(DROP_CHANCE_VALUE_PATH, formatChance(dropChance));
     }
 
-    private void updateSelectedCategoryLabel(UICommandBuilder commands) {
-        String categoryName = formatCategoryName(selectedCategory);
-        commands.set(SELECTED_CATEGORY_ID, "Selected: " + categoryName);
-    }
-
-    private String formatCategoryName(MobCategory category) {
-        if (category == null) return "Unknown";
-        String name = category.name();
-        return name.charAt(0) + name.substring(1).toLowerCase(Locale.US);
-    }
-
     private void bindEvents(UIEventBuilder events) {
-        EventData itemIdData = EventData.of(HardcoreAddDropPageEventData.KEY_ITEM_ID, ITEM_ID_VALUE_PATH);
-        events.addEventBinding(CustomUIEventBindingType.ValueChanged, ITEM_ID_INPUT_PATH, itemIdData, false);
-
-        // Category buttons
-        EventData hostileData = EventData.of(HardcoreAddDropPageEventData.KEY_HOSTILE, HOSTILE_VALUE_PATH);
-        events.addEventBinding(CustomUIEventBindingType.Activating, HOSTILE_BUTTON_PATH, hostileData, false);
-
-        EventData eliteData = EventData.of(HardcoreAddDropPageEventData.KEY_ELITE, ELITE_VALUE_PATH);
-        events.addEventBinding(CustomUIEventBindingType.Activating, ELITE_BUTTON_PATH, eliteData, false);
-
-        EventData minibossData = EventData.of(HardcoreAddDropPageEventData.KEY_MINIBOSS, MINIBOSS_VALUE_PATH);
-        events.addEventBinding(CustomUIEventBindingType.Activating, MINIBOSS_BUTTON_PATH, minibossData, false);
-
-        EventData worldbossData = EventData.of(HardcoreAddDropPageEventData.KEY_WORLDBOSS, WORLDBOSS_VALUE_PATH);
-        events.addEventBinding(CustomUIEventBindingType.Activating, WORLDBOSS_BUTTON_PATH, worldbossData, false);
-
-        // Quantity and chance inputs
-        EventData minQtyData = EventData.of(HardcoreAddDropPageEventData.KEY_MIN_QUANTITY, MIN_QUANTITY_VALUE_PATH);
-        events.addEventBinding(CustomUIEventBindingType.ValueChanged, MIN_QUANTITY_INPUT_PATH, minQtyData, false);
-
-        EventData maxQtyData = EventData.of(HardcoreAddDropPageEventData.KEY_MAX_QUANTITY, MAX_QUANTITY_VALUE_PATH);
-        events.addEventBinding(CustomUIEventBindingType.ValueChanged, MAX_QUANTITY_INPUT_PATH, maxQtyData, false);
-
-        EventData dropChanceData = EventData.of(HardcoreAddDropPageEventData.KEY_DROP_CHANCE, DROP_CHANCE_VALUE_PATH);
-        events.addEventBinding(CustomUIEventBindingType.ValueChanged, DROP_CHANCE_INPUT_PATH, dropChanceData, false);
-
-        // Adjust buttons
+        events.addEventBinding(CustomUIEventBindingType.ValueChanged, ITEM_ID_INPUT_PATH,
+                EventData.of(HardcoreAddDropPageEventData.KEY_ITEM_ID, ITEM_ID_VALUE_PATH), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, HOSTILE_BUTTON_PATH,
+                EventData.of(HardcoreAddDropPageEventData.KEY_HOSTILE, HOSTILE_VALUE_PATH), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, ELITE_BUTTON_PATH,
+                EventData.of(HardcoreAddDropPageEventData.KEY_ELITE, ELITE_VALUE_PATH), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, MINIBOSS_BUTTON_PATH,
+                EventData.of(HardcoreAddDropPageEventData.KEY_MINIBOSS, MINIBOSS_VALUE_PATH), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, WORLDBOSS_BUTTON_PATH,
+                EventData.of(HardcoreAddDropPageEventData.KEY_WORLDBOSS, WORLDBOSS_VALUE_PATH), false);
+        events.addEventBinding(CustomUIEventBindingType.ValueChanged, MIN_QUANTITY_INPUT_PATH,
+                EventData.of(HardcoreAddDropPageEventData.KEY_MIN_QUANTITY, MIN_QUANTITY_VALUE_PATH), false);
+        events.addEventBinding(CustomUIEventBindingType.ValueChanged, MAX_QUANTITY_INPUT_PATH,
+                EventData.of(HardcoreAddDropPageEventData.KEY_MAX_QUANTITY, MAX_QUANTITY_VALUE_PATH), false);
+        events.addEventBinding(CustomUIEventBindingType.ValueChanged, DROP_CHANCE_INPUT_PATH,
+                EventData.of(HardcoreAddDropPageEventData.KEY_DROP_CHANCE, DROP_CHANCE_VALUE_PATH), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, MIN_QUANTITY_MINUS_PATH,
                 EventData.of(HardcoreAddDropPageEventData.KEY_ADJUST, ADJUST_MIN_QUANTITY_MINUS_VALUE_PATH), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, MIN_QUANTITY_PLUS_PATH,
@@ -289,13 +334,10 @@ public class HardcoreAddDropPage extends InteractiveCustomUIPage<HardcoreAddDrop
                 EventData.of(HardcoreAddDropPageEventData.KEY_ADJUST, ADJUST_CHANCE_MINUS_VALUE_PATH), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, DROP_CHANCE_PLUS_PATH,
                 EventData.of(HardcoreAddDropPageEventData.KEY_ADJUST, ADJUST_CHANCE_PLUS_VALUE_PATH), false);
-
-        // Navigation buttons
-        EventData cancelData = EventData.of(HardcoreAddDropPageEventData.KEY_CANCEL, CANCEL_VALUE_PATH);
-        events.addEventBinding(CustomUIEventBindingType.Activating, CANCEL_BUTTON_PATH, cancelData, false);
-
-        EventData saveData = EventData.of(HardcoreAddDropPageEventData.KEY_SAVE, SAVE_VALUE_PATH);
-        events.addEventBinding(CustomUIEventBindingType.Activating, SAVE_BUTTON_PATH, saveData, false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, CANCEL_BUTTON_PATH,
+                EventData.of(HardcoreAddDropPageEventData.KEY_CANCEL, CANCEL_VALUE_PATH), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, SAVE_BUTTON_PATH,
+                EventData.of(HardcoreAddDropPageEventData.KEY_SAVE, SAVE_VALUE_PATH), false);
     }
 
     private void openBloodMoonDropsPage(Ref<EntityStore> ref, Store<EntityStore> store) {
@@ -308,7 +350,11 @@ public class HardcoreAddDropPage extends InteractiveCustomUIPage<HardcoreAddDrop
             return;
         }
 
-        player.getPageManager().openCustomPage(ref, store, new HardcoreBloodMoonDropsPage(plugin, playerRef, returnPage));
+        player.getPageManager().openCustomPage(
+                ref,
+                store,
+                new HardcoreBloodMoonDropsPage(plugin, playerRef, returnFilter, returnSearch, returnPage)
+        );
     }
 
     private void reopenPage(Ref<EntityStore> ref, Store<EntityStore> store) {
@@ -321,20 +367,36 @@ public class HardcoreAddDropPage extends InteractiveCustomUIPage<HardcoreAddDrop
             return;
         }
 
-        player.getPageManager().openCustomPage(
-                ref,
-                store,
-                new HardcoreAddDropPage(
+        HardcoreAddDropPage page = editMode
+                ? new HardcoreAddDropPage(
                         plugin,
                         playerRef,
+                        returnFilter,
+                        returnSearch,
+                        returnPage,
+                        selectedCategory,
+                        itemId,
+                        minQuantity,
+                        maxQuantity,
+                        dropChance,
+                        true,
+                        originalCategory,
+                        originalItemId
+                )
+                : new HardcoreAddDropPage(
+                        plugin,
+                        playerRef,
+                        returnFilter,
+                        returnSearch,
                         returnPage,
                         selectedCategory,
                         itemId,
                         minQuantity,
                         maxQuantity,
                         dropChance
-                )
-        );
+                );
+
+        player.getPageManager().openCustomPage(ref, store, page);
     }
 
     private boolean applyMinQuantityInput(String value) {
@@ -342,14 +404,14 @@ public class HardcoreAddDropPage extends InteractiveCustomUIPage<HardcoreAddDrop
         if (parsed == null) {
             return false;
         }
-        int clamped = clamp(parsed, MIN_QTY_MIN, MIN_QTY_MAX);
-        boolean changed = clamped != minQuantity;
-        minQuantity = clamped;
+        int clampedValue = clamp(parsed, MIN_QTY_MIN, MIN_QTY_MAX);
+        boolean changed = clampedValue != minQuantity;
+        minQuantity = clampedValue;
         if (maxQuantity < minQuantity) {
             maxQuantity = minQuantity;
             changed = true;
         }
-        return clamped != parsed || changed;
+        return changed || clampedValue != parsed;
     }
 
     private boolean applyMaxQuantityInput(String value) {
@@ -357,14 +419,13 @@ public class HardcoreAddDropPage extends InteractiveCustomUIPage<HardcoreAddDrop
         if (parsed == null) {
             return false;
         }
-        int clamped = clamp(parsed, MAX_QTY_MIN, MAX_QTY_MAX);
-        boolean changed = clamped != maxQuantity;
-        maxQuantity = clamped;
-        if (maxQuantity < minQuantity) {
-            maxQuantity = minQuantity;
-            changed = true;
+        int clampedValue = clamp(parsed, MAX_QTY_MIN, MAX_QTY_MAX);
+        if (clampedValue < minQuantity) {
+            clampedValue = minQuantity;
         }
-        return clamped != parsed || changed;
+        boolean changed = clampedValue != maxQuantity;
+        maxQuantity = clampedValue;
+        return changed || clampedValue != parsed;
     }
 
     private boolean applyDropChanceInput(String value) {
@@ -372,66 +433,48 @@ public class HardcoreAddDropPage extends InteractiveCustomUIPage<HardcoreAddDrop
         if (parsed == null) {
             return false;
         }
-        float clamped = clamp(parsed, CHANCE_MIN, CHANCE_MAX);
-        boolean changed = Math.abs(clamped - dropChance) > 0.0001f;
-        dropChance = clamped;
-        return Math.abs(clamped - parsed) > 0.0001f || changed;
+        float clampedValue = clamp(parsed, CHANCE_MIN, CHANCE_MAX);
+        boolean changed = Float.compare(clampedValue, dropChance) != 0;
+        dropChance = clampedValue;
+        return changed || Float.compare(clampedValue, parsed) != 0;
     }
 
     private void handleAdjustAction(String action) {
-        if (action == null || action.trim().isEmpty()) {
-            return;
+        if ("min_qty:-".equalsIgnoreCase(action)) {
+            minQuantity = clamp(minQuantity - QTY_STEP, MIN_QTY_MIN, MIN_QTY_MAX);
+            if (maxQuantity < minQuantity) {
+                maxQuantity = minQuantity;
+            }
+        } else if ("min_qty:+".equalsIgnoreCase(action)) {
+            minQuantity = clamp(minQuantity + QTY_STEP, MIN_QTY_MIN, MIN_QTY_MAX);
+            if (maxQuantity < minQuantity) {
+                maxQuantity = minQuantity;
+            }
+        } else if ("max_qty:-".equalsIgnoreCase(action)) {
+            maxQuantity = clamp(maxQuantity - QTY_STEP, MAX_QTY_MIN, MAX_QTY_MAX);
+            if (maxQuantity < minQuantity) {
+                maxQuantity = minQuantity;
+            }
+        } else if ("max_qty:+".equalsIgnoreCase(action)) {
+            maxQuantity = clamp(maxQuantity + QTY_STEP, MAX_QTY_MIN, MAX_QTY_MAX);
+            if (maxQuantity < minQuantity) {
+                maxQuantity = minQuantity;
+            }
+        } else if ("chance:-".equalsIgnoreCase(action)) {
+            dropChance = clamp(dropChance - CHANCE_STEP, CHANCE_MIN, CHANCE_MAX);
+        } else if ("chance:+".equalsIgnoreCase(action)) {
+            dropChance = clamp(dropChance + CHANCE_STEP, CHANCE_MIN, CHANCE_MAX);
         }
-
-        String normalized = action.trim().toLowerCase(Locale.ROOT);
-        switch (normalized) {
-            case "min_qty:-":
-                minQuantity = clamp(minQuantity - QTY_STEP, MIN_QTY_MIN, MIN_QTY_MAX);
-                if (maxQuantity < minQuantity) {
-                    maxQuantity = minQuantity;
-                }
-                break;
-            case "min_qty:+":
-                minQuantity = clamp(minQuantity + QTY_STEP, MIN_QTY_MIN, MIN_QTY_MAX);
-                if (maxQuantity < minQuantity) {
-                    maxQuantity = minQuantity;
-                }
-                break;
-            case "max_qty:-":
-                maxQuantity = clamp(maxQuantity - QTY_STEP, MAX_QTY_MIN, MAX_QTY_MAX);
-                if (maxQuantity < minQuantity) {
-                    maxQuantity = minQuantity;
-                }
-                break;
-            case "max_qty:+":
-                maxQuantity = clamp(maxQuantity + QTY_STEP, MAX_QTY_MIN, MAX_QTY_MAX);
-                if (maxQuantity < minQuantity) {
-                    minQuantity = maxQuantity;
-                }
-                break;
-            case "chance:-":
-                dropChance = clamp(dropChance - CHANCE_STEP, CHANCE_MIN, CHANCE_MAX);
-                break;
-            case "chance:+":
-                dropChance = clamp(dropChance + CHANCE_STEP, CHANCE_MIN, CHANCE_MAX);
-                break;
-            default:
-                return;
-        }
-
-        sendFormUpdate();
     }
 
     private void sendFormUpdate() {
-        UICommandBuilder update = new UICommandBuilder();
-        update.set(MIN_QUANTITY_VALUE_PATH, String.valueOf(minQuantity));
-        update.set(MAX_QUANTITY_VALUE_PATH, String.valueOf(maxQuantity));
-        update.set(DROP_CHANCE_VALUE_PATH, formatChance(dropChance));
-        sendUpdate(update);
+        UICommandBuilder updateCommands = new UICommandBuilder();
+        fillForm(updateCommands);
+        sendUpdate(updateCommands, new UIEventBuilder(), false);
     }
 
     private Integer parseInt(String value) {
-        if (value == null || value.trim().isEmpty()) {
+        if (value == null || value.isBlank()) {
             return null;
         }
         try {
@@ -442,41 +485,36 @@ public class HardcoreAddDropPage extends InteractiveCustomUIPage<HardcoreAddDrop
     }
 
     private Float parseFloat(String value) {
-        if (value == null || value.trim().isEmpty()) {
+        if (value == null || value.isBlank()) {
             return null;
         }
-        String normalized = value.trim().replace(',', '.');
         try {
-            return Float.parseFloat(normalized);
+            return Float.parseFloat(value.trim().replace(',', '.'));
         } catch (NumberFormatException ignored) {
             return null;
         }
     }
 
-    private String formatChance(float value) {
-        if (Math.abs(value - Math.round(value)) < 0.0001f) {
-            return String.valueOf(Math.round(value));
-        }
-        return String.format(Locale.US, "%.1f", value);
-    }
-
     private int clamp(int value, int min, int max) {
-        if (value < min) {
-            return min;
-        }
-        if (value > max) {
-            return max;
-        }
-        return value;
+        return Math.max(min, Math.min(max, value));
     }
 
     private float clamp(float value, float min, float max) {
-        if (value < min) {
+        if (Float.isNaN(value) || Float.isInfinite(value)) {
             return min;
         }
-        if (value > max) {
-            return max;
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private String formatChance(float value) {
+        return String.format(Locale.US, "%.1f", value);
+    }
+
+    private String formatCategoryName(MobCategory category) {
+        if (category == null) {
+            return "Unknown";
         }
-        return value;
+        String name = category.name().toLowerCase(Locale.US);
+        return Character.toUpperCase(name.charAt(0)) + name.substring(1);
     }
 }

@@ -36,6 +36,8 @@ public class HardcoreRemoveDropPage extends InteractiveCustomUIPage<HardcoreRemo
     private final MobCategory category;
     private final String itemId;
     private final BloodMoonDropConfig.DropEntry entry;
+    private final MobCategory returnFilter;
+    private final String returnSearch;
     private final int returnPage;
 
     public HardcoreRemoveDropPage(
@@ -44,6 +46,8 @@ public class HardcoreRemoveDropPage extends InteractiveCustomUIPage<HardcoreRemo
             MobCategory category,
             String itemId,
             BloodMoonDropConfig.DropEntry entry,
+            MobCategory returnFilter,
+            String returnSearch,
             int returnPage
     ) {
         super(playerRef, CustomPageLifetime.CanDismiss, HardcoreRemoveDropPageEventData.CODEC);
@@ -52,6 +56,8 @@ public class HardcoreRemoveDropPage extends InteractiveCustomUIPage<HardcoreRemo
         this.category = category;
         this.itemId = itemId;
         this.entry = entry;
+        this.returnFilter = returnFilter;
+        this.returnSearch = returnSearch != null ? returnSearch : "";
         this.returnPage = Math.max(0, returnPage);
     }
 
@@ -117,7 +123,7 @@ public class HardcoreRemoveDropPage extends InteractiveCustomUIPage<HardcoreRemo
         }
 
         player.getPageManager().openCustomPage(ref, store,
-                new HardcoreBloodMoonDropsPage(plugin, playerRef, returnPage));
+                new HardcoreBloodMoonDropsPage(plugin, playerRef, returnFilter, returnSearch, returnPage));
     }
 
     private String formatCategoryName(MobCategory category) {

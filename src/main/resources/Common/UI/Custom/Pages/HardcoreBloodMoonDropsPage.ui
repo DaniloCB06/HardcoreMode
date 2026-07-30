@@ -3,7 +3,7 @@ $C = "../Common.ui";
 $C.@PageOverlay {}
 
 $C.@Container {
-  Anchor: (Width: 1100, Height: 850);
+  Anchor: (Width: 1260, Height: 1020);
 
   #Title {
     Group {
@@ -36,13 +36,94 @@ $C.@Container {
         VerticalAlignment: Center,
         HorizontalAlignment: Center
       );
-      Anchor: (Bottom: 16);
-      Text: "Use the Add button below to create drops. For bulk edits, change 'HardcoreModeBloodMoonDrops.json' in 'com.example_HardcoreMode'";
+      Anchor: (Bottom: 14);
+      Text: "Manage Blood Moon drops here.";
+    }
+
+    Group #FiltersContainer {
+      LayoutMode: Left;
+      Padding: (Left: 8, Right: 8, Top: 6, Bottom: 6);
+      Background: (Color: #0d1a2b);
+      Anchor: (Bottom: 8);
+
+      Label #SearchLabel {
+        Anchor: (Width: 55);
+        Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #a8b5c9, VerticalAlignment: Center);
+        Text: "Search:";
+      }
+
+      TextField #SearchInput {
+        Anchor: (Width: 240, Height: 28, Right: 10);
+        PlaceholderText: "Item or category...";
+        Padding: (Top: 6, Bottom: 6, Left: 10, Right: 10);
+        Background: (Color: #1a2433);
+      }
+
+      Label #FilterByCategoryLabel {
+        Anchor: (Width: 70);
+        Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #a8b5c9, VerticalAlignment: Center);
+        Text: "Filter:";
+      }
+
+      $C.@SmallSecondaryTextButton #FilterAllButton {
+        Anchor: (Width: 60, Height: 26, Left: 4);
+        Text: "All";
+      }
+
+      $C.@CheckBox #FilterAllValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      $C.@SmallSecondaryTextButton #FilterHostileButton {
+        Anchor: (Width: 75, Height: 26, Left: 4);
+        Text: "Hostile";
+      }
+
+      $C.@CheckBox #FilterHostileValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      $C.@SmallSecondaryTextButton #FilterEliteButton {
+        Anchor: (Width: 60, Height: 26, Left: 4);
+        Text: "Elite";
+      }
+
+      $C.@CheckBox #FilterEliteValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      $C.@SmallSecondaryTextButton #FilterMinibossButton {
+        Anchor: (Width: 90, Height: 26, Left: 4);
+        Text: "Miniboss";
+      }
+
+      $C.@CheckBox #FilterMinibossValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
+
+      $C.@SmallSecondaryTextButton #FilterWorldbossButton {
+        Anchor: (Width: 100, Height: 26, Left: 4);
+        Text: "Worldboss";
+      }
+
+      $C.@CheckBox #FilterWorldbossValue {
+        Anchor: (Width: 0, Height: 0);
+        Visible: false;
+        Value: true;
+      }
     }
 
     Group #DropsList {
       LayoutMode: Top;
-      Padding: (Top: 8);
+      Padding: (Top: 6);
 
       Group #HeaderRow {
         LayoutMode: Left;
@@ -51,7 +132,7 @@ $C.@Container {
         Anchor: (Bottom: 4);
 
         Label #HeaderEnabled {
-          Anchor: (Width: 60);
+          Anchor: (Width: 70);
           Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #d3d6db, HorizontalAlignment: Center, VerticalAlignment: Center);
           Text: "Enabled";
         }
@@ -88,7 +169,7 @@ $C.@Container {
         }
 
         Label #HeaderActions {
-          Anchor: (Width: 100);
+          Anchor: (Width: 180);
           Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #d3d6db, HorizontalAlignment: Center, VerticalAlignment: Center);
           Text: "Actions";
         }
@@ -106,6 +187,10 @@ $C.@Container {
       }
     }
 
+    Group #Spacer {
+      FlexWeight: 1;
+    }
+
     Group #PaginationContainer {
       LayoutMode: Left;
       Padding: (Full: 8);
@@ -114,7 +199,7 @@ $C.@Container {
 
       $C.@SmallSecondaryTextButton #PrevButton {
         Anchor: (Width: 120, Height: 28);
-        Text: "< Previos";
+        Text: "< Previous";
       }
 
       $C.@CheckBox #PrevValue {
@@ -152,10 +237,6 @@ $C.@Container {
       Anchor: (Bottom: 8);
       Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #7a8596, HorizontalAlignment: Center, VerticalAlignment: Center);
       Text: "Total: 0 drops";
-    }
-
-    Group #Spacer {
-      FlexWeight: 1;
     }
 
     Group #BottomButtonsContainer {
