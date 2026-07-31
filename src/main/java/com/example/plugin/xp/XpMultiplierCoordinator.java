@@ -2,18 +2,20 @@ package com.example.plugin.xp;
 
 import com.example.plugin.HardcoreModePlugin;
 import com.example.plugin.config.WorldHardcoreConfig;
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.common.plugin.PluginIdentifier;
 import com.hypixel.hytale.server.core.plugin.PluginBase;
 import com.hypixel.hytale.server.core.plugin.PluginManager;
 import com.hypixel.hytale.server.core.util.Config;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
 public final class XpMultiplierCoordinator {
@@ -30,6 +32,15 @@ public final class XpMultiplierCoordinator {
 
     public XpMultiplierCoordinator(HardcoreModePlugin plugin) {
         this.plugin = plugin;
+    }
+
+    public void initialize() {
+        getActiveProvider();
+    }
+
+    public void close() {
+        endlessLevelingProvider.close();
+        restoreAllProviders();
     }
 
     public boolean isSupported() {
@@ -79,11 +90,7 @@ public final class XpMultiplierCoordinator {
         XpProvider provider = getActiveProvider();
         if (provider == endlessLevelingProvider) {
             rpgLevelingProvider.restoreBaseValue();
-            if (shouldApply) {
-                endlessLevelingProvider.applyWorldMultiplier(normalizedWorldName, worldConfig.bloodMoonXpMultiplier);
-            } else {
-                endlessLevelingProvider.clearWorldMultiplier(normalizedWorldName);
-            }
+            endlessLevelingProvider.restoreBaseValue();
             return;
         }
 
@@ -97,7 +104,7 @@ public final class XpMultiplierCoordinator {
         XpProvider provider = getActiveProvider();
         if (provider == endlessLevelingProvider) {
             rpgLevelingProvider.restoreBaseValue();
-            endlessLevelingProvider.clearWorldMultiplier(normalizedWorldName);
+            endlessLevelingProvider.restoreBaseValue();
             return;
         }
 
@@ -198,6 +205,26 @@ public final class XpMultiplierCoordinator {
                 error.getClass().getSimpleName(),
                 error.getMessage()
         );
+    }
+
+    public boolean usesPerEntityMultiplier() {
+        return getActiveProvider() == endlessLevelingProvider;
+    }
+
+    public void syncEntity(Ref<EntityStore> ref, float multiplier) {
+        if (!usesPerEntityMultiplier()) {
+            return;
+        }
+
+        endlessLevelingProvider.applyEntityMultiplier(ref, multiplier);
+    }
+
+    public void clearEntity(Ref<EntityStore> ref) {
+        if (!usesPerEntityMultiplier()) {
+            return;
+        }
+
+        endlessLevelingProvider.clearEntityMultiplier(ref);
     }
 
     private interface XpProvider {
@@ -364,84 +391,45 @@ public final class XpMultiplierCoordinator {
 
     private final class EndlessLevelingProvider implements XpProvider {
         private static final String API_CLASS = "com.airijko.endlessleveling.api.EndlessLevelingAPI";
+        private static final String LEVELING_MANAGER_CLASS =
+                "com.airijko.endlessleveling.leveling.LevelingManager";
+        private static final String XP_SOURCE_CLASS = "com.airijko.endlessleveling.xpstats.XpSource";
+
+        private final BiConsumer<UUID, Double> xpGrantListener = this::onXpGranted;
+        private final ThreadLocal<Boolean> applyingFallback = ThreadLocal.withInitial(() -> false);
 
         private boolean checked;
         private boolean available;
+        private boolean listenerRegistered;
+        private boolean readbackWarningLogged;
         private Method apiGetMethod;
-        private Method setWorldXpMultiplierMethod;
-        private Method getWorldOverrideValueByWorldNameMethod;
-        private Field runtimeWorldOverridesField;
-        private final Set<String> managedWorlds = ConcurrentHashMap.newKeySet();
-        private final Set<String> snapshotWorlds = ConcurrentHashMap.newKeySet();
-        private final Set<String> worldsWithPreviousExperienceOverride = ConcurrentHashMap.newKeySet();
-        private final Map<String, Object> previousExperienceOverrides = new ConcurrentHashMap<>();
+        private Method setEntityXpMultiplierMethod;
+        private Method clearEntityXpMultiplierMethod;
+        private Method getEntityXpMultiplierMethod;
+        private Method addXpGrantListenerMethod;
+        private Method removeXpGrantListenerMethod;
+        private Method getCurrentGrantSourceNameMethod;
+        private Method apiLevelingManagerMethod;
+        private Method adjustRawXpMethod;
+        private Method xpSourceValueOfMethod;
+        private Field currentMobKillGrantField;
+        private Field mobKillGrantStoreField;
+        private Field mobKillGrantEntityMultiplierField;
 
         @Override
         public boolean isReady() {
-            if (!ensureApiAccess()) {
-                return false;
-            }
-
-            try {
-                return apiGetMethod.invoke(null) != null;
-            } catch (ReflectiveOperationException | RuntimeException ignored) {
-                return false;
-            }
+            Object api = getApiInstance();
+            return api != null && ensureXpGrantListener(api);
         }
 
         @Override
         public boolean applyMultiplier(float multiplier) {
-            boolean applied = true;
-            for (Map.Entry<String, Float> entry : worldsWithXpMultiplier.entrySet()) {
-                Float worldMultiplier = entry.getValue();
-                if (worldMultiplier == null) {
-                    continue;
-                }
-                applied &= applyWorldMultiplier(entry.getKey(), worldMultiplier);
-            }
-            return applied;
+            return true;
         }
 
         @Override
         public boolean restoreBaseValue() {
-            boolean restored = true;
-            for (String worldName : new ArrayList<>(snapshotWorlds)) {
-                restored &= restoreWorldSnapshot(worldName);
-            }
-            managedWorlds.clear();
-            snapshotWorlds.clear();
-            worldsWithPreviousExperienceOverride.clear();
-            previousExperienceOverrides.clear();
-            return restored;
-        }
-
-        private boolean applyWorldMultiplier(String worldName, float multiplier) {
-            if (!ensureApiAccess() || worldName == null || worldName.isBlank()) {
-                return false;
-            }
-
-            Object api = getApiInstance();
-            if (api == null) {
-                return false;
-            }
-
-            snapshotWorldOverrideIfNeeded(api, worldName);
-
-            try {
-                setWorldXpMultiplierMethod.invoke(api, worldName, (double) Math.max(0.0f, multiplier));
-                managedWorlds.add(worldName);
-                return true;
-            } catch (ReflectiveOperationException | RuntimeException error) {
-                logWarning("Failed to apply EndlessLeveling world XP multiplier", error);
-                return false;
-            }
-        }
-
-        private boolean clearWorldMultiplier(String worldName) {
-            if (worldName == null || worldName.isBlank()) {
-                return true;
-            }
-            return restoreWorldSnapshot(worldName);
+            return true;
         }
 
         private Object getApiInstance() {
@@ -456,91 +444,161 @@ public final class XpMultiplierCoordinator {
             }
         }
 
-        private void snapshotWorldOverrideIfNeeded(Object api, String worldName) {
-            if (api == null || !snapshotWorlds.add(worldName)) {
+        private void applyEntityMultiplier(Ref<EntityStore> ref, float multiplier) {
+            if (!ensureApiAccess() || ref == null || !ref.isValid()) {
                 return;
             }
 
-            Object previousOverride = readWorldExperienceOverride(api, worldName);
-            if (previousOverride != null) {
-                worldsWithPreviousExperienceOverride.add(worldName);
-                previousExperienceOverrides.put(worldName, deepCopyValue(previousOverride));
-            }
-        }
-
-        private Object readWorldExperienceOverride(Object api, String worldName) {
-            if (api == null || worldName == null || worldName.isBlank()) {
-                return null;
-            }
-
-            try {
-                return getWorldOverrideValueByWorldNameMethod.invoke(api, worldName, "Experience");
-            } catch (ReflectiveOperationException | RuntimeException error) {
-                logWarning("Failed to read EndlessLeveling world XP override", error);
-                return null;
-            }
-        }
-
-        @SuppressWarnings("unchecked")
-        private boolean restoreWorldSnapshot(String worldName) {
-            if (!ensureApiAccess() || worldName == null || worldName.isBlank()) {
-                return false;
+            int entityIndex = ref.getIndex();
+            if (entityIndex < 0) {
+                return;
             }
 
             Object api = getApiInstance();
             if (api == null) {
-                return false;
+                return;
             }
 
-            managedWorlds.remove(worldName);
-            snapshotWorlds.remove(worldName);
+            double normalizedMultiplier = Double.isFinite(multiplier) && multiplier > 1.0f
+                    ? multiplier
+                    : 1.0d;
 
             try {
-                Object rawOverrides = runtimeWorldOverridesField.get(api);
-                if (!(rawOverrides instanceof Map<?, ?>)) {
-                    return false;
-                }
-
-                Map<String, Object> runtimeWorldOverrides = (Map<String, Object>) rawOverrides;
-                Object worldOverridesObject = runtimeWorldOverrides.get(worldName);
-                if (worldOverridesObject instanceof Map<?, ?>) {
-                    Map<String, Object> worldOverrides = (Map<String, Object>) worldOverridesObject;
-                    if (worldsWithPreviousExperienceOverride.remove(worldName)) {
-                        Object previous = previousExperienceOverrides.remove(worldName);
-                        worldOverrides.put("Experience", deepCopyValue(previous));
-                    } else {
-                        worldOverrides.remove("Experience");
-                    }
-
-                    if (worldOverrides.isEmpty()) {
-                        runtimeWorldOverrides.remove(worldName);
-                    }
-                } else if (worldsWithPreviousExperienceOverride.remove(worldName)) {
-                    Map<String, Object> replacement = new LinkedHashMap<>();
-                    replacement.put("Experience", deepCopyValue(previousExperienceOverrides.remove(worldName)));
-                    runtimeWorldOverrides.put(worldName, replacement);
+                if (normalizedMultiplier <= 1.0d) {
+                    clearEntityXpMultiplierMethod.invoke(api, entityIndex);
                 } else {
-                    previousExperienceOverrides.remove(worldName);
+                    setEntityXpMultiplierMethod.invoke(api, entityIndex, normalizedMultiplier);
                 }
+                verifyEntityMultiplier(api, entityIndex, normalizedMultiplier);
+            } catch (ReflectiveOperationException | RuntimeException error) {
+                logWarning("Failed to sync EndlessLeveling entity XP multiplier", error);
+            }
+        }
 
+        private void verifyEntityMultiplier(Object api, int entityIndex, double expected) throws ReflectiveOperationException {
+            Object result = getEntityXpMultiplierMethod.invoke(api, entityIndex);
+            double actual = result instanceof Number number ? number.doubleValue() : 1.0d;
+            if (!readbackWarningLogged && Math.abs(actual - expected) > 0.0001d) {
+                readbackWarningLogged = true;
+                logWarning("EndlessLeveling did not retain the entity XP multiplier", null);
+            }
+        }
+
+        private void clearEntityMultiplier(Ref<EntityStore> ref) {
+            if (!ensureApiAccess() || ref == null || !ref.isValid()) {
+                return;
+            }
+
+            int entityIndex = ref.getIndex();
+            Object api = entityIndex < 0 ? null : getApiInstance();
+            if (api == null) {
+                return;
+            }
+
+            try {
+                clearEntityXpMultiplierMethod.invoke(api, entityIndex);
+            } catch (ReflectiveOperationException | RuntimeException error) {
+                logWarning("Failed to clear EndlessLeveling entity XP multiplier", error);
+            }
+        }
+
+        private synchronized boolean ensureXpGrantListener(Object api) {
+            if (listenerRegistered) {
                 return true;
-            } catch (IllegalAccessException | RuntimeException error) {
-                logWarning("Failed to restore EndlessLeveling world XP override", error);
+            }
+
+            try {
+                addXpGrantListenerMethod.invoke(api, xpGrantListener);
+                listenerRegistered = true;
+                return true;
+            } catch (ReflectiveOperationException | RuntimeException error) {
+                logWarning("Failed to register the EndlessLeveling XP integration", error);
                 return false;
             }
         }
 
-        private Object deepCopyValue(Object value) {
-            if (value instanceof Map<?, ?> sourceMap) {
-                Map<String, Object> copy = new LinkedHashMap<>();
-                for (Map.Entry<?, ?> entry : sourceMap.entrySet()) {
-                    if (entry.getKey() != null) {
-                        copy.put(String.valueOf(entry.getKey()), deepCopyValue(entry.getValue()));
-                    }
-                }
-                return copy;
+        private void onXpGranted(UUID playerUuid, Double grantedXp) {
+            if (Boolean.TRUE.equals(applyingFallback.get())
+                    || playerUuid == null
+                    || grantedXp == null
+                    || !Double.isFinite(grantedXp)
+                    || grantedXp <= 0.0d) {
+                return;
             }
-            return value;
+
+            Object api = getApiInstance();
+            if (api == null) {
+                return;
+            }
+
+            try {
+                String sourceName = (String) getCurrentGrantSourceNameMethod.invoke(api);
+                if (!isMobKillSource(sourceName)) {
+                    return;
+                }
+
+                Object context = getCurrentMobKillGrant(api);
+                if (context == null) {
+                    return;
+                }
+
+                @SuppressWarnings("unchecked")
+                Store<EntityStore> store = (Store<EntityStore>) mobKillGrantStoreField.get(context);
+                double desiredMultiplier = plugin.getBloodMoonXpMultiplierForStore(store);
+                double appliedMultiplier = mobKillGrantEntityMultiplierField.getDouble(context);
+                if (!Double.isFinite(appliedMultiplier) || appliedMultiplier <= 0.0d) {
+                    appliedMultiplier = 1.0d;
+                }
+
+                if (desiredMultiplier <= appliedMultiplier + 0.0001d) {
+                    return;
+                }
+
+                double missingXp = grantedXp * ((desiredMultiplier / appliedMultiplier) - 1.0d);
+                if (!Double.isFinite(missingXp) || missingXp <= 0.0d) {
+                    return;
+                }
+
+                Object levelingManager = apiLevelingManagerMethod.invoke(api);
+                Object xpSource = xpSourceValueOfMethod.invoke(null, sourceName);
+                if (levelingManager == null || xpSource == null) {
+                    return;
+                }
+
+                applyingFallback.set(true);
+                adjustRawXpMethod.invoke(levelingManager, playerUuid, missingXp, xpSource);
+            } catch (ReflectiveOperationException | RuntimeException error) {
+                logWarning("Failed to apply the EndlessLeveling Blood Moon XP fallback", error);
+            } finally {
+                applyingFallback.remove();
+            }
+        }
+
+        private Object getCurrentMobKillGrant(Object api) throws IllegalAccessException {
+            Object value = currentMobKillGrantField.get(api);
+            return value instanceof ThreadLocal<?> threadLocal ? threadLocal.get() : null;
+        }
+
+        private boolean isMobKillSource(String sourceName) {
+            return "MOB_KILL".equals(sourceName)
+                    || "PARTY_KILL".equals(sourceName)
+                    || "PARTY_SHARE".equals(sourceName);
+        }
+
+        private synchronized void close() {
+            if (!listenerRegistered) {
+                return;
+            }
+
+            Object api = getApiInstance();
+            if (api != null) {
+                try {
+                    removeXpGrantListenerMethod.invoke(api, xpGrantListener);
+                } catch (ReflectiveOperationException | RuntimeException error) {
+                    logWarning("Failed to unregister the EndlessLeveling XP integration", error);
+                }
+            }
+            listenerRegistered = false;
         }
 
         private boolean ensureApiAccess() {
@@ -551,15 +609,34 @@ public final class XpMultiplierCoordinator {
             checked = true;
             try {
                 Class<?> apiClass = Class.forName(API_CLASS);
+                Class<?> levelingManagerClass = Class.forName(LEVELING_MANAGER_CLASS);
+                Class<?> xpSourceClass = Class.forName(XP_SOURCE_CLASS);
+                Class<?> grantContextClass = Class.forName(API_CLASS + "$MobKillGrantContext");
+
                 apiGetMethod = apiClass.getMethod("get");
-                setWorldXpMultiplierMethod = apiClass.getMethod("setWorldXpMultiplier", String.class, double.class);
-                getWorldOverrideValueByWorldNameMethod = apiClass.getMethod(
-                        "getWorldOverrideValueByWorldName",
-                        String.class,
-                        String.class
+                setEntityXpMultiplierMethod = apiClass.getMethod("setEntityXpMultiplier", int.class, double.class);
+                clearEntityXpMultiplierMethod = apiClass.getMethod("clearEntityXpMultiplier", int.class);
+                getEntityXpMultiplierMethod = apiClass.getMethod("getEntityXpMultiplier", int.class);
+                addXpGrantListenerMethod = apiClass.getMethod("addXpGrantListener", BiConsumer.class);
+                removeXpGrantListenerMethod = apiClass.getMethod("removeXpGrantListener", BiConsumer.class);
+                getCurrentGrantSourceNameMethod = apiClass.getMethod("getCurrentGrantSourceName");
+
+                apiLevelingManagerMethod = apiClass.getDeclaredMethod("levelingManager");
+                apiLevelingManagerMethod.setAccessible(true);
+                adjustRawXpMethod = levelingManagerClass.getMethod(
+                        "adjustRawXp",
+                        UUID.class,
+                        double.class,
+                        xpSourceClass
                 );
-                runtimeWorldOverridesField = apiClass.getDeclaredField("runtimeWorldOverrides");
-                runtimeWorldOverridesField.setAccessible(true);
+                xpSourceValueOfMethod = xpSourceClass.getMethod("valueOf", String.class);
+
+                currentMobKillGrantField = apiClass.getDeclaredField("currentMobKillGrant");
+                currentMobKillGrantField.setAccessible(true);
+                mobKillGrantStoreField = grantContextClass.getDeclaredField("store");
+                mobKillGrantStoreField.setAccessible(true);
+                mobKillGrantEntityMultiplierField = grantContextClass.getDeclaredField("entityXpMult");
+                mobKillGrantEntityMultiplierField.setAccessible(true);
                 available = true;
             } catch (ReflectiveOperationException | RuntimeException error) {
                 available = false;

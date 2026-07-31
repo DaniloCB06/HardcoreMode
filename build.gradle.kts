@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.example"
-version = "4.0.0"
+version = "4.0.1"
 
 val launcherHytaleServerJar = File(
     System.getenv("APPDATA"),

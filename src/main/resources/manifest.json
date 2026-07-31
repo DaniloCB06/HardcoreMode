@@ -1,7 +1,7 @@
 {
   "Group": "com.example",
   "Name": "HardcoreMode",
-  "Version": "4.0.0",
+  "Version": "4.0.1",
   "ServerVersion": ">=0.5.0",
   "Description": "Increases mob health and damage with a configurable GUI.",
   "Authors": [
